@@ -1,0 +1,14 @@
+LICENSE
+README.md
+setup.py
+edmt/__init__.py
+edmt/base.py
+edmt/edmt.py
+edmt/init.py
+edmt/load.py
+edmt.egg-info/PKG-INFO
+edmt.egg-info/SOURCES.txt
+edmt.egg-info/dependency_links.txt
+edmt.egg-info/requires.txt
+edmt.egg-info/top_level.txt
+tests/test_emdt.py
