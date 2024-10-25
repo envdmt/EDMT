@@ -12,5 +12,7 @@ Requires-Python: >=3.6
 Description-Content-Type: text/markdown
 License-File: LICENSE
 Requires-Dist: geopandas==1.0.1
+Requires-Dist: requests==2.32.3
+Requires-Dist: tqdm==4.66.5
 
 # edmt
