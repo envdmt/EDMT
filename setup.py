@@ -20,6 +20,8 @@ setup(
         'geopandas==1.0.1',
         'requests==2.32.3',
         'tqdm==4.66.5',
-        'plotly==5.24.1'
+        'plotly==5.24.1',
+        'numpy==2.1.2',
+        'pyproj==3.7.0',
     ],
 )
