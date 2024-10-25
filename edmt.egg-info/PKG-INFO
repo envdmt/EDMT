@@ -15,5 +15,7 @@ Requires-Dist: geopandas==1.0.1
 Requires-Dist: requests==2.32.3
 Requires-Dist: tqdm==4.66.5
 Requires-Dist: plotly==5.24.1
+Requires-Dist: numpy==2.1.2
+Requires-Dist: pyproj==3.7.0
 
 # edmt
