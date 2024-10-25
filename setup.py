@@ -17,6 +17,8 @@ setup(
     ],
     python_requires='>=3.6',  # Specify the Python versions supported
     install_requires=[
-        'geopandas==1.0.1'
+        'geopandas==1.0.1',
+        'requests==2.32.3',
+        'tqdm==4.66.5'
     ],
 )
