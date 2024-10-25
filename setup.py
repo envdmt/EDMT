@@ -19,6 +19,7 @@ setup(
     install_requires=[
         'geopandas==1.0.1',
         'requests==2.32.3',
-        'tqdm==4.66.5'
+        'tqdm==4.66.5',
+        'plotly==5.24.1'
     ],
 )
