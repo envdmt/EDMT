@@ -12,23 +12,6 @@ ASCII = """\
 __initialized = False
 
 
-# def init(silent=False, force=False):
-#     """
-#     Initializes the environment with Library-specific customizations.
-
-#     Parameters
-#     ----------
-#     silent : bool, optional
-#         Removes console output
-#     force : bool, optional
-#         Ignores `__initialized`
-
-#     """
-
-#     print(ASCII)
-
-
-
 def init(silent=False, force=False):
     """
     Initializes the environment with ecoscope-specific customizations.
