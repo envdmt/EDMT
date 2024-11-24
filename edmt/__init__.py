@@ -1,4 +1,7 @@
 from .base.base import *
+from .base import version
+
+__version__ = version.get_versions()["version"]
 
 ASCII = """\
   ______ _____  __  __ _______ 
@@ -37,6 +40,5 @@ def init(silent=False, force=False):
     __initialized = True
     if not silent:
         print(ASCII)
-
 
 __all__ = ["analysis", "base", "contrib", "conversion","mapping", "models","plotting"]
