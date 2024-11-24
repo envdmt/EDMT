@@ -1,4 +1,4 @@
-from .base.base import *
+from edmt.base.base import *
 
 ASCII = """\
   ______ _____  __  __ _______ 

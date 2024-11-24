@@ -7,4 +7,13 @@ edmt.egg-info/SOURCES.txt
 edmt.egg-info/dependency_links.txt
 edmt.egg-info/requires.txt
 edmt.egg-info/top_level.txt
+edmt/analysis/__init__.py
+edmt/base/__init__.py
+edmt/base/base.py
+edmt/contrib/__init__.py
+edmt/conversion/__init__.py
+edmt/conversion/gen_uuid.py
+edmt/mapping/__init__.py
+edmt/models/__init__.py
+edmt/plotting/__init__.py
 tests/test_emdt.py
