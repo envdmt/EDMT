@@ -1,7 +1,6 @@
 from ..conversion.gen_uuid import *
 from . import  version
 
-# check version
 
 """
 Example 

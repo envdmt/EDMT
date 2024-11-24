@@ -10,6 +10,7 @@ edmt.egg-info/top_level.txt
 edmt/analysis/__init__.py
 edmt/base/__init__.py
 edmt/base/base.py
+edmt/base/version.py
 edmt/contrib/__init__.py
 edmt/conversion/__init__.py
 edmt/conversion/gen_uuid.py
