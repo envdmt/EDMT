@@ -1,6 +1,5 @@
 import geopandas as gpd
 import matplotlib.pyplot as plt
-import h3
 import contextily as cx
 import matplotlib.colors as mcolors
 
