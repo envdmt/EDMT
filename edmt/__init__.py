@@ -1,4 +1,5 @@
-from .base.base import *
+from .base import base
+from .conversion import __init__ as convesrion
 from .base import version
 
 __version__ = version.get_versions()["version"]
