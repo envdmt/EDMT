@@ -22,7 +22,6 @@ def plot_df(df, column=None, ax=None,legend=None):
         'loc': 'lower right',
         'bbox_to_anchor': (1, 0),  # Controls position (x, y)
         'frameon': True,  # Optional: add a frame around the legend
-        'orientation': 'vertical',
         'colorbar': False
         },
     )
