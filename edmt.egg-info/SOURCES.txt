@@ -16,6 +16,8 @@ edmt/conversion/__init__.py
 edmt/conversion/conversion.py
 edmt/conversion/gen_uuid.py
 edmt/mapping/__init__.py
+edmt/mapping/mapping.py
+edmt/mapping/test_plot.py
 edmt/models/__init__.py
 edmt/plotting/__init__.py
 tests/test_emdt.py
