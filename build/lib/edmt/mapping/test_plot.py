@@ -8,9 +8,6 @@ def plot_df(df, column=None, ax=None,legend=None):
     df = df.copy()
     df = df.to_crs(epsg=4326)  # WGS 84
 
-    # Define color map with 5 colors
-    # cmap = mcolors.ListedColormap(['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd'])
-
     if ax is None:
         _, ax = plt.subplots(figsize=(8, 8))
 
@@ -29,9 +26,6 @@ def plot_df(df, column=None, ax=None,legend=None):
         'orientation': 'vertical',
         'colorbar': False
         },
-        # cmap = "RdYlGn_r",
-        # categorical = True,
-        # scheme  =  "FisherJenks"
     )
     cx.add_basemap(ax, crs=df.crs, source=cx.providers.CartoDB.Positron)
 
