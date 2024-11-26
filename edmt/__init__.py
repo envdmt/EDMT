@@ -1,11 +1,5 @@
+from .base.__init__ import *
 from .base import version
-from .analysis import __init__ as analysis
-from .base import __init__ as base
-from .contrib import __init__ as contrib
-from .conversion import __init__ as convesrion
-from .mapping import __init__ as mapping
-from .models import __init__ as models
-from .plotting import __init__ as plotting
 
 __version__ = version.get_versions()["version"]
 
@@ -47,4 +41,4 @@ def init(silent=False, force=False):
     if not silent:
         print(ASCII)
 
-__all__ = ["analysis", "base", "contrib", "conversion","mapping", "models","plotting"]
+# __all__ = ["analysis", "base", "contrib", "conversion","mapping", "models","plotting"]
