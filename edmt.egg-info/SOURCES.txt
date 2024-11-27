@@ -13,6 +13,7 @@ edmt/base/base.py
 edmt/base/load.py
 edmt/base/version.py
 edmt/contrib/__init__.py
+edmt/contrib/utils.py
 edmt/conversion/__init__.py
 edmt/conversion/conversion.py
 edmt/conversion/gen_uuid.py

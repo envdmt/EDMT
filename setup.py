@@ -19,10 +19,10 @@ setup(
     install_requires=[
         'geopandas==1.0.1',
         'plotly==5.24.1',
-        'tqdm==4.66.5',
+        'seaborn==0.13.2',
         'folium==0.18.0',
         'mapclassify==2.8.1',
         'matplotlib==3.9.2',
-        'contextily==1.6.2',
+        'contextily==1.6.2'
     ],
 )
