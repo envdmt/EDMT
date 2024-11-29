@@ -1,1 +1,1 @@
-from ..contrib.utils import *
+from edmt.contrib.utils import *

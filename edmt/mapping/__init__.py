@@ -1,2 +1,2 @@
-from ..mapping.test_plot import *
-from ..mapping.mapping import *
+from edmt.mapping.test_plot import *
+from edmt.mapping.mapping import *

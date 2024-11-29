@@ -1,8 +1,8 @@
-from ..analysis import __init__ as analysis
-from ..conversion import __init__ as convesrion
-from ..mapping import __init__ as mapping
-from ..models import __init__ as models
-from ..plotting import __init__ as plotting
+from edmt.analysis import __init__ as analysis
+from edmt.conversion import __init__ as convesrion
+from edmt.mapping import __init__ as mapping
+from edmt.models import __init__ as models
+from edmt.plotting import __init__ as plotting
 
 
-from ..base.base import *
+from edmt.base.base import *
