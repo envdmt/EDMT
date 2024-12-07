@@ -17,7 +17,7 @@ setup(
     ],
     python_requires='>=3.6',  # Specify the Python versions supported
     install_requires=[
-        'geopandas==1.0.1',
+        'geopandas==0.14.2',
         'plotly==5.24.1',
         'seaborn==0.13.2',
         'folium==0.18.0',
