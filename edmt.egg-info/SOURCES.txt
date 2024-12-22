@@ -11,6 +11,7 @@ edmt/analysis/__init__.py
 edmt/base/__init__.py
 edmt/base/base.py
 edmt/base/load.py
+edmt/base/sorters.py
 edmt/base/version.py
 edmt/contrib/__init__.py
 edmt/contrib/utils.py

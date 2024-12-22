@@ -7,6 +7,7 @@ contourpy==1.3.1
 cycler==0.12.1
 debugpy==1.8.9
 decorator==5.1.1
+edmt @ file:///media/dataengineer/Data/Dev%20Center/EDMT
 exceptiongroup==1.2.2
 executing==2.1.0
 folium==0.18.0

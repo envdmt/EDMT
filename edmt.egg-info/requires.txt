@@ -1,7 +1,7 @@
-contextily==1.6.2
-folium==0.18.0
 geopandas==0.14.2
-mapclassify==2.8.1
-matplotlib==3.9.2
 plotly==5.24.1
 seaborn==0.13.2
+folium==0.18.0
+mapclassify==2.8.1
+matplotlib==3.9.2
+contextily==1.6.2
