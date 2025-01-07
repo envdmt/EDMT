@@ -19,8 +19,11 @@ def datasets():#geom=None):
     #     # add a section for sklearn datasets
 
     # # fetch_california_housing
-        df = sklearn.datasets.fetch_california_housing(data_home=None, download_if_missing=True, return_X_y=False, as_frame=False, n_retries=3, delay=1.0)
-        return df
+    """
+    link : https://scikit-learn.org/stable/modules/generated/sklearn.datasets.fetch_california_housing.html#sklearn.datasets.fetch_california_housing
+    """
+    df = sklearn.datasets.fetch_california_housing(data_home=None, download_if_missing=True, return_X_y=False, as_frame=False, n_retries=3, delay=1.0)
+    return df
 
 def filler(df,column=None,method=None):
     # remove nan values by filling using Sklearn impute
