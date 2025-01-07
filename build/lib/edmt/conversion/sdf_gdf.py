@@ -16,7 +16,7 @@ def sdf_to_gdf(sdf):
     """
     tmp = sdf.copy()
     tmp = tmp[~tmp['SHAPE'].isna()]
-    gdf = gpd.GeoDataFrame(tmp, geometry=tmp["SHAPE"], crs=4326).set_index('objectid')
+    gdf = gpd.GeoDataFrame(tmp, geometry=tmp["SHAPE"], crs=4326).set_index('OBJECTID')
     gdf['geometry'] = gdf['geometry'].apply(lambda x: make_valid(x)) # try to fix any geoemtry issues
     gdf.drop(columns=['Shape__Area', 'Shape__Length', 'SHAPE'], errors='ignore', inplace=True)
     return gdf
