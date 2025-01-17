@@ -13,24 +13,6 @@ Classifier: Operating System :: OS Independent
 Requires-Python: >=3.6
 Description-Content-Type: text/markdown
 License-File: LICENSE
-<<<<<<< HEAD
-
-Requires-Dist: geopandas==0.14.2
-Requires-Dist: plotly==5.24.1
-Requires-Dist: seaborn==0.13.2
-Requires-Dist: folium==0.18.0
-Requires-Dist: mapclassify==2.8.1
-Requires-Dist: matplotlib==3.9.2
-Requires-Dist: contextily==1.6.2
-
-Requires-Dist: geopandas==1.0.1
-Requires-Dist: plotly==5.24.1
-Requires-Dist: tqdm==4.66.5
-Requires-Dist: folium==0.18.0
-Requires-Dist: mapclassify==2.8.1
-Requires-Dist: matplotlib==3.9.2
-=======
->>>>>>> origin/eugene
 
 # edmt
 
