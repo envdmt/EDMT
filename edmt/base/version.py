@@ -1,5 +1,5 @@
 import json
-from setup import setup as se
+from ... import setup as se
 
 version_json = f'''
 {
