@@ -1,12 +1,10 @@
 import json
+from setup import setup as se
 
-version_json = '''
+version_json = f'''
 {
- "date": "2024-12-02T14:23:16+0200",
- "dirty": false,
- "error": null,
- "full-revisionid": "e4314d53bc69452de1202e36b3cf0c5806a7d3b1",
- "version": "1.0.0.1"
+ 
+ "version": {se.version} + {se.name}
 }
 '''  # END VERSION_JSON
 

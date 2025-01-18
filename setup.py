@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='edmt',
-    version='1.0.0.1',        
+    version='1.0.0.2',        
     author='Odero & Kuloba',
     author_email='francisodero@maraelephantproject.org',
     description='Environmental Data Management Toolbox',
