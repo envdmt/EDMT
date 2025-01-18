@@ -1,13 +1,5 @@
-from .base.__init__ import *
 import importlib.metadata
-
-from . import analysis
-from . import base
-from . import contrib
-from . import conversion
-from . import mapping
-from . import models
-from . import plotting
+from . import analysis, base, contrib, conversion, mapping, models, plotting
 
 __version__  = importlib.metadata.version("edmt")
 
