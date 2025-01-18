@@ -1,8 +1,22 @@
 from setuptools import setup, find_packages
 
+versions = [
+    '1.0.1+e',  # Local Version
+    '1.0.1-e',  # Pre-Release Identifier
+    '1.0.1.dev0',  # Development Release
+    '1.0.1.post0' # Post-Release
+    ]
+
+release = [
+    '1.0.1a1', # Alpha version 1
+    '1.0.1b1', # Beta version 1
+    '1.0.1rc1', # Release Candidate 1
+
+]
+
 setup(
     name='edmt',
-    version='1.0.0.2',        
+    version=versions[0],        
     author='Odero & Kuloba',
     author_email='francisodero@maraelephantproject.org',
     description='Environmental Data Management Toolbox',
