@@ -40,4 +40,9 @@ setup(
         'contextily==1.6.2',
         'fiona==1.9.6'
     ],
+    entry_points={
+        'console_scripts': [
+            'edmt-version=edmt.version:print_version',
+        ],
+    },
 )

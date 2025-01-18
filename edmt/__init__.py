@@ -1,16 +1,15 @@
 from .base.__init__ import *
-from .base import version
+import importlib.metadata
 
-from .analysis import __init__ as analysis
-from .base import __init__ as base
-from .contrib import __init__ as contrib
-from .conversion import __init__ as conversion
-from .mapping import __init__ as mapping
-from .models import __init__ as models
-from .plotting import __init__ as plotting
+from . import analysis
+from . import base
+from . import contrib
+from . import conversion
+from . import mapping
+from . import models
+from . import plotting
 
-
-__version__ = version.get_versions()["version"]
+__version__  = importlib.metadata.version("edmt")
 
 ASCII = """\
   ______ _____  __  __ _______ 
@@ -48,3 +47,5 @@ def init(silent=False, force=False):
     __initialized = True
     if not silent:
         print(ASCII)
+
+
