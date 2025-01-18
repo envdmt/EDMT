@@ -1,7 +1,15 @@
 import importlib.metadata
 
 # Submodule imports
-from . import analysis, base, contrib, conversion, mapping, models, plotting
+# from edmt import analysis, conversion, mapping, models, plotting
+
+from . import analysis
+from . import base
+from . import contrib
+from . import conversion
+from . import mapping
+from . import models
+from . import plotting
 
 # Package version
 __version__ = importlib.metadata.version("edmt")
