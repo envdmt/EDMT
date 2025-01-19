@@ -1,2 +1,3 @@
-from edmt.mapping.test_plot import *
-from edmt.mapping.mapping import *
+from .mapping import *
+
+__all__ = [mapping_]

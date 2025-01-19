@@ -2,3 +2,5 @@ __pycache__/
 Outputs
 contextily_provider.txt
 required.txt
+test.py
+install_edmt.py

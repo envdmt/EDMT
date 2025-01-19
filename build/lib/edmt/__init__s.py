@@ -1,7 +1,21 @@
-from edmt import analysis, base, contrib, conversion, mapping, models, plotting
 import importlib.metadata
 
-ASCII = """\
+# Submodule imports
+# from edmt import analysis, conversion, mapping, models, plotting
+
+from . import analysis
+from . import base
+from . import contrib
+from . import conversion
+from . import mapping
+from . import models
+from . import plotting
+
+# Package version
+__version__ = importlib.metadata.version("edmt")
+
+# ASCII art for EDMT banner
+ASCII = r"""
   ______ _____  __  __ _______ 
  |  ____|  __ \|  \/  |__   __|
  | |__  | |  | | \  / |  | |   
@@ -10,13 +24,11 @@ ASCII = """\
  |______|_____/|_|  |_|  |_|   
 """
 
+# Initialization state
 __initialized = False
 
-# Package version
-__version__ = importlib.metadata.version("edmt")
 
-
-def init(silent=False, force=False):
+def init(silent: bool = False, force: bool = False):
     """
     Initializes the environment with EDMT-specific customizations.
 
@@ -27,19 +39,19 @@ def init(silent=False, force=False):
     force : bool, optional
         Forces re-initialization even if already initialized (default is False).
     """
+
     global __initialized
+
+    # Check if already initialized
     if __initialized and not force:
         if not silent:
-            print("EDMT already initialized.")
+            print("EDMT is already initialized.")
         return
 
-    import pandas as pd
-    pd.set_option('display.max_columns',None)
-
+    # Set the initialization flag
     __initialized = True
+
+    # Display ASCII art if not silent
     if not silent:
         print(ASCII)
-        print("EDMT initialized successfully.")
-
-
-__all__ = ["analysis", "base", "contrib", "init", "conversion", "mapping", "models", "plotting"]
+        print(f"EDMT initialized successfully. Version: {__version__}")
