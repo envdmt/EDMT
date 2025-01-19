@@ -1,26 +1,20 @@
-utils_ = [
-    "clean_vars","normalize_column","dataframe_to_dict",
-    "to_gdf","clean_time_cols","format_iso_time"
-    ]
-
 import geopandas as gpd
 import pandas as pd
 from dateutil import parser
 
 
-# def clean_vars(addl_kwargs={}, **kwargs):
-#     for k in addl_kwargs.keys():
-#         print(f"Warning: {k} is a non-standard parameter. Results may be unexpected.")
-#     # Create the cleaned dictionary after the loop
-#     clea_n = {k: v for k, v in {**addl_kwargs, **kwargs}.items() if v is not None}
-#     return clea_n
-
-
 def clean_vars(addl_kwargs={}, **kwargs):
     for k in addl_kwargs.keys():
         print(f"Warning: {k} is a non-standard parameter. Results may be unexpected.")
-        clea_ = {k: v for k, v in {**addl_kwargs, **kwargs}.items() if v is not None}
-        return clea_
+    # Create the cleaned dictionary after the loop
+    clea_n = {k: v for k, v in {**addl_kwargs, **kwargs}.items() if v is not None}
+    return clea_n
+
+# def clean_vars(addl_kwargs={}, **kwargs):
+#     for k in addl_kwargs.keys():
+#         print(f"Warning: {k} is a non-standard parameter. Results may be unexpected.")
+#         clea_ = {k: v for k, v in {**addl_kwargs, **kwargs}.items() if v is not None}
+#         return clea_
 
 
 def normalize_column(df, col):

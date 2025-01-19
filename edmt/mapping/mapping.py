@@ -11,6 +11,15 @@ from edmt.contrib.utils import clean_vars
 import time
 from datetime import datetime
 
+
+def clean_vars(additional_args, **default_args):
+    # Merge additional_args into default_args
+    if additional_args is None:
+        additional_args = {}
+    default_args.update(additional_args)
+    return default_args
+
+
 class Mapping:
 
     def __init__(self):
