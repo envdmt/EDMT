@@ -18,21 +18,29 @@ class Mapping:
 
     @staticmethod
     def gplot(df, column=None, title=None, ax=None, legend=True, fill=None, grids=None):
+        import matplotlib.pyplot as plt
+        import contextily as cx
+        from pyproj import CRS
+
+        # Ensure GeoDataFrame is a copy and has a valid CRS
         df = df.copy()
         if df.crs is None:
             raise ValueError("Input GeoDataFrame must have a CRS defined.")
         if df.crs != CRS.from_epsg(4326):
-            df = df.to_crs(epsg=4326) 
-            
-        if ax:
+            df = df.to_crs(epsg=4326)  # Ensure WGS 84
+        
+        # Ensure 'ax' is always initialized
+        if ax is None:
             fig, ax = plt.subplots(figsize=(10, 10))
 
+        # Default plot arguments
         plot_args = {
             "ax": ax,
             "alpha": 0.6,
             "edgecolor": "black",
         }
 
+        # Add column-specific arguments if a column is provided
         if column:
             plot_args["column"] = column
             plot_args["legend"] = legend
@@ -43,24 +51,75 @@ class Mapping:
                 "title": column,
             }
 
+        # Add fill color
         if fill:
             plot_args["color"] = fill
 
+        # Set title
         if title:
             ax.set_title(title, fontsize=14)
 
+        # Add grids if specified
         if grids:
             ax.grid(visible=True, linestyle="--", linewidth=0.5, alpha=0.7)
 
+        # Plot the GeoDataFrame
         df.plot(**plot_args)
 
+        # Add a frame around the map
         for spine in ax.spines.values():
             spine.set_edgecolor("black")
             spine.set_linewidth(1.5)
 
+        # Add basemap
         cx.add_basemap(ax, crs=df.crs, source=cx.providers.OpenStreetMap.Mapnik)
 
         return ax
+
+    # def gplot(df, column=None, title=None, ax=None, legend=True, fill=None, grids=None):
+    #     df = df.copy()
+    #     if df.crs is None:
+    #         raise ValueError("Input GeoDataFrame must have a CRS defined.")
+    #     if df.crs != CRS.from_epsg(4326):
+    #         df = df.to_crs(epsg=4326) 
+            
+    #     if ax:
+    #         fig, ax = plt.subplots(figsize=(10, 10))
+
+    #     plot_args = {
+    #         "ax": ax,
+    #         "alpha": 0.6,
+    #         "edgecolor": "black",
+    #     }
+
+    #     if column:
+    #         plot_args["column"] = column
+    #         plot_args["legend"] = legend
+    #         plot_args["legend_kwds"] = {
+    #             "loc": "lower right",
+    #             "bbox_to_anchor": (1, 0),
+    #             "frameon": True,
+    #             "title": column,
+    #         }
+
+    #     if fill:
+    #         plot_args["color"] = fill
+
+    #     if title:
+    #         ax.set_title(title, fontsize=14)
+
+    #     if grids:
+    #         ax.grid(visible=True, linestyle="--", linewidth=0.5, alpha=0.7)
+
+    #     df.plot(**plot_args)
+
+    #     for spine in ax.spines.values():
+    #         spine.set_edgecolor("black")
+    #         spine.set_linewidth(1.5)
+
+    #     cx.add_basemap(ax, crs=df.crs, source=cx.providers.OpenStreetMap.Mapnik)
+
+    #     return ax
 
 
     
