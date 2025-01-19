@@ -12,13 +12,6 @@ import time
 from datetime import datetime
 
 
-def clean_vars(additional_args, **default_args):
-    # Merge additional_args into default_args
-    if additional_args is None:
-        additional_args = {}
-    default_args.update(additional_args)
-    return default_args
-
 
 class Mapping:
 
@@ -27,7 +20,7 @@ class Mapping:
         pass
 
     @staticmethod
-    def gplot(df, column=None, title=None, ax=None, legend=True, fill=None,grids=None, **additional_args):
+    def gplot(df, column=None, title=None, ax=None, legend=True, fill=None,grids=None):#, **additional_args):
         # print(f"Plot started at: {datetime.now()}")
         # start_time = time.time()
 
@@ -63,7 +56,7 @@ class Mapping:
             ax.grid(visible=True, linestyle="--", linewidth=0.5, alpha=0.7)
 
         # Clean and merge additional arguments
-        plot_args = clean_vars(additional_args, **plot_args)
+        # plot_args = clean_vars(additional_args, **plot_args)
 
         # Plot the GeoDataFrame
         df.plot(**plot_args)
