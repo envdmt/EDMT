@@ -32,6 +32,7 @@ setup(
         'geopandas==0.12.2',
         'mapclassify==2.8.0',
         'matplotlib==3.9.2',
+        'numpy==2.2.1',
         'plotly==5.24.1',
         'seaborn==0.13.2'
     ],
