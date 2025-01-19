@@ -34,19 +34,7 @@ def init(silent=False, force=False):
         return
 
     import pandas as pd
-
-    pd.options.plotting.backend = "plotly"
-    pd.options.mode.copy_on_write = True
-
-    from tqdm.auto import tqdm
-
-    tqdm.pandas()
-
-    from shapely.errors import ShapelyDeprecationWarning
-
-    import plotly.io as pio
-
-    pio.templates.default = "seaborn"
+    pd.set_option('display.max_columns',None)
 
     __initialized = True
     if not silent:
