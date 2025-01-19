@@ -1,4 +1,3 @@
-from .test_plot import *
 from .mapping import *
 
-__all__ = [mapping_, plots_]
+__all__ = [mapping_]

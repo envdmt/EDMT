@@ -19,7 +19,6 @@ edmt/conversion/__init__.py
 edmt/conversion/conversion.py
 edmt/mapping/__init__.py
 edmt/mapping/mapping.py
-edmt/mapping/test_plot.py
 edmt/models/__init__.py
 edmt/models/drones.py
 edmt/plotting/__init__.py
