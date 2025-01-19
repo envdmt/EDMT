@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: edmt
-Version: 1.0.1a1
+Version: 1.0.1+e
 Summary: Environmental Data Management Toolbox
 Home-page: https://github.com/envdmt/EDMT.git
 Author: Odero & Kuloba
@@ -10,7 +10,7 @@ Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved :: MIT License
 Classifier: Operating System :: OS Independent
-Requires-Python: >=3.6
+Requires-Python: >=3.10.12
 Description-Content-Type: text/markdown
 License-File: LICENSE
 

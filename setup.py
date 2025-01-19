@@ -5,18 +5,15 @@ versions = [
     '1.0.1-e',  # Pre-Release Identifier
     '1.0.1.dev0',  # Development Release
     '1.0.1.post0' # Post-Release
-    ]
-
-merges = [
+    
     '1.0.1a1', # Alpha version 1
     '1.0.1b1', # Beta version 1
     '1.0.1rc1', # Release Candidate 1
-
 ]
 
 setup(
     name='edmt',
-    version=merges[0],        
+    version=versions[0],        
     author='Odero & Kuloba',
     author_email='francisodero@maraelephantproject.org',
     description='Environmental Data Management Toolbox',
@@ -29,16 +26,15 @@ setup(
         'License :: OSI Approved :: MIT License', 
         'Operating System :: OS Independent',
     ],
-    python_requires='>=3.6',  
+    python_requires='>=3.10.12',  
     install_requires=[
-        'geopandas==0.14.2',
+        'geopandas==0.12.2',
         'plotly==5.24.1',
         'seaborn==0.13.2',
         'folium==0.18.0',
-        'mapclassify==2.8.1',
+        'mapclassify==2.8.0',
         'matplotlib==3.9.2',
-        'contextily==1.6.2',
-        'contourpy==1.2.1',
+        'contextily==1.4.0',
         'fiona==1.9.6'
     ],
     entry_points={
