@@ -24,7 +24,7 @@ class Mapping:
         if df.crs != CRS.from_epsg(4326):
             df = df.to_crs(epsg=4326) 
             
-        if ax is None:
+        if ax:
             fig, ax = plt.subplots(figsize=(10, 10))
 
         plot_args = {
