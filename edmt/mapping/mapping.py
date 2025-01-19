@@ -22,10 +22,10 @@ class Mapping:
         if df.crs is None:
             raise ValueError("Input GeoDataFrame must have a CRS defined.")
         if df.crs != CRS.from_epsg(4326):
-            df = df.to_crs(epsg=4326)
-        
+            df = df.to_crs(epsg=4326) 
+            
         if ax is None:
-            _, ax = plt.subplots(figsize=(10, 10))
+            fig, ax = plt.subplots(figsize=(10, 10))
 
         plot_args = {
             "ax": ax,
@@ -59,6 +59,7 @@ class Mapping:
             spine.set_linewidth(1.5)
 
         cx.add_basemap(ax, crs=df.crs, source=cx.providers.OpenStreetMap.Mapnik)
+
         return ax
 
 
