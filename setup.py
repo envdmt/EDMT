@@ -5,7 +5,7 @@ versions = [
     '1.0.1-e',  # Pre-Release Identifier
     '1.0.1.dev0',  # Development Release
     '1.0.1.post0' # Post-Release
-    
+
     '1.0.1a1', # Alpha version 1
     '1.0.1b1', # Beta version 1
     '1.0.1rc1', # Release Candidate 1
@@ -35,6 +35,7 @@ setup(
         'mapclassify==2.8.0',
         'matplotlib==3.9.2',
         'contextily==1.4.0',
+        'contourpy==1.2.1',
         'fiona==1.9.6'
     ],
     entry_points={

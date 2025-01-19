@@ -1,4 +1,5 @@
 contextily==1.4.0
+contourpy==1.2.1
 fiona==1.9.6
 folium==0.18.0
 geopandas==0.12.2
