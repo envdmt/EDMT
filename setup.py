@@ -38,6 +38,7 @@ setup(
         'mapclassify==2.8.1',
         'matplotlib==3.9.2',
         'contextily==1.6.2',
+        'contourpy==1.3.1',
         'fiona==1.9.6'
     ],
     entry_points={
