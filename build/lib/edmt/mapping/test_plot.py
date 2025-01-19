@@ -1,3 +1,6 @@
+plots_ = ["Mapping"]
+
+
 import geopandas as gpd
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -16,8 +19,8 @@ class Mapping:
 
     @staticmethod
     def gplot(df, column=None, title=None, ax=None, legend=True, fill=None,grids=None, **additional_args):
-        print(f"Plot started at: {datetime.now()}")
-        start_time = time.time()
+        # print(f"Plot started at: {datetime.now()}")
+        # start_time = time.time()
 
         df = df.copy()
         df = df.to_crs(epsg=4326)  # Ensure WGS 84
@@ -64,9 +67,9 @@ class Mapping:
         # Add basemap
         cx.add_basemap(ax, crs=df.crs, source=cx.providers.OpenStreetMap.Mapnik)
 
-        end_time = time.time()
-        execution_time = end_time - start_time
-        print(f"Execution time: {execution_time:.2f} seconds.")
+        # end_time = time.time()
+        # execution_time = end_time - start_time
+        # print(f"Execution time: {execution_time:.2f} seconds.")
         return ax
 
     

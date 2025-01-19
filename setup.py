@@ -7,7 +7,7 @@ versions = [
     '1.0.1.post0' # Post-Release
     ]
 
-release = [
+merges = [
     '1.0.1a1', # Alpha version 1
     '1.0.1b1', # Beta version 1
     '1.0.1rc1', # Release Candidate 1
@@ -16,7 +16,7 @@ release = [
 
 setup(
     name='edmt',
-    version=versions[0],        
+    version=merges[0],        
     author='Odero & Kuloba',
     author_email='francisodero@maraelephantproject.org',
     description='Environmental Data Management Toolbox',

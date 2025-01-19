@@ -1,21 +1,7 @@
+from edmt import analysis, base, contrib, conversion, mapping, models, plotting
 import importlib.metadata
 
-# Submodule imports
-# from edmt import analysis, conversion, mapping, models, plotting
-
-from . import analysis
-from . import base
-from . import contrib
-from . import conversion
-from . import mapping
-from . import models
-from . import plotting
-
-# Package version
-__version__ = importlib.metadata.version("edmt")
-
-# ASCII art for EDMT banner
-ASCII = r"""
+ASCII = """\
   ______ _____  __  __ _______ 
  |  ____|  __ \|  \/  |__   __|
  | |__  | |  | | \  / |  | |   
@@ -24,11 +10,13 @@ ASCII = r"""
  |______|_____/|_|  |_|  |_|   
 """
 
-# Initialization state
 __initialized = False
 
+# Package version
+__version__ = importlib.metadata.version("edmt")
 
-def init(silent: bool = False, force: bool = False):
+
+def init(silent=False, force=False):
     """
     Initializes the environment with EDMT-specific customizations.
 
@@ -39,19 +27,31 @@ def init(silent: bool = False, force: bool = False):
     force : bool, optional
         Forces re-initialization even if already initialized (default is False).
     """
-
     global __initialized
-
-    # Check if already initialized
     if __initialized and not force:
         if not silent:
-            print("EDMT is already initialized.")
+            print("EDMT already initialized.")
         return
 
-    # Set the initialization flag
-    __initialized = True
+    import pandas as pd
 
-    # Display ASCII art if not silent
+    pd.options.plotting.backend = "plotly"
+    pd.options.mode.copy_on_write = True
+
+    from tqdm.auto import tqdm
+
+    tqdm.pandas()
+
+    from shapely.errors import ShapelyDeprecationWarning
+
+    import plotly.io as pio
+
+    pio.templates.default = "seaborn"
+
+    __initialized = True
     if not silent:
         print(ASCII)
-        print(f"EDMT initialized successfully. Version: {__version__}")
+        print("EDMT initialized successfully.")
+
+
+__all__ = ["analysis", "base", "contrib", "init", "conversion", "mapping", "models", "plotting"]

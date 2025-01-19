@@ -1,1 +1,3 @@
-from . import drones
+from .drones import *
+
+__all__ = [drones_]

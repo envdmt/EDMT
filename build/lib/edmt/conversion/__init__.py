@@ -1,4 +1,3 @@
-from ..conversion.gen_uuid import *
-from ..conversion.conversion import *
-from ..conversion.sdf_gdf import *
-# from ..conversion.conversion import *
+from .conversion import *
+
+__all__ = [conversion_]

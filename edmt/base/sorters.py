@@ -1,3 +1,6 @@
+sorters_ = ["datasets","fillers"]
+
+
 # use sklaern to add datasets and sorters for filling Nan Values by impute
 import geopandas as gpd
 import pandas as pd
