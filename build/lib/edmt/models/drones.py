@@ -19,9 +19,7 @@ def kml_to_geojson(file_path=None):
       geojson_ds.CopyLayer(layer, layer.GetName())
       geojson_ds.Destroy()
       dataSource.Destroy()
-
-
-#   print(f"Downloaded & Converted {drone['name']} Trajectory to GeoJSON file")
+      print("Successuflly Converted KML to GeoJSON")
 
 # @title **UTM zone**
 # Function to find UTM zone for a given longitude
