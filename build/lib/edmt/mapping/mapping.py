@@ -18,22 +18,16 @@ def clean_vars(additional_args, **default_args):
 
 
 class Mapping:
-
     def __init__(self):
         # Initialize any necessary attributes
         pass
 
     @staticmethod
-    def gplot(df, column=None, title=None, legend=True, fill=None,grids=None, **additional_args):
-        # print(f"Plot started at: {datetime.now()}")
-        # start_time = time.time()
-
+    def gplot(df, column=None, title=None, legend=True, fill=None, grids=None, **additional_args):
         df = df.copy()
-        df = df.to_crs(epsg=4326)  # Ensure WGS 84
+        df = df.to_crs(epsg=4326)
 
         ax = plt.subplots(figsize=(10, 10))
-
-        # Default plot arguments
         plot_args = {
             "ax": ax,
             "alpha": 0.6,
@@ -46,34 +40,11 @@ class Mapping:
                 "frameon": True,
                 "title": column,
             },
-            "facecolor" : fill
+            "facecolor": fill,
         }
-
-        # Title
-        if title:
-            ax.set_title(title, fontsize=14)
-
-        # Add grids
-        if grids:
-            ax.grid(visible=True, linestyle="--", linewidth=0.5, alpha=0.7)
-
-        # Clean and merge additional arguments
         plot_args = clean_vars(additional_args, **plot_args)
-
-        # Plot the GeoDataFrame
         df.plot(**plot_args)
-
-        # Add a frame around the map
-        for spine in ax.spines.values():
-            spine.set_edgecolor("black")
-            spine.set_linewidth(1.5)
-
-        # Add basemap
         cx.add_basemap(ax, crs=df.crs, source=cx.providers.OpenStreetMap.Mapnik)
-
-        # end_time = time.time()
-        # execution_time = end_time - start_time
-        # print(f"Execution time: {execution_time:.2f} seconds.")
         return ax
 
 # class Mapping:
