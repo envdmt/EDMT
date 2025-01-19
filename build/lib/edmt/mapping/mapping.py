@@ -18,20 +18,14 @@ class Mapping:
 
     @staticmethod
     def gplot(df, column=None, title=None, ax=None, legend=True, fill=None, grids=None):
-        import matplotlib.pyplot as plt
-        import contextily as cx
-        from pyproj import CRS
 
-        # Ensure GeoDataFrame is a copy and has a valid CRS
         df = df.copy()
         if df.crs is None:
             raise ValueError("Input GeoDataFrame must have a CRS defined.")
         if df.crs != CRS.from_epsg(4326):
             df = df.to_crs(epsg=4326)  # Ensure WGS 84
-        
-        # Ensure 'ax' is always initialized
-        if ax is None:
-            fig, ax = plt.subplots(figsize=(10, 10))
+            
+        ax=ax
 
         # Default plot arguments
         plot_args = {
