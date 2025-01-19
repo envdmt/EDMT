@@ -1,20 +1,24 @@
 drones_ = ["kml_to_geojson","get_utm_epsg"]
-# @title **Convert KML to GeoJSON**
 
-def kml_to_geojson(kml_file_path=None):
-    kml_file_path = kml_file_path
-    print(kml_file_path)
-#   driver = ogr.GetDriverByName('KML')
-#   dataSource = driver.Open(kml_file_path, 0)
-#   if dataSource:
-#       layer = dataSource.GetLayer()
-#       geojson_driver = ogr.GetDriverByName('GeoJSON')
-#       if os.path.exists(drone_file_path):
-#           os.remove(drone_file_path)
-#       geojson_ds = geojson_driver.CreateDataSource(drone_file_path)
-#       geojson_ds.CopyLayer(layer, layer.GetName())
-#       geojson_ds.Destroy()
-#       dataSource.Destroy()
+
+from osgeo import ogr
+import os
+
+def kml_to_geojson(file_path=None):
+  driver = ogr.GetDriverByName('KML')
+  dataSource = driver.Open(file_path, 0)
+
+  if dataSource:
+      layer = dataSource.GetLayer()
+      geojson_driver = ogr.GetDriverByName('GeoJSON')
+      drone_file_path = f"{file_path} drone"
+
+      if os.path.exists(drone_file_path):
+          os.remove(drone_file_path)
+      geojson_ds = geojson_driver.CreateDataSource(drone_file_path)
+      geojson_ds.CopyLayer(layer, layer.GetName())
+      geojson_ds.Destroy()
+      dataSource.Destroy()
 
 
 #   print(f"Downloaded & Converted {drone['name']} Trajectory to GeoJSON file")
