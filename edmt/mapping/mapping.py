@@ -24,16 +24,14 @@ class Mapping:
         pass
 
     @staticmethod
-    def gplot(df, column=None, title=None, ax=None, legend=True, fill=None,grids=None, **additional_args):
+    def gplot(df, column=None, title=None, legend=True, fill=None,grids=None, **additional_args):
         # print(f"Plot started at: {datetime.now()}")
         # start_time = time.time()
 
         df = df.copy()
         df = df.to_crs(epsg=4326)  # Ensure WGS 84
 
-        # Create plot
-        if ax is None:
-            _, ax = plt.subplots(figsize=(10, 10))
+        ax = plt.subplots(figsize=(10, 10))
 
         # Default plot arguments
         plot_args = {
