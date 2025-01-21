@@ -1,5 +1,3 @@
-from .base import base_
-from .load import load_
-from .sorters import sorters_
+from edmt.base import base_
 
-__all__ = [base_,load_, sorters_]
+__all__ = [base_]

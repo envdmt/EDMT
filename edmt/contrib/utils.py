@@ -8,6 +8,12 @@ def clean_vars(addl_kwargs={}, **kwargs):
         print(f"Warning: {k} is a non-standard parameter. Results may be unexpected.")
         clea_ = {k: v for k, v in {**addl_kwargs, **kwargs}.items() if v is not None}
         return clea_
+    
+# def clean_vars(additional_args, **default_args):
+#     if additional_args is None:
+#         additional_args = {}
+#     default_args.update(additional_args)
+#     return default_args
 
 
 def normalize_column(df, col):
@@ -37,13 +43,16 @@ def to_gdf(df):
     )
 
 
-def clean_time_cols(df):
-    time_cols = ["time", "created_at", "updated_at", "end_time", "last_position_date", "recorded_at", "fixtime"]
-    for col in time_cols:
-        if col in df.columns and not pd.api.types.is_datetime64_ns_dtype(df[col]):
-            # convert x is not None to pd.isna(x) is False
-            df[col] = df[col].apply(lambda x: pd.to_datetime(parser.parse(x), utc=True) if not pd.isna(x) else None)
-    return df
+def clean_time_cols(df,columns = []):
+    if columns:
+        time_cols = [columns]
+        for col in time_cols:
+            if col in df.columns and not pd.api.types.is_datetime64_ns_dtype(df[col]):
+                # convert x is not None to pd.isna(x) is False
+                df[col] = df[col].apply(lambda x: pd.to_datetime(parser.parse(x), utc=True) if not pd.isna(x) else None)
+        return df
+    else:
+        print("Select a column with Time format")
 
 
 def format_iso_time(date_string: str) -> str:

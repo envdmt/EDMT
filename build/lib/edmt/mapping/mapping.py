@@ -9,13 +9,6 @@ from pyproj import CRS
 
 from edmt.contrib.utils import clean_vars
 
-def clean_vars(additional_args, **default_args):
-    if additional_args is None:
-        additional_args = {}
-    default_args.update(additional_args)
-    return default_args
-
-
 # class Mapping:
 #     def __init__(self):
 #         # Initialize any necessary attributes

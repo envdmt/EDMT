@@ -1,4 +1,3 @@
-from .conversion import *
-from .drones import *
+from edmt.conversion import conversion_
 
-__all__ = [conversion_,drones_]
+__all__ = [conversion_]

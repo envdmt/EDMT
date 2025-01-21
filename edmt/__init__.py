@@ -1,14 +1,12 @@
-from edmt import analysis, base, contrib, conversion, mapping, models, plotting
+# from edmt import base
 import importlib.metadata
 
 
 ASCII = """\
-  ______ _____  __  __ _______ 
- |  ____|  __ \|  \/  |__   __|
- | |__  | |  | | \  / |  | |   
- |  __| | |  | | |\/| |  | |   
- | |____| |__| | |  | |  | |   
- |______|_____/|_|  |_|  |_|   
+ ___ ___  __  __ _____ 
+| __|   \|  \/  |_   _|
+| _|| |) | |\/| | | |  
+|___|___/|_|  |_| |_|  
 """
 
 __initialized = False
@@ -36,6 +34,10 @@ def init(silent=False, force=False):
 
     import pandas as pd
     pd.set_option('display.max_columns',None)
+
+    import warnings
+    warnings.filterwarnings("ignore", message="Unable to import Axes3D")
+
 
     __initialized = True
     if not silent:

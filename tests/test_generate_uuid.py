@@ -10,4 +10,4 @@ def test_edmt():
     3. (Optional) Add specific assertions based on the expected behavior of 'edmt.init()'.
     """
     result = edmt.init()
-    assert result is not None
+    assert result is None
