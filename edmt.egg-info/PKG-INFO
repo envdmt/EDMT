@@ -1,9 +1,9 @@
 Metadata-Version: 2.1
 Name: edmt
-Version: 1.0.1a1
+Version: 1.0.1.dev0
 Summary: Environmental Data Management Toolbox
 Home-page: https://github.com/envdmt/EDMT.git
-Author: Odero & Kuloba
+Author: Odero, Kuloba & musasia
 Author-email: francisodero@maraelephantproject.org
 License: UNKNOWN
 Platform: UNKNOWN

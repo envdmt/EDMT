@@ -1,4 +1,4 @@
-mapping_ = ["Mapping"]
+mapping_ = ["Mapping","Maps"]
 
 
 import geopandas as gpd
@@ -10,7 +10,6 @@ from pyproj import CRS
 from edmt.contrib.utils import clean_vars
 
 def clean_vars(additional_args, **default_args):
-    # Merge additional_args into default_args
     if additional_args is None:
         additional_args = {}
     default_args.update(additional_args)
@@ -216,5 +215,3 @@ class Mapping:
 #     def legend(df):
 
 #         return df
-    
-    
