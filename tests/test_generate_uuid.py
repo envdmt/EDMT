@@ -18,7 +18,7 @@ def mock_geojson():
     )
 
 
-def test_generate_uuid(mock_geojson):
+def generate_uuid(mock_geojson):
     """
     Test the 'generate_uuid' function from the 'edmt.conversion' module.
 
