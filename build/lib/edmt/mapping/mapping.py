@@ -16,35 +16,35 @@ def clean_vars(additional_args, **default_args):
     return default_args
 
 
-class Mapping:
-    def __init__(self):
-        # Initialize any necessary attributes
-        pass
+# class Mapping:
+#     def __init__(self):
+#         # Initialize any necessary attributes
+#         pass
 
-    @staticmethod
-    def gplot(df, column=None, title=None, legend=True, fill=None, grids=None, **additional_args):
-        df = df.copy()
-        df = df.to_crs(epsg=4326)
+#     @staticmethod
+#     def gplot(df, column=None, title=None, legend=True, fill=None, grids=None, **additional_args):
+#         df = df.copy()
+#         df = df.to_crs(epsg=4326)
 
-        ax = plt.subplots(figsize=(10, 10))
-        plot_args = {
-            "ax": ax,
-            "alpha": 0.6,
-            "edgecolor": "black",
-            "column": column,
-            "legend": legend,
-            "legend_kwds": {
-                "loc": "lower right",
-                "bbox_to_anchor": (1, 0),
-                "frameon": True,
-                "title": column,
-            },
-            "facecolor": fill,
-        }
-        plot_args = clean_vars(additional_args, **plot_args)
-        df.plot(**plot_args)
-        cx.add_basemap(ax, crs=df.crs, source=cx.providers.OpenStreetMap.Mapnik)
-        return ax
+#         ax = plt.subplots(figsize=(10, 10))
+#         plot_args = {
+#             "ax": ax,
+#             "alpha": 0.6,
+#             "edgecolor": "black",
+#             "column": column,
+#             "legend": legend,
+#             "legend_kwds": {
+#                 "loc": "lower right",
+#                 "bbox_to_anchor": (1, 0),
+#                 "frameon": True,
+#                 "title": column,
+#             },
+#             "facecolor": fill,
+#         }
+#         plot_args = clean_vars(additional_args, **plot_args)
+#         df.plot(**plot_args)
+#         cx.add_basemap(ax, crs=df.crs, source=cx.providers.OpenStreetMap.Mapnik)
+#         return ax
 
 # class Mapping:
 

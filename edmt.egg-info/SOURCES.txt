@@ -25,4 +25,4 @@ edmt/models/__init__.py
 edmt/models/drones.py
 edmt/plotting/__init__.py
 tests/__init__.py
-tests/test.py
+tests/test_generate_uuid.py
