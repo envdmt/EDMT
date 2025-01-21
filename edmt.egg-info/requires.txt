@@ -1,6 +1,8 @@
+contextily==1.6.2
+fiona==1.9.6
 folium==0.18.0
-geopandas==1.0.1
+geopandas==0.14.2
 mapclassify==2.8.1
 matplotlib==3.9.2
 plotly==5.24.1
-tqdm==4.66.5
+seaborn==0.13.2

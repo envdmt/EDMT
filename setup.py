@@ -1,27 +1,48 @@
 from setuptools import setup, find_packages
 
+versions = [
+    '1.0.1+e',  # Local Version
+    '1.0.1-e',  # Pre-Release Identifier
+    '1.0.1.dev0',  # Development Release
+    '1.0.1.post0' # Post-Release
+    ]
+
+merges = [
+    '1.0.1a1', # Alpha version 1
+    '1.0.1b1', # Beta version 1
+    '1.0.1rc1', # Release Candidate 1
+
+]
+
 setup(
-    name='edmt',  # Replace with your package name
-    version='1.0.0.2',          # Initial version
+    name='edmt',
+    version=merges[0],        
     author='Odero & Kuloba',
     author_email='francisodero@maraelephantproject.org',
     description='Environmental Data Management Toolbox',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
-    url='https://github.com/envdmt/EDMT.git',  # Replace with your repo URL
-    packages=find_packages(),  # Automatically find packages in your repo
+    url='https://github.com/envdmt/EDMT.git',
+    packages=find_packages(),
     classifiers=[
         'Programming Language :: Python :: 3',
-        'License :: OSI Approved :: MIT License',  # Adjust as needed
+        'License :: OSI Approved :: MIT License', 
         'Operating System :: OS Independent',
     ],
-    python_requires='>=3.6',  # Specify the Python versions supported
+    python_requires='>=3.6',  
     install_requires=[
-        'geopandas==1.0.1',
+        'geopandas==0.14.2',
         'plotly==5.24.1',
-        'tqdm==4.66.5',
+        'seaborn==0.13.2',
         'folium==0.18.0',
         'mapclassify==2.8.1',
-        'matplotlib==3.9.2'
+        'matplotlib==3.9.2',
+        'contextily==1.6.2',
+        'fiona==1.9.6'
     ],
+    entry_points={
+        'console_scripts': [
+            'edmt-version=edmt.version:print_version',
+        ],
+    },
 )
