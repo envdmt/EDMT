@@ -1,3 +1,3 @@
-from .conversion import *
+from edmt.conversion import conversion_
 
 __all__ = [conversion_]
