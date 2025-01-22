@@ -1,3 +1,3 @@
-from edmt import analysis, base, contrib, conversion, mapping, models, plotting
+from edmt import analysis,contrib, conversion, mapping, models, plotting
 
-base_ = [analysis, base, contrib, conversion, mapping, models, plotting]
+base_ = [analysis, contrib, conversion, mapping, models, plotting]
