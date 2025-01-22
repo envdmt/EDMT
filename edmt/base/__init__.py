@@ -1,3 +1,5 @@
-from edmt.base import base_
+from .base import (
+    base
+)
 
-__all__ = [base_]
+__all__ = ['base']

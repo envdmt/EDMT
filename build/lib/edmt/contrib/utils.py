@@ -2,7 +2,6 @@ import geopandas as gpd
 import pandas as pd
 from dateutil import parser
 
-
 def clean_vars(addl_kwargs={}, **kwargs):
     for k in addl_kwargs.keys():
         print(f"Warning: {k} is a non-standard parameter. Results may be unexpected.")

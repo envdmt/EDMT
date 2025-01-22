@@ -1,3 +1,7 @@
-from edmt.conversion import conversion_
+from .conversion import (
+    sdf_to_gdf,
+    generate_uuid,
+    get_utm_epsg
+)
 
-__all__ = [conversion_]
+__all__ = ['sdf_to_gdf', 'generate_uuid', 'get_utm_epsg']

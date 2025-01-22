@@ -1,14 +1,12 @@
-conversion_ = [
-    "sdf_to_gdf","generate_uuid","kml_to_geojson","get_utm_epsg"
-    ]
-
-
 import os
 import uuid
 import pandas as pd
 import geopandas as gpd
-from osgeo import ogr
+# from osgeo import ogr
 from shapely import make_valid
+
+# List of functions provided by this module
+# __all__ = ["sdf_to_gdf", "generate_uuid", "get_utm_epsg"]
 
 def sdf_to_gdf(sdf):
     """
@@ -74,26 +72,6 @@ def generate_uuid(df, index=False):
         df = df.set_index('uuid').reset_index()
 
     return df
-
-def kml_to_geojson(file_path=None,url=None):
-    if file_path and url is None:
-        print("file path and url invalid.")
-    else:
-        driver = ogr.GetDriverByName('KML')
-        dataSource = driver.Open(file_path or url, 0)
-
-        if dataSource:
-            layer = dataSource.GetLayer()
-            geojson_driver = ogr.GetDriverByName('GeoJSON')
-            output_folder = f"Drone - {file_path}"
-
-            if os.path.exists(output_folder):
-                os.remove(output_folder)
-            geojson_ds = geojson_driver.CreateDataSource(output_folder)
-            geojson_ds.CopyLayer(layer, layer.GetName())
-            geojson_ds.Destroy()
-            dataSource.Destroy()
-            print(f"Successuflly Converted KML to GeoJSON and saved to {output_folder}")
        
 def get_utm_epsg(longitude=None):
     if longitude is None:
@@ -102,3 +80,26 @@ def get_utm_epsg(longitude=None):
         zone_number = int((longitude + 180) / 6) + 1
         hemisphere = '6' if longitude >= 0 else '7'  # 6 for Northern, 7 for Southern Hemisphere
         return f"32{hemisphere}{zone_number:02d}"
+    
+"""
+Issue Installing GDAL, To check a better way to convert or a way to install osgeo
+"""
+# def kml_to_geojson(file_path=None,url=None):
+#     if file_path and url is None:
+#         print("file path and url invalid.")
+#     else:
+#         driver = ogr.GetDriverByName('KML')
+#         dataSource = driver.Open(file_path or url, 0)
+
+#         if dataSource:
+#             layer = dataSource.GetLayer()
+#             geojson_driver = ogr.GetDriverByName('GeoJSON')
+#             output_folder = f"Drone - {file_path}"
+
+#             if os.path.exists(output_folder):
+#                 os.remove(output_folder)
+#             geojson_ds = geojson_driver.CreateDataSource(output_folder)
+#             geojson_ds.CopyLayer(layer, layer.GetName())
+#             geojson_ds.Destroy()
+#             dataSource.Destroy()
+#             print(f"Successuflly Converted KML to GeoJSON and saved to {output_folder}")

@@ -1,3 +1,4 @@
+from edmt import analysis, base, contrib, conversion, mapping, models, plotting
 import importlib.metadata
 
 ASCII = """\

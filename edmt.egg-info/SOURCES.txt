@@ -9,6 +9,7 @@ edmt.egg-info/entry_points.txt
 edmt.egg-info/requires.txt
 edmt.egg-info/top_level.txt
 edmt/analysis/__init__.py
+edmt/analysis/analysis.py
 edmt/base/__init__.py
 edmt/base/base.py
 edmt/contrib/__init__.py
@@ -17,7 +18,6 @@ edmt/contrib/sorters.py
 edmt/contrib/utils.py
 edmt/conversion/__init__.py
 edmt/conversion/conversion.py
-edmt/conversion/drones.py
 edmt/mapping/__init__.py
 edmt/mapping/mapping.py
 edmt/mapping/maps.py
