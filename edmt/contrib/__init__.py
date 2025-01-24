@@ -16,23 +16,23 @@ from .utils import (
     format_iso_time
 )
 
-__sorters__ = [
+__all__ = [
     "sorters",
-    "filler"
-    ]
-
-
-__utils__ = [
+    "filler",
     "clean_vars",
     "normalize_column",
     "dataframe_to_dict",
     "to_gdf",
     "clean_time_cols",
-    "format_iso_time"
+    "format_iso_time",
+    "read_file_from_url"
     ]
 
-__load__ = [
-    "read_file_from_url"
-]
 
-__all__ = __sorters__ + __utils__ + __load__
+# from .conversion import (
+#     sdf_to_gdf,
+#     generate_uuid,
+#     get_utm_epsg
+# )
+
+# __all__ = ['sdf_to_gdf', 'generate_uuid', 'get_utm_epsg']

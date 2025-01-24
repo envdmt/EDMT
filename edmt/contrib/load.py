@@ -2,7 +2,7 @@ import requests
 import geopandas as gpd
 import os
 
-def read_file_from_url(url_path: str, local_file: str = "gdf") -> gpd.GeoDataFrame:
+def read_file_from_url(url_path: str, local_file: str = "downloaded_file") -> gpd.GeoDataFrame:
     """
     Reads a file from a given URL, downloads it locally, and loads it as a GeoDataFrame.
 

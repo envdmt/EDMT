@@ -2,7 +2,7 @@ import requests
 import geopandas as gpd
 import os
 
-def read_file_from_url(url_path: str, local_file: str = "gdf") -> gpd.GeoDataFrame:
+def read_file_from_url(url_path: str, local_file: str = "downloaded_file") -> gpd.GeoDataFrame:
     """
     Reads a file from a given URL, downloads it locally, and loads it as a GeoDataFrame.
 
@@ -40,7 +40,6 @@ def read_file_from_url(url_path: str, local_file: str = "gdf") -> gpd.GeoDataFra
         
         # Load the file into a GeoDataFrame
         gdf = gpd.read_file(local_file, engine="pyogrio")
-        print("Reading Data")
         return gdf
     
     except requests.exceptions.RequestException as e:
