@@ -3,6 +3,10 @@ from .sorters import (
     filler
 )
 
+from .load import (
+    read_file_from_url
+)
+
 from .utils import (
     clean_vars,
     normalize_column,
@@ -12,10 +16,13 @@ from .utils import (
     format_iso_time
 )
 
-
-__all__ = [
+__sorters__ = [
     "sorters",
-    "filler",
+    "filler"
+    ]
+
+
+__utils__ = [
     "clean_vars",
     "normalize_column",
     "dataframe_to_dict",
@@ -23,3 +30,9 @@ __all__ = [
     "clean_time_cols",
     "format_iso_time"
     ]
+
+__load__ = [
+    "load"
+]
+
+__all__ = __sorters__ + __utils__ + __load__
