@@ -32,7 +32,7 @@ __utils__ = [
     ]
 
 __load__ = [
-    "load"
+    "read_file_from_url"
 ]
 
 __all__ = __sorters__ + __utils__ + __load__
