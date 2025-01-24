@@ -10,9 +10,9 @@ versions = [
 
 setup(
     name='edmt',
-    version=versions[2],   
+    version=versions[1],   
     author='Odero, Kuloba & musasia',
-    author_email='francisodero@maraelephantproject.org',
+    author_email='francisodero10@gmail.com',
     description='Environmental Data Management Toolbox',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
