@@ -40,6 +40,7 @@ def read_file_from_url(url_path: str, local_file: str = "gdf") -> gpd.GeoDataFra
         
         # Load the file into a GeoDataFrame
         gdf = gpd.read_file(local_file, engine="pyogrio")
+        print("Reading Data")
         return gdf
     
     except requests.exceptions.RequestException as e:
