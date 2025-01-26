@@ -17,6 +17,7 @@ from .utils import (
 )
 
 __all__ = [
+    "read_file_from_url",
     "sorters",
     "filler",
     "clean_vars",
@@ -24,8 +25,7 @@ __all__ = [
     "dataframe_to_dict",
     "to_gdf",
     "clean_time_cols",
-    "format_iso_time",
-    "read_file_from_url"
+    "format_iso_time"
     ]
 
 
