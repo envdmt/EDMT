@@ -1,8 +1,17 @@
+import os
 import requests
 import geopandas as gpd
-import os
+from google.colab import files
+import json
 
-def read_file_from_url(url_path: str, local_file: str = "downloaded_file") -> gpd.GeoDataFrame:
+def config():
+    uploaded = files.upload()
+    config_file_name = list(uploaded.keys())[0]
+    with open(config_file_name, mode='r') as file:
+        config = json.load(file)
+    return config
+
+def read_url(url_path: str, local_file: str = "downloaded_file") -> gpd.GeoDataFrame:
     """
     Reads a file from a given URL, downloads it locally, and loads it as a GeoDataFrame.
 
@@ -52,3 +61,5 @@ def read_file_from_url(url_path: str, local_file: str = "downloaded_file") -> gp
         # Optional: Clean up the local file after reading if needed
         if os.path.exists(local_file):
             os.remove(local_file)
+
+

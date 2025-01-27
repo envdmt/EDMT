@@ -4,7 +4,8 @@ from .sorters import (
 )
 
 from .load import (
-    read_file_from_url
+    read_url,
+    config
 )
 
 from .utils import (
@@ -17,9 +18,10 @@ from .utils import (
 )
 
 __all__ = [
-    "read_file_from_url",
     "sorters",
     "filler",
+    "read_url",
+    "config",
     "clean_vars",
     "normalize_column",
     "dataframe_to_dict",
@@ -27,12 +29,3 @@ __all__ = [
     "clean_time_cols",
     "format_iso_time"
     ]
-
-
-# from .conversion import (
-#     sdf_to_gdf,
-#     generate_uuid,
-#     get_utm_epsg
-# )
-
-# __all__ = ['sdf_to_gdf', 'generate_uuid', 'get_utm_epsg']

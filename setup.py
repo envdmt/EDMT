@@ -3,14 +3,14 @@ from setuptools import setup, find_packages
 versions = [
     '1.0.1+e',  # Local Version
     '1.0.1.dev0',  # Development Release
-    '1.0.1a1', # Alpha version 1
+    '1.0.1a3', # Alpha version 1
     '1.0.1b1', # Beta version 1
     '1.0.1rc1', # Release Candidate 1
 ]
 
 setup(
     name='edmt',
-    version=versions[1],   
+    version=versions[2],   
     author='Odero, Kuloba & musasia',
     author_email='francisodero10@gmail.com',
     description='Environmental Data Management Toolbox',
