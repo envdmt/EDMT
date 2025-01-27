@@ -1,15 +1,17 @@
 import os
 import requests
 import geopandas as gpd
-from google.colab import files
-import json
+# from google.colab import files
+# import json
 
 def config():
-    uploaded = files.upload()
-    config_file_name = list(uploaded.keys())[0]
-    with open(config_file_name, mode='r') as file:
-        config = json.load(file)
-    return config
+    # uploaded = files.upload()
+    # config_file_name = list(uploaded.keys())[0]
+    # with open(config_file_name, mode='r') as file:
+    #     config = json.load(file)
+    # return config
+    n="Still testing"
+    return print(n)
 
 def read_url(url_path: str, local_file: str = "downloaded_file") -> gpd.GeoDataFrame:
     """
