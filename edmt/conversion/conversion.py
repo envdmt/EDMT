@@ -5,7 +5,7 @@ import pandas as pd
 import geopandas as gpd
 from shapely import make_valid
 
-def sdf_to_gdf(sdf, crs=4326):
+def sdf_to_gdf(sdf, crs=None):
     """
     Converts a spatial dataframe (sdf) to a geodataframe (gdf) with a user-defined CRS.
 
