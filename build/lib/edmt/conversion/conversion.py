@@ -6,8 +6,10 @@ import geopandas as gpd
 import requests
 from shapely import make_valid
 
+from edmt.contrib import clean_vars
 
-def sdf_to_gdf(sdf, crs=4326):
+
+def sdf_to_gdf(sdf, crs=None):
     """
     Converts a spatial dataframe (sdf) to a geodataframe (gdf) with a user-defined CRS.
 
@@ -23,18 +25,38 @@ def sdf_to_gdf(sdf, crs=4326):
     5. Drops the columns 'Shape__Area', 'Shape__Length', and 'SHAPE', if they exist, to clean up the GeoDataFrame.
     6. Returns the resulting GeoDataFrame.
     """
+    # Validate input DataFrame
+    if not isinstance(sdf, pd.DataFrame):
+        raise ValueError("Input must be a pandas DataFrame.")
+    if sdf.empty:
+        raise ValueError("DataFrame is empty. Cannot generate UUIDs for an empty DataFrame.")
+
+    # clean vars
+    params = clean_vars(
+        shape = "SHAPE",
+        geometry = "geometry",
+        columns = ["Shape__Area", "Shape__Length", "SHAPE"],
+        crs=crs
+    )
+    assert params.get("geometry") is None
+    print("Geometry column is present and valid")
+
     tmp = sdf.copy()
-    tmp = tmp[~tmp['SHAPE'].isna()]
-    
-    # Allow user to define CRS
-    gdf = gpd.GeoDataFrame(tmp, geometry=tmp["SHAPE"], crs=crs)
-    
-    # Validate geometries
-    gdf['geometry'] = gdf['geometry'].apply(lambda x: make_valid(x))
-    
-    # Drop unnecessary columns
-    gdf.drop(columns=['Shape__Area', 'Shape__Length', 'SHAPE'], errors='ignore', inplace=True)
-    
+    tmp = tmp[~tmp[params.get("shape")].isna()]
+
+    if crs:
+        crs=params.get("crs")
+    else:
+        crs=4326
+
+    gdf = gpd.GeoDataFrame(
+        tmp, 
+        geometry=tmp[params.get("shape")], 
+        crs=crs
+        )
+    gdf['geometry'] = gdf[params.get("geometry")].apply(lambda x: make_valid(x)) # Validate geometries
+    gdf.drop(columns=params.get("columns"), errors='ignore', inplace=True)
+    print("COnverted Spatial DataFrame to GeoDataFrame")
     return gdf
 
 def generate_uuid(df, index=False):
