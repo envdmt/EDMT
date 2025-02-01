@@ -142,5 +142,5 @@ class Mapping:
     def legend(df):
 
         return df
-    
+
     

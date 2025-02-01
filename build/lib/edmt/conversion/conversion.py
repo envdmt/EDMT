@@ -5,7 +5,7 @@ import pandas as pd
 import geopandas as gpd
 from shapely import make_valid
 
-def sdf_to_gdf(sdf, crs=4326):
+def sdf_to_gdf(sdf, crs=None):
     """
     Converts a spatial dataframe (sdf) to a geodataframe (gdf) with a user-defined CRS.
 
@@ -21,6 +21,15 @@ def sdf_to_gdf(sdf, crs=4326):
     5. Drops the columns 'Shape__Area', 'Shape__Length', and 'SHAPE', if they exist, to clean up the GeoDataFrame.
     6. Returns the resulting GeoDataFrame.
     """
+
+    # validate input sdf
+    # 
+    if not isinstance(sdf, pd.DataFrame):
+        raise ValueError("Input must be a Spatial DataFrame.")
+    #  Ensure dataframe is not empty
+    if sdf.empty:
+        raise ValueError("The input Spatial Dataframe is empty. Cannot convert.")
+
     tmp = sdf.copy()
     tmp = tmp[~tmp['SHAPE'].isna()]
     
