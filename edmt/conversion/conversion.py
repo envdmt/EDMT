@@ -22,13 +22,17 @@ def sdf_to_gdf(sdf, crs=None):
     6. Returns the resulting GeoDataFrame.
     """
 
-    # validate input sdf
-    # 
+    # validate that the input is a Dataframe
     if not isinstance(sdf, pd.DataFrame):
         raise ValueError("Input must be a Spatial DataFrame.")
-    #  Ensure dataframe is not empty
+   
+    # validate input is not empty
     if sdf.empty:
         raise ValueError("The input Spatial Dataframe is empty. Cannot convert.")
+    
+    # validate that the required 'SHAPE' column exists
+    if 'SHAPE' not in sdf.columns:
+        raise ValueError("Input DataFrame must have a 'SHAPE' column")
 
     tmp = sdf.copy()
     tmp = tmp[~tmp['SHAPE'].isna()]
