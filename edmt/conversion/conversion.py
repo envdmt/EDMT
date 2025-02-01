@@ -28,7 +28,7 @@ def sdf_to_gdf(sdf, crs=None):
    
     # validate input is not empty
     if sdf.empty:
-        raise ValueError("The input Spatial Dataframe is empty. Cannot convert.")
+        raise ValueError("The input Spatial Dataframe is empty. Cannot convert to geodataframe.")
     
     # validate that the required 'SHAPE' column exists
     if 'SHAPE' not in sdf.columns:
