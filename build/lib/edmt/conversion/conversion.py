@@ -9,7 +9,7 @@ from shapely import make_valid
 from edmt.contrib import clean_vars
 
 
-def sdf_to_gdf(sdf, crs=None):
+def sdf_to_gdf(sdf, crs=None,shape=None):
     """
     Converts a spatial dataframe (sdf) to a geodataframe (gdf) with a user-defined CRS.
 
@@ -33,7 +33,7 @@ def sdf_to_gdf(sdf, crs=None):
 
     # clean vars
     params = clean_vars(
-        shape = "SHAPE",
+        shape = shape,
         geometry = "geometry",
         columns = ["Shape__Area", "Shape__Length", "SHAPE"],
         crs=crs
