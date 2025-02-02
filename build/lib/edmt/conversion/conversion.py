@@ -9,7 +9,7 @@ from shapely import make_valid
 from edmt.contrib import clean_vars
 
 
-def sdf_to_gdf(sdf, crs=None,shape=None):
+def sdf_to_gdf(sdf, crs=None):
     """
     Converts a spatial dataframe (sdf) to a geodataframe (gdf) with a user-defined CRS.
 
@@ -33,7 +33,7 @@ def sdf_to_gdf(sdf, crs=None,shape=None):
 
     # clean vars
     params = clean_vars(
-        shape = shape,
+        shape = "SHAPE",
         geometry = "geometry",
         columns = ["Shape__Area", "Shape__Length", "SHAPE"],
         crs=crs
@@ -44,11 +44,11 @@ def sdf_to_gdf(sdf, crs=None,shape=None):
     tmp = sdf.copy()
     tmp = tmp[~tmp[params.get("shape")].isna()]
 
-    if crs:
-        crs=params.get("crs")
-    else:
+    if crs is None:
         crs=4326
-
+    else:
+        crs=params.get("crs")
+        
     gdf = gpd.GeoDataFrame(
         tmp, 
         geometry=tmp[params.get("shape")], 
@@ -56,7 +56,7 @@ def sdf_to_gdf(sdf, crs=None,shape=None):
         )
     gdf['geometry'] = gdf[params.get("geometry")].apply(lambda x: make_valid(x)) # Validate geometries
     gdf.drop(columns=params.get("columns"), errors='ignore', inplace=True)
-    print("COnverted Spatial DataFrame to GeoDataFrame")
+    print("Converted Spatial DataFrame to GeoDataFrame")
     return gdf
 
 def generate_uuid(df, index=False):
