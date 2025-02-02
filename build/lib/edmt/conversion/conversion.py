@@ -30,6 +30,9 @@ def sdf_to_gdf(sdf, crs=None):
         raise ValueError("Input must be a pandas DataFrame.")
     if sdf.empty:
         raise ValueError("DataFrame is empty. Cannot generate UUIDs for an empty DataFrame.")
+    
+    if 'SHAPE' not in sdf.columns:
+        raise ValueError("Input DataFrame must have a 'SHAPE' column")
 
     # clean vars
     params = clean_vars(
