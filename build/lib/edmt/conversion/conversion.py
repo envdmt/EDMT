@@ -30,9 +30,6 @@ def sdf_to_gdf(sdf, crs=None):
         raise ValueError("Input must be a pandas DataFrame.")
     if sdf.empty:
         raise ValueError("DataFrame is empty. Cannot generate UUIDs for an empty DataFrame.")
-    
-    if 'SHAPE' not in sdf.columns:
-        raise ValueError("Input DataFrame must have a 'SHAPE' column")
 
     # clean vars
     params = clean_vars(
@@ -47,11 +44,11 @@ def sdf_to_gdf(sdf, crs=None):
     tmp = sdf.copy()
     tmp = tmp[~tmp[params.get("shape")].isna()]
 
-    if crs is None:
-        crs=4326
-    else:
+    if crs:
         crs=params.get("crs")
-        
+    else:
+        crs=4326
+
     gdf = gpd.GeoDataFrame(
         tmp, 
         geometry=tmp[params.get("shape")], 
@@ -59,7 +56,7 @@ def sdf_to_gdf(sdf, crs=None):
         )
     gdf['geometry'] = gdf[params.get("geometry")].apply(lambda x: make_valid(x)) # Validate geometries
     gdf.drop(columns=params.get("columns"), errors='ignore', inplace=True)
-    print("Converted Spatial DataFrame to GeoDataFrame")
+    print("COnverted Spatial DataFrame to GeoDataFrame")
     return gdf
 
 def generate_uuid(df, index=False):
