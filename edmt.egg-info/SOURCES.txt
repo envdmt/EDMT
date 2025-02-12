@@ -17,7 +17,9 @@ edmt/contrib/load.py
 edmt/contrib/sorters.py
 edmt/contrib/utils.py
 edmt/conversion/__init__.py
+edmt/conversion/checks.py
 edmt/conversion/conversion.py
+edmt/conversion/time.py
 edmt/mapping/__init__.py
 edmt/mapping/mapping.py
 edmt/mapping/maps.py
