@@ -186,3 +186,197 @@ def read_file_from_url(url_path: str, local_file: str = "downloaded_file"):
         # Optional: Clean up the local file after reading if needed
         if os.path.exists(local_file):
             os.remove(local_file)
+
+
+
+
+"""
+A unit of time is any particular time interval, used as a standard way of measuring or
+expressing duration.  The base unit of time in the International System of Units (SI),
+and by extension most of the Western world, is the second, defined as about 9 billion
+oscillations of the caesium atom.
+
+"""
+
+time_chart: dict[str, float] = {
+    "seconds": 1.0,
+    "minutes": 60.0,  # 1 minute = 60 sec
+    "hours": 3600.0,  # 1 hour = 60 minutes = 3600 seconds
+    "days": 86400.0,  # 1 day = 24 hours = 1440 min = 86400 sec
+    "weeks": 604800.0,  # 1 week=7d=168hr=10080min = 604800 sec
+    "months": 2629800.0,  # Approximate value for a month in seconds
+    "years": 31557600.0,  # Approximate value for a year in seconds
+}
+
+time_chart_inverse: dict[str, float] = {
+    key: 1 / value for key, value in time_chart.items()
+}
+
+
+def convert_time(time_value: float, unit_from: str, unit_to: str) -> float:
+    """
+    Convert time from one unit to another using the time_chart above.
+
+    >>> convert_time(3600, "seconds", "hours")
+    1.0
+    >>> convert_time(3500, "Seconds", "Hours")
+    0.972
+    >>> convert_time(1, "DaYs", "hours")
+    24.0
+    >>> convert_time(120, "minutes", "SeCoNdS")
+    7200.0
+    >>> convert_time(2, "WEEKS", "days")
+    14.0
+    >>> convert_time(0.5, "hours", "MINUTES")
+    30.0
+    >>> convert_time(-3600, "seconds", "hours")
+    Traceback (most recent call last):
+        ...
+    ValueError: 'time_value' must be a non-negative number.
+    >>> convert_time("Hello", "hours", "minutes")
+    Traceback (most recent call last):
+        ...
+    ValueError: 'time_value' must be a non-negative number.
+    >>> convert_time([0, 1, 2], "weeks", "days")
+    Traceback (most recent call last):
+        ...
+    ValueError: 'time_value' must be a non-negative number.
+    >>> convert_time(1, "cool", "century")  # doctest: +ELLIPSIS
+    Traceback (most recent call last):
+        ...
+    ValueError: Invalid unit cool is not in seconds, minutes, hours, days, weeks, ...
+    >>> convert_time(1, "seconds", "hot")  # doctest: +ELLIPSIS
+    Traceback (most recent call last):
+        ...
+    ValueError: Invalid unit hot is not in seconds, minutes, hours, days, weeks, ...
+    """
+    if not isinstance(time_value, (int, float)) or time_value < 0:
+        msg = "'time_value' must be a non-negative number."
+        raise ValueError(msg)
+
+    unit_from = unit_from.lower()
+    unit_to = unit_to.lower()
+    if unit_from not in time_chart or unit_to not in time_chart:
+        invalid_unit = unit_from if unit_from not in time_chart else unit_to
+        msg = f"Invalid unit {invalid_unit} is not in {', '.join(time_chart)}."
+        raise ValueError(msg)
+
+    return round(
+        time_value * time_chart[unit_from] * time_chart_inverse[unit_to],
+        3,
+    )
+
+
+if __name__ == "__main__":
+    import doctest
+
+    doctest.testmod()
+    print(f"{convert_time(3600,'seconds', 'hours') = :,}")
+    print(f"{convert_time(360, 'days', 'months') = :,}")
+    print(f"{convert_time(360, 'months', 'years') = :,}")
+    print(f"{convert_time(1, 'years', 'seconds') = :,}")
+
+
+
+
+"""
+Conversion of length units.
+Available Units:
+Metre, Kilometre, Megametre, Gigametre,
+Terametre, Petametre, Exametre, Zettametre, Yottametre
+
+USAGE :
+-> Import this file into their respective project.
+-> Use the function length_conversion() for conversion of length units.
+-> Parameters :
+    -> value : The number of from units you want to convert
+    -> from_type : From which type you want to convert
+    -> to_type : To which type you want to convert
+"""
+
+UNIT_SYMBOL = {
+    "meter": "m",
+    "kilometer": "km",
+    "megametre": "Mm",
+    "gigametre": "Gm",
+    "terametre": "Tm",
+    "petametre": "Pm",
+    "exametre": "Em",
+    "zettametre": "Zm",
+    "yottametre": "Ym",
+}
+# Exponent of the factor(meter)
+METRIC_CONVERSION = {
+    "m": 0,
+    "km": 3,
+    "Mm": 6,
+    "Gm": 9,
+    "Tm": 12,
+    "Pm": 15,
+    "Em": 18,
+    "Zm": 21,
+    "Ym": 24,
+}
+
+
+def length_conversion(value: float, from_type: str, to_type: str) -> float:
+    """
+    Conversion between astronomical length units.
+
+    >>> length_conversion(1, "meter", "kilometer")
+    0.001
+    >>> length_conversion(1, "meter", "megametre")
+    1e-06
+    >>> length_conversion(1, "gigametre", "meter")
+    1000000000
+    >>> length_conversion(1, "gigametre", "terametre")
+    0.001
+    >>> length_conversion(1, "petametre", "terametre")
+    1000
+    >>> length_conversion(1, "petametre", "exametre")
+    0.001
+    >>> length_conversion(1, "terametre", "zettametre")
+    1e-09
+    >>> length_conversion(1, "yottametre", "zettametre")
+    1000
+    >>> length_conversion(4, "wrongUnit", "inch")
+    Traceback (most recent call last):
+      ...
+    ValueError: Invalid 'from_type' value: 'wrongUnit'.
+    Conversion abbreviations are: m, km, Mm, Gm, Tm, Pm, Em, Zm, Ym
+    """
+
+    from_sanitized = from_type.lower().strip("s")
+    to_sanitized = to_type.lower().strip("s")
+
+    from_sanitized = UNIT_SYMBOL.get(from_sanitized, from_sanitized)
+    to_sanitized = UNIT_SYMBOL.get(to_sanitized, to_sanitized)
+
+    if from_sanitized not in METRIC_CONVERSION:
+        msg = (
+            f"Invalid 'from_type' value: {from_type!r}.\n"
+            f"Conversion abbreviations are: {', '.join(METRIC_CONVERSION)}"
+        )
+        raise ValueError(msg)
+    if to_sanitized not in METRIC_CONVERSION:
+        msg = (
+            f"Invalid 'to_type' value: {to_type!r}.\n"
+            f"Conversion abbreviations are: {', '.join(METRIC_CONVERSION)}"
+        )
+        raise ValueError(msg)
+    from_exponent = METRIC_CONVERSION[from_sanitized]
+    to_exponent = METRIC_CONVERSION[to_sanitized]
+    exponent = 1
+
+    if from_exponent > to_exponent:
+        exponent = from_exponent - to_exponent
+    else:
+        exponent = -(to_exponent - from_exponent)
+
+    return value * pow(10, exponent)
+
+
+if __name__ == "__main__":
+    from doctest import testmod
+
+    testmod()
