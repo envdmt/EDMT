@@ -36,26 +36,9 @@ class Mapping:
             self.ax.set_title(title)
         return self
 
-    def add_grids(self, linewidth: float = 0.5, alpha: float = 0.7):
-        """
-        Add a grid to the plot with customizable styling.
-
-        Parameters:
-            linewidth (float): The width of the grid lines. Default is 0.5.
-            alpha (float): The transparency of the grid lines. Default is 0.7.
-
-        Returns:
-            Mapping: The instance of the class, for method chaining.
-        """
+    def add_grids(self):
         if self.ax:
-            args = {
-                "visible": True,
-                "linestyle": "--",
-                "linewidth": linewidth,
-                "alpha": alpha,
-            }
-            args = {key: value for key, value in args.items() if value is not None}
-            self.ax.grid(**args)
+            self.ax.grid(visible=True, linestyle="--", linewidth=0.5, alpha=0.7)
         return self
 
     def add_labels(self):
