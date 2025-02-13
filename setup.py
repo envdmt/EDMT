@@ -10,7 +10,7 @@ versions = [
 
 setup(
     name='edmt',
-    version=versions[2],   
+    version=versions[0],   
     author='Odero, Kuloba & musasia',
     author_email='francisodero10@gmail.com',
     description='Environmental Data Management Toolbox',
