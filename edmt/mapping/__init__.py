@@ -1,7 +1,7 @@
-# from .mapping import (
-#     Mapping
-# )
+from .maps import (
+    Mapping
+)
 
-# __all__ = [
-#     "Mapping"
-# ]
+__all__ = [
+    "Mapping"
+]
