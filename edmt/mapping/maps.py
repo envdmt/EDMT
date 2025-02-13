@@ -26,7 +26,7 @@ class Mapping:
         Plot the GeoDataFrame and store the axis object.
         """
         df = self.process_df(df)
-        self.ax = df.plot(alpha=0.7, legend=True)
+        self.ax = df.plot(alpha=0.7)
         cx.add_basemap(self.ax, source=cx.providers.CartoDB.Positron)
         self.ax.set_axis_off()
         return self
@@ -36,15 +36,25 @@ class Mapping:
             self.ax.set_title(title)
         return self
 
-    def add_grids(self,linewidth:float = None,alpha:float = None):
-        args = {
-            "visible":True,
-            "linestyle":"--",
-            "linewidth":linewidth,
-            "alpha":alpha,
-        }
-        args = clean_vars(**args)
+    def add_grids(self, linewidth: float = 0.5, alpha: float = 0.7):
+        """
+        Add a grid to the plot with customizable styling.
+
+        Parameters:
+            linewidth (float): The width of the grid lines. Default is 0.5.
+            alpha (float): The transparency of the grid lines. Default is 0.7.
+
+        Returns:
+            Mapping: The instance of the class, for method chaining.
+        """
         if self.ax:
+            args = {
+                "visible": True,
+                "linestyle": "--",
+                "linewidth": linewidth,
+                "alpha": alpha,
+            }
+            args = {key: value for key, value in args.items() if value is not None}
             self.ax.grid(**args)
         return self
 
