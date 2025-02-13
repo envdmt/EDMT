@@ -52,8 +52,12 @@ class Mapping:
             self.ax.set_axis_off()
         return self
 
-    def add_basemap(self, source=cx.providers.CartoDB.Positron):
-        if self.ax:
-            cx.add_basemap(self.ax, source=source)
-            self.ax.set_axis_off()
-        return self
+    def add_basemap(self, providers=None,tile=None):
+        if providers and tile:
+            source = f"cx.providers.{providers}.{tile}"
+            source = print(source)
+
+            if self.ax:
+                cx.add_basemap(self.ax, source=source)
+                self.ax.set_axis_off()
+            return self
