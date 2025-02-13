@@ -21,12 +21,12 @@ class Mapping:
     def set_crs(self, crs):
         self.default_crs = crs
 
-    def gplot(self, df):
+    def gplot(self, df,column:str=None):
         """
         Plot the GeoDataFrame and store the axis object.
         """
         df = self.process_df(df)
-        self.ax = df.plot(alpha=0.7)
+        self.ax = df.plot(alpha=0.7,column=column)
         cx.add_basemap(self.ax, source=cx.providers.CartoDB.Positron)
         self.ax.set_axis_off()
         return self
