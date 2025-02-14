@@ -1,8 +1,9 @@
 import contextily as cx
 from edmt.contrib.utils import clean_vars
+# from geopandas import plotting as plot
 
 class Mapping:
-    def __init__(self):
+    def __init__(self,**kwargs):
         self.default_crs = 4326
         self.df_cache = None
         self.ax = None
@@ -21,7 +22,7 @@ class Mapping:
     def set_crs(self, crs):
         self.default_crs = crs
 
-    def gplot(self, df,column:str=None):
+    def gplot(self, df,column:str=None,**kwargs):
         """
         Plot the GeoDataFrame and store the axis object.
         """
@@ -29,6 +30,25 @@ class Mapping:
         self.ax = df.plot(alpha=0.7,column=column)
         cx.add_basemap(self.ax, source=cx.providers.CartoDB.Positron)
         self.ax.set_axis_off()
+        return self
+
+    def figure(self, width, height):
+        if self.ax:
+            self.ax.set_figwidth(width)
+            self.ax.set_figheight(height)
+        return self
+
+        # usage
+        # figure(12, 6)
+
+    def add_colorbar(self):
+        if self.ax:
+            self.ax.get_figure().colorbar
+        return self
+
+    def add_axis(self):
+        if self.ax:
+            self.ax.set_axis_on()
         return self
 
     def add_title(self, title):
@@ -46,17 +66,11 @@ class Mapping:
             self.ax.tick_params(labeltop=False, labelright=False, labelsize=8, pad=-20)
         return self
 
-    def add_legend(self):
-        if self.ax:
-            self.ax.legend(loc="lower right", bbox_to_anchor=(1, 0), frameon=True)
-            self.ax.set_axis_off()
-        return self
+    
 
     def add_basemap(self, providers=None,tile=None):
         if providers and tile:
             source = f"cx.providers.{providers}.{tile}"
-            source = print(source)
-
             if self.ax:
                 cx.add_basemap(self.ax, source=source)
                 self.ax.set_axis_off()
