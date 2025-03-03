@@ -27,7 +27,6 @@ class Mapping:
         kwargs["width"] = width
         return kwargs
 
-    
 
     def gplot(self, df,column:str=None,**kwargs):
         """

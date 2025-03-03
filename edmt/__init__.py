@@ -40,7 +40,9 @@ def init(silent=False, force=False):
         return
     
     import pandas as pd
-    pd.set_option('display.max_columns',None)
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.max_colwidth', None)
+    pd.set_option("plotting.backend", "matplotlib")
 
     import warnings
     warnings.filterwarnings("ignore", message="Unable to import Axes3D")

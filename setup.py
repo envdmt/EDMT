@@ -33,7 +33,8 @@ setup(
         'mapclassify==2.8.0',
         'matplotlib==3.9.2',
         'plotly==5.24.1',
-        'seaborn==0.13.2'
+        'seaborn==0.13.2',
+        'Sphinx==7.4.7'
     ],
     entry_points={
         'console_scripts': [
