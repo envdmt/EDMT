@@ -2,6 +2,7 @@ import os
 import uuid
 import pandas as pd
 import pickle
+import numpy as np
 import geopandas as gpd
 # from osgeo import ogr
 import requests

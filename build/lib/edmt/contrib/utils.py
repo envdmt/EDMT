@@ -7,12 +7,6 @@ def clean_vars(addl_kwargs={}, **kwargs):
         print(f"Warning: {k} is a non-standard parameter. Results may be unexpected.")
         clea_ = {k: v for k, v in {**addl_kwargs, **kwargs}.items() if v is not None}
         return clea_
-    
-# def clean_vars(additional_args, **default_args):
-#     if additional_args is None:
-#         additional_args = {}
-#     default_args.update(additional_args)
-#     return default_args
 
 
 def normalize_column(df, col):
@@ -31,15 +25,6 @@ def dataframe_to_dict(events):
     if isinstance(events, pd.DataFrame):
         events = events.to_dict("records")
     return events
-
-
-def to_gdf(df):
-    longitude, latitude = (0, 1) if isinstance(df["location"].iat[0], list) else ("longitude", "latitude")
-    return gpd.GeoDataFrame(
-        df,
-        geometry=gpd.points_from_xy(df["location"].str[longitude], df["location"].str[latitude]),
-        crs=4326,
-    )
 
 
 def clean_time_cols(df,columns = []):

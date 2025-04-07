@@ -6,6 +6,7 @@ geopandas==0.13
 mapclassify==2.8.0
 matplotlib==3.9.2
 plotly==5.24.1
+numpy==1.24.4
 seaborn==0.13.2
 Sphinx==7.4.7
 sphinx-autoapi==3.5.0
