@@ -112,81 +112,72 @@ def get_utm_epsg(longitude=None):
         hemisphere = '6' if longitude >= 0 else '7'  # 6 for Northern, 7 for Southern Hemisphere
         return f"32{hemisphere}{zone_number:02d}"
     
-"""
-Issue Installing GDAL, To check a better way to convert or a way to install osgeo
-"""
-# def kml_to_geojson(file_path=None,url=None):
-#     if file_path and url is None:
-#         print("file path and url invalid.")
-#     else:
-#         driver = ogr.GetDriverByName('KML')
-#         dataSource = driver.Open(file_path or url, 0)
+# def pkl_to_gdf(pkl_file, crs=None):
+#     """
+#     Converts a pickle file containing a GeoDataFrame to a GeoDataFrame with a user-defined CRS.
 
-#         if dataSource:
-#             layer = dataSource.GetLayer()
-#             geojson_driver = ogr.GetDriverByName('GeoJSON')
-#             output_folder = f"Drone - {file_path}"
+#     Parameters:
+#     - pkl_file: Path to the pickle file.
+#     - crs: Coordinate Reference System (default is EPSG:4326).
 
-#             if os.path.exists(output_folder):
-#                 os.remove(output_folder)
-#             geojson_ds = geojson_driver.CreateDataSource(output_folder)
-#             geojson_ds.CopyLayer(layer, layer.GetName())
-#             geojson_ds.Destroy()
-#             dataSource.Destroy()
-#             print(f"Successuflly Converted KML to GeoJSON and saved to {output_folder}")
+#     Returns:
+#     - gdf: GeoDataFrame with the specified CRS.
+#     """
+#     # Validate input file
+#     if not os.path.isfile(pkl_file):
+#         raise ValueError(f"File {pkl_file} does not exist.")
 
+#     # Load the pickle file
+#     gdf = gpd.read_pickle(pkl_file)
 
-def read_file_from_url(url_path: str, local_file: str = "downloaded_file"):
+#     # Set the CRS if provided
+#     if crs:
+#         gdf.crs = crs
+
+#     return gdf
+
+def pkl_to_gdf(df, output_path, layer_name):
     """
-    Reads a file from a given URL, downloads it locally, and loads it as a GeoDataFrame.
+    Converts a GeoDataFrame to a GeoPackage file.
 
-    Parameters:
+    Parameters
     ----------
-    url_path : str
-        The URL of the file to download.
-    local_file : str, optional
-        The name of the local file to save the downloaded content (default: "downloaded_file").
-
-    Returns:
-    -------
-    gpd.GeoDataFrame
-        A GeoDataFrame loaded from the downloaded file.
-
-    Raises:
-    ------
-    ValueError:
-        If `url_path` is None or empty.
-    requests.exceptions.RequestException:
-        If there is an issue during the HTTP request.
-    OSError:
-        If there is an issue writing the local file.
+    df : gpd.GeoDataFrame
+        The GeoDataFrame to convert.
+    output_path : str
+        The path to the output GeoPackage file.
+    layer_name : str
+        The name of the layer in the GeoPackage file.
     """
-    if not url_path:
-        raise ValueError("The 'url_path' parameter cannot be None or empty.")
-    
-    try:
-        # Download the file from the given URL
-        with requests.get(url_path, stream=True) as response:
-            response.raise_for_status()
-            with open(local_file, "wb") as file:
-                for chunk in response.iter_content(chunk_size=8192):
-                    file.write(chunk)
-        
-        # Load the file into a GeoDataFrame
-        gdf = gpd.read_file(local_file, engine="pyogrio")
-        return gdf
-    
-    except requests.exceptions.RequestException as e:
-        raise requests.exceptions.RequestException(f"Error fetching file from URL: {e}")
-    
-    except OSError as e:
-        raise OSError(f"Error saving or accessing the local file: {e}")
-    
-    finally:
-        # Optional: Clean up the local file after reading if needed
-        if os.path.exists(local_file):
-            os.remove(local_file)
+    if not isinstance(df, gpd.GeoDataFrame) or df.empty:
+        print("The input is either not a GeoDataFrame or is empty.")
+        return
 
+    try:
+        # Stringify unsupported data types (lists, dicts)
+        drop_cols = [col for col in df.columns if df[col].apply(lambda x: isinstance(x, (list, dict))).any()]
+        for col in drop_cols:
+            df[col] = df[col].apply(str)
+
+        # Convert object columns to string
+        for col in df.select_dtypes(include='object').columns:
+            df[col] = df[col].astype(str)
+
+        # Write in chunks to reduce memory usage
+        chunk_size = 10000
+        for i in range(0, len(df), chunk_size):
+            mode = 'w' if i == 0 else 'a'
+            df.iloc[i:i + chunk_size].to_file(
+                output_path,
+                layer=layer_name,
+                driver='GPKG',
+                mode=mode
+            )
+
+        print("Conversion successful!")
+
+    except Exception as e:
+        print(f"Error during export: {e}")
 
 
 
@@ -449,3 +440,56 @@ if __name__ == "__main__":
     import doctest
 
     doctest.testmod()
+
+
+
+# def read_file_from_url(url_path: str, local_file: str = "downloaded_file"):
+#     """
+#     Reads a file from a given URL, downloads it locally, and loads it as a GeoDataFrame.
+
+#     Parameters:
+#     ----------
+#     url_path : str
+#         The URL of the file to download.
+#     local_file : str, optional
+#         The name of the local file to save the downloaded content (default: "downloaded_file").
+
+#     Returns:
+#     -------
+#     gpd.GeoDataFrame
+#         A GeoDataFrame loaded from the downloaded file.
+
+#     Raises:
+#     ------
+#     ValueError:
+#         If `url_path` is None or empty.
+#     requests.exceptions.RequestException:
+#         If there is an issue during the HTTP request.
+#     OSError:
+#         If there is an issue writing the local file.
+#     """
+#     if not url_path:
+#         raise ValueError("The 'url_path' parameter cannot be None or empty.")
+    
+#     try:
+#         # Download the file from the given URL
+#         with requests.get(url_path, stream=True) as response:
+#             response.raise_for_status()
+#             with open(local_file, "wb") as file:
+#                 for chunk in response.iter_content(chunk_size=8192):
+#                     file.write(chunk)
+        
+#         # Load the file into a GeoDataFrame
+#         gdf = gpd.read_file(local_file, engine="pyogrio")
+#         return gdf
+    
+#     except requests.exceptions.RequestException as e:
+#         raise requests.exceptions.RequestException(f"Error fetching file from URL: {e}")
+    
+#     except OSError as e:
+#         raise OSError(f"Error saving or accessing the local file: {e}")
+    
+#     finally:
+#         # Optional: Clean up the local file after reading if needed
+#         if os.path.exists(local_file):
+#             os.remove(local_file)
