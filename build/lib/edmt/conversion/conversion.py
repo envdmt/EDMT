@@ -136,7 +136,7 @@ def get_utm_epsg(longitude=None):
 
 #     return gdf
 
-def pkl_to_gdf(df, output_path, layer_name):
+def pkl_to_gdf(df : pd.DataFrame, output_path : str, layer_name : str):
     """
     Converts a GeoDataFrame to a GeoPackage file.
 
