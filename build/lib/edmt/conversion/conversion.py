@@ -1,6 +1,7 @@
 import os
 import uuid
 import pandas as pd
+import pickle
 import geopandas as gpd
 # from osgeo import ogr
 import requests
@@ -112,31 +113,15 @@ def get_utm_epsg(longitude=None):
         hemisphere = '6' if longitude >= 0 else '7'  # 6 for Northern, 7 for Southern Hemisphere
         return f"32{hemisphere}{zone_number:02d}"
     
-# def pkl_to_gdf(pkl_file, crs=None):
-#     """
-#     Converts a pickle file containing a GeoDataFrame to a GeoDataFrame with a user-defined CRS.
+def to_gdf(df):
+    longitude, latitude = (0, 1) if isinstance(df["location"].iat[0], list) else ("longitude", "latitude")
+    return gpd.GeoDataFrame(
+        df,
+        geometry=gpd.points_from_xy(df["location"].str[longitude], df["location"].str[latitude]),
+        crs=4326,
+    )
 
-#     Parameters:
-#     - pkl_file: Path to the pickle file.
-#     - crs: Coordinate Reference System (default is EPSG:4326).
-
-#     Returns:
-#     - gdf: GeoDataFrame with the specified CRS.
-#     """
-#     # Validate input file
-#     if not os.path.isfile(pkl_file):
-#         raise ValueError(f"File {pkl_file} does not exist.")
-
-#     # Load the pickle file
-#     gdf = gpd.read_pickle(pkl_file)
-
-#     # Set the CRS if provided
-#     if crs:
-#         gdf.crs = crs
-
-#     return gdf
-
-def pkl_to_gdf(df : pd.DataFrame, output_path : str, layer_name : str):
+def pkl_to_gdf(pkl, output_path : str, layer_name : str):
     """
     Converts a GeoDataFrame to a GeoPackage file.
 
@@ -149,6 +134,10 @@ def pkl_to_gdf(df : pd.DataFrame, output_path : str, layer_name : str):
     layer_name : str
         The name of the layer in the GeoPackage file.
     """
+
+    with open(pkl, "rb") as f:
+        df = pickle.load(f)
+
     if not isinstance(df, gpd.GeoDataFrame) or df.empty:
         print("The input is either not a GeoDataFrame or is empty.")
         return
@@ -167,13 +156,8 @@ def pkl_to_gdf(df : pd.DataFrame, output_path : str, layer_name : str):
         chunk_size = 10000
         for i in range(0, len(df), chunk_size):
             mode = 'w' if i == 0 else 'a'
-            df.iloc[i:i + chunk_size].to_file(
-                output_path,
-                layer=layer_name,
-                driver='GPKG',
-                mode=mode
-            )
-
+            # convert to GeoDataFrame using to_gdf(df) using the chunk
+            gdf = to_gdf(df.iloc[i:i+chunk_size])
         print("Conversion successful!")
 
     except Exception as e:
