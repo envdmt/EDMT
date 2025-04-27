@@ -1,4 +1,4 @@
-Metadata-Version: 2.4
+Metadata-Version: 2.2
 Name: edmt
 Version: 1.0.1+e
 Summary: Environmental Data Management Toolbox
@@ -27,7 +27,6 @@ Dynamic: classifier
 Dynamic: description
 Dynamic: description-content-type
 Dynamic: home-page
-Dynamic: license-file
 Dynamic: requires-dist
 Dynamic: requires-python
 Dynamic: summary
