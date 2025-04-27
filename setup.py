@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 versions = [
-    '1.0.1+e',  # Local Version
+    '1.0.2+e',  # Local Version
     '1.0.1.dev0',  # Development Release
     '1.0.1a3', # Alpha version 1
     '1.0.1b1', # Beta version 1

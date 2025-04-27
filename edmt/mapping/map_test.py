@@ -13,6 +13,7 @@ class Mapping:
         Process the GeoDataFrame for plotting.
         Includes caching and CRS transformation.
         """
+        default_crs = 4326
         self.df_cache = df.copy()
         return self.df_cache.to_crs(epsg=self.default_crs)
 
