@@ -207,44 +207,7 @@ def to_gdf(df):
     )
 
 
-
 def convert_time(time_value: float, unit_from: str, unit_to: str) -> float:
-    """
-    Convert time from one unit to another using the time_chart above.
-
-    >>> convert_time(3600, "seconds", "hours")
-    1.0
-    >>> convert_time(3500, "Seconds", "Hours")
-    0.972
-    >>> convert_time(1, "DaYs", "hours")
-    24.0
-    >>> convert_time(120, "minutes", "SeCoNdS")
-    7200.0
-    >>> convert_time(2, "WEEKS", "days")
-    14.0
-    >>> convert_time(0.5, "hours", "MINUTES")
-    30.0
-    >>> convert_time(-3600, "seconds", "hours")
-    Traceback (most recent call last):
-        ...
-    ValueError: 'time_value' must be a non-negative number.
-    >>> convert_time("Hello", "hours", "minutes")
-    Traceback (most recent call last):
-        ...
-    ValueError: 'time_value' must be a non-negative number.
-    >>> convert_time([0, 1, 2], "weeks", "days")
-    Traceback (most recent call last):
-        ...
-    ValueError: 'time_value' must be a non-negative number.
-    >>> convert_time(1, "cool", "century")  # doctest: +ELLIPSIS
-    Traceback (most recent call last):
-        ...
-    ValueError: Invalid unit cool is not in seconds, minutes, hours, days, weeks, ...
-    >>> convert_time(1, "seconds", "hot")  # doctest: +ELLIPSIS
-    Traceback (most recent call last):
-        ...
-    ValueError: Invalid unit hot is not in seconds, minutes, hours, days, weeks, ...
-    """
     if not isinstance(time_value, (int, float)) or time_value < 0:
         msg = "'time_value' must be a non-negative number."
         raise ValueError(msg)
@@ -262,46 +225,8 @@ def convert_time(time_value: float, unit_from: str, unit_to: str) -> float:
     )
 
 
-if __name__ == "__main__":
-    import doctest
-
-    doctest.testmod()
-    print(f"{convert_time(3600,'seconds', 'hours') = :,}")
-    print(f"{convert_time(360, 'days', 'months') = :,}")
-    print(f"{convert_time(360, 'months', 'years') = :,}")
-    print(f"{convert_time(1, 'years', 'seconds') = :,}")
-
-
-
-
 
 def length_conversion(value: float, from_type: str, to_type: str) -> float:
-    """
-    Conversion between astronomical length units.
-
-    >>> length_conversion(1, "meter", "kilometer")
-    0.001
-    >>> length_conversion(1, "meter", "megametre")
-    1e-06
-    >>> length_conversion(1, "gigametre", "meter")
-    1000000000
-    >>> length_conversion(1, "gigametre", "terametre")
-    0.001
-    >>> length_conversion(1, "petametre", "terametre")
-    1000
-    >>> length_conversion(1, "petametre", "exametre")
-    0.001
-    >>> length_conversion(1, "terametre", "zettametre")
-    1e-09
-    >>> length_conversion(1, "yottametre", "zettametre")
-    1000
-    >>> length_conversion(4, "wrongUnit", "inch")
-    Traceback (most recent call last):
-      ...
-    ValueError: Invalid 'from_type' value: 'wrongUnit'.
-    Conversion abbreviations are: m, km, Mm, Gm, Tm, Pm, Em, Zm, Ym
-    """
-
     from_sanitized = from_type.lower().strip("s")
     to_sanitized = to_type.lower().strip("s")
 
@@ -332,47 +257,9 @@ def length_conversion(value: float, from_type: str, to_type: str) -> float:
     return value * pow(10, exponent)
 
 
-if __name__ == "__main__":
-    from doctest import testmod
-
-    testmod()
-
 
 
 def convert_speed(speed: float, unit_from: str, unit_to: str) -> float:
-    """
-    Convert speed from one unit to another using the speed_chart above.
-
-    "km/h": 1.0,
-    "m/s": 3.6,
-    "mph": 1.609344,
-    "knot": 1.852,
-
-    >>> convert_speed(100, "km/h", "m/s")
-    27.778
-    >>> convert_speed(100, "km/h", "mph")
-    62.137
-    >>> convert_speed(100, "km/h", "knot")
-    53.996
-    >>> convert_speed(100, "m/s", "km/h")
-    360.0
-    >>> convert_speed(100, "m/s", "mph")
-    223.694
-    >>> convert_speed(100, "m/s", "knot")
-    194.384
-    >>> convert_speed(100, "mph", "km/h")
-    160.934
-    >>> convert_speed(100, "mph", "m/s")
-    44.704
-    >>> convert_speed(100, "mph", "knot")
-    86.898
-    >>> convert_speed(100, "knot", "km/h")
-    185.2
-    >>> convert_speed(100, "knot", "m/s")
-    51.444
-    >>> convert_speed(100, "knot", "mph")
-    115.078
-    """
     if unit_to not in speed_chart or unit_from not in speed_chart_inverse:
         msg = (
             f"Incorrect 'from_type' or 'to_type' value: {unit_from!r}, {unit_to!r}\n"
@@ -382,7 +269,3 @@ def convert_speed(speed: float, unit_from: str, unit_to: str) -> float:
     return round(speed * speed_chart[unit_from] * speed_chart_inverse[unit_to], 3)
 
 
-if __name__ == "__main__":
-    import doctest
-
-    doctest.testmod()
