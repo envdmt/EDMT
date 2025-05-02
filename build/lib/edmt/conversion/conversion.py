@@ -122,49 +122,6 @@ def to_gdf(df):
         crs=4326,
     )
 
-def pkl_to_gdf(pkl, output_path : str, layer_name : str):
-    """
-    Converts a GeoDataFrame to a GeoPackage file.
-
-    Parameters
-    ----------
-    df : gpd.GeoDataFrame
-        The GeoDataFrame to convert.
-    output_path : str
-        The path to the output GeoPackage file.
-    layer_name : str
-        The name of the layer in the GeoPackage file.
-    """
-
-    with open(pkl, "rb") as f:
-        df = pickle.load(f)
-
-    if not isinstance(df, gpd.GeoDataFrame) or df.empty:
-        print("The input is either not a GeoDataFrame or is empty.")
-        return
-
-    try:
-        # Stringify unsupported data types (lists, dicts)
-        drop_cols = [col for col in df.columns if df[col].apply(lambda x: isinstance(x, (list, dict))).any()]
-        for col in drop_cols:
-            df[col] = df[col].apply(str)
-
-        # Convert object columns to string
-        for col in df.select_dtypes(include='object').columns:
-            df[col] = df[col].astype(str)
-
-        # Write in chunks to reduce memory usage
-        chunk_size = 10000
-        for i in range(0, len(df), chunk_size):
-            mode = 'w' if i == 0 else 'a'
-            # convert to GeoDataFrame using to_gdf(df) using the chunk
-            gdf = to_gdf(df.iloc[i:i+chunk_size])
-        print("Conversion successful!")
-
-    except Exception as e:
-        print(f"Error during export: {e}")
-
-
 
 """
 A unit of time is any particular time interval, used as a standard way of measuring or
