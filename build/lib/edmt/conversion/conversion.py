@@ -122,7 +122,6 @@ def to_gdf(df):
         crs=4326,
     )
 
-
 """
 A unit of time is any particular time interval, used as a standard way of measuring or
 expressing duration.  The base unit of time in the International System of Units (SI),
