@@ -10,6 +10,90 @@ from shapely import make_valid
 
 from edmt.contrib import clean_vars
 
+"""
+A unit of time is any particular time interval, used as a standard way of measuring or
+expressing duration.  The base unit of time in the International System of Units (SI),
+and by extension most of the Western world, is the second, defined as about 9 billion
+oscillations of the caesium atom.
+
+"""
+
+time_chart: dict[str, float] = {
+    "seconds": 1.0,
+    "minutes": 60.0,  # 1 minute = 60 sec
+    "hours": 3600.0,  # 1 hour = 60 minutes = 3600 seconds
+    "days": 86400.0,  # 1 day = 24 hours = 1440 min = 86400 sec
+    "weeks": 604800.0,  # 1 week=7d=168hr=10080min = 604800 sec
+    "months": 2629800.0,  # Approximate value for a month in seconds
+    "years": 31557600.0,  # Approximate value for a year in seconds
+}
+
+time_chart_inverse: dict[str, float] = {
+    key: 1 / value for key, value in time_chart.items()
+}
+
+
+
+"""
+Conversion of length units.
+Available Units:
+Metre, Kilometre, Megametre, Gigametre,
+Terametre, Petametre, Exametre, Zettametre, Yottametre
+
+USAGE :
+-> Import this file into their respective project.
+-> Use the function length_conversion() for conversion of length units.
+-> Parameters :
+    -> value : The number of from units you want to convert
+    -> from_type : From which type you want to convert
+    -> to_type : To which type you want to convert
+"""
+
+UNIT_SYMBOL = {
+    "meter": "m",
+    "kilometer": "km",
+    "megametre": "Mm",
+    "gigametre": "Gm",
+    "terametre": "Tm",
+    "petametre": "Pm",
+    "exametre": "Em",
+    "zettametre": "Zm",
+    "yottametre": "Ym",
+}
+# Exponent of the factor(meter)
+METRIC_CONVERSION = {
+    "m": 0,
+    "km": 3,
+    "Mm": 6,
+    "Gm": 9,
+    "Tm": 12,
+    "Pm": 15,
+    "Em": 18,
+    "Zm": 21,
+    "Ym": 24,
+}
+
+
+
+"""
+Convert speed units
+"""
+
+speed_chart: dict[str, float] = {
+    "km/h": 1.0,
+    "m/s": 3.6,
+    "mph": 1.609344,
+    "knot": 1.852,
+}
+
+speed_chart_inverse: dict[str, float] = {
+    "km/h": 1.0,
+    "m/s": 0.277777778,
+    "mph": 0.621371192,
+    "knot": 0.539956803,
+}
+
+
 
 def sdf_to_gdf(sdf, crs=None):
     """
@@ -122,27 +206,6 @@ def to_gdf(df):
         crs=4326,
     )
 
-"""
-A unit of time is any particular time interval, used as a standard way of measuring or
-expressing duration.  The base unit of time in the International System of Units (SI),
-and by extension most of the Western world, is the second, defined as about 9 billion
-oscillations of the caesium atom.
-
-"""
-
-time_chart: dict[str, float] = {
-    "seconds": 1.0,
-    "minutes": 60.0,  # 1 minute = 60 sec
-    "hours": 3600.0,  # 1 hour = 60 minutes = 3600 seconds
-    "days": 86400.0,  # 1 day = 24 hours = 1440 min = 86400 sec
-    "weeks": 604800.0,  # 1 week=7d=168hr=10080min = 604800 sec
-    "months": 2629800.0,  # Approximate value for a month in seconds
-    "years": 31557600.0,  # Approximate value for a year in seconds
-}
-
-time_chart_inverse: dict[str, float] = {
-    key: 1 / value for key, value in time_chart.items()
-}
 
 
 def convert_time(time_value: float, unit_from: str, unit_to: str) -> float:
@@ -211,45 +274,6 @@ if __name__ == "__main__":
 
 
 
-"""
-Conversion of length units.
-Available Units:
-Metre, Kilometre, Megametre, Gigametre,
-Terametre, Petametre, Exametre, Zettametre, Yottametre
-
-USAGE :
--> Import this file into their respective project.
--> Use the function length_conversion() for conversion of length units.
--> Parameters :
-    -> value : The number of from units you want to convert
-    -> from_type : From which type you want to convert
-    -> to_type : To which type you want to convert
-"""
-
-UNIT_SYMBOL = {
-    "meter": "m",
-    "kilometer": "km",
-    "megametre": "Mm",
-    "gigametre": "Gm",
-    "terametre": "Tm",
-    "petametre": "Pm",
-    "exametre": "Em",
-    "zettametre": "Zm",
-    "yottametre": "Ym",
-}
-# Exponent of the factor(meter)
-METRIC_CONVERSION = {
-    "m": 0,
-    "km": 3,
-    "Mm": 6,
-    "Gm": 9,
-    "Tm": 12,
-    "Pm": 15,
-    "Em": 18,
-    "Zm": 21,
-    "Ym": 24,
-}
-
 
 def length_conversion(value: float, from_type: str, to_type: str) -> float:
     """
@@ -315,25 +339,6 @@ if __name__ == "__main__":
 
 
 
-"""
-Convert speed units
-"""
-
-speed_chart: dict[str, float] = {
-    "km/h": 1.0,
-    "m/s": 3.6,
-    "mph": 1.609344,
-    "knot": 1.852,
-}
-
-speed_chart_inverse: dict[str, float] = {
-    "km/h": 1.0,
-    "m/s": 0.277777778,
-    "mph": 0.621371192,
-    "knot": 0.539956803,
-}
-
-
 def convert_speed(speed: float, unit_from: str, unit_to: str) -> float:
     """
     Convert speed from one unit to another using the speed_chart above.
@@ -381,56 +386,3 @@ if __name__ == "__main__":
     import doctest
 
     doctest.testmod()
-
-
-
-# def read_file_from_url(url_path: str, local_file: str = "downloaded_file"):
-#     """
-#     Reads a file from a given URL, downloads it locally, and loads it as a GeoDataFrame.
-
-#     Parameters:
-#     ----------
-#     url_path : str
-#         The URL of the file to download.
-#     local_file : str, optional
-#         The name of the local file to save the downloaded content (default: "downloaded_file").
-
-#     Returns:
-#     -------
-#     gpd.GeoDataFrame
-#         A GeoDataFrame loaded from the downloaded file.
-
-#     Raises:
-#     ------
-#     ValueError:
-#         If `url_path` is None or empty.
-#     requests.exceptions.RequestException:
-#         If there is an issue during the HTTP request.
-#     OSError:
-#         If there is an issue writing the local file.
-#     """
-#     if not url_path:
-#         raise ValueError("The 'url_path' parameter cannot be None or empty.")
-    
-#     try:
-#         # Download the file from the given URL
-#         with requests.get(url_path, stream=True) as response:
-#             response.raise_for_status()
-#             with open(local_file, "wb") as file:
-#                 for chunk in response.iter_content(chunk_size=8192):
-#                     file.write(chunk)
-        
-#         # Load the file into a GeoDataFrame
-#         gdf = gpd.read_file(local_file, engine="pyogrio")
-#         return gdf
-    
-#     except requests.exceptions.RequestException as e:
-#         raise requests.exceptions.RequestException(f"Error fetching file from URL: {e}")
-    
-#     except OSError as e:
-#         raise OSError(f"Error saving or accessing the local file: {e}")
-    
-#     finally:
-#         # Optional: Clean up the local file after reading if needed
-#         if os.path.exists(local_file):
-#             os.remove(local_file)
