@@ -10,7 +10,7 @@ from edmt import (
 
 import importlib.metadata
 
-ASCII = r"""
+ASCII = r"""\
  ___ ___  __  __ _____ 
 | __|   \|  \/  |_   _|
 | _|| |) | |\/| | | |  
