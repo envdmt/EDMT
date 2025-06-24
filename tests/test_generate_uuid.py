@@ -1,15 +1,15 @@
 import edmt
 import geopandas as gpd
 
-def test_edmt_read_file_from_url():
-    """
-    Test the 'read_file_from_url()' function to ensure it downloads and reads the file as a GeoDataFrame.
+# def test_edmt_read_file_from_url():
+#     """
+#     Test the 'read_file_from_url()' function to ensure it downloads and reads the file as a GeoDataFrame.
 
-    Steps:
-    1. Import the function from the 'edmt.contrib' module.
-    2. Call the function with a valid URL pointing to a GeoPackage file.
-    3. Verify that the result is a valid GeoDataFrame.
-    """
+#     Steps:
+#     1. Import the function from the 'edmt.contrib' module.
+#     2. Call the function with a valid URL pointing to a GeoPackage file.
+#     3. Verify that the result is a valid GeoDataFrame.
+    # """
     # try:
     #     # Import the function
     #     from edmt.contrib import read_file_from_url as read_url

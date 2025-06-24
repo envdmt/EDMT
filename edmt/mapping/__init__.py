@@ -1,4 +1,4 @@
-from .map_test import (
+from .maps import (
     Mapping
 )
 
