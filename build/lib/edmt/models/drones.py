@@ -45,15 +45,16 @@ class Airdata:
         url = f"{self.base_url}/accounts/keys"
         auth = auth = HTTPBasicAuth(self.api_key, '')
         params = clean_vars(url,auth)
-
-        response = requests.get(**params)
-        if response.status_code == 200:
-            data = response.json()
-            df = pd.json_normalize(data)
-            return df
-        else:
-            print(f"Error {response.status_code}: {response.text}")
-            return pd.DataFrame()
+        
+        print(params)
+        # response = requests.get(params.url,params.auth)
+        # if response.status_code == 200:
+        #     data = response.json()
+        #     df = pd.json_normalize(data)
+        #     return df
+        # else:
+        #     print(f"Error {response.status_code}: {response.text}")
+        #     return pd.DataFrame()
 
 
 
