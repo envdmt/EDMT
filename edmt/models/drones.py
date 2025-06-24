@@ -1,7 +1,14 @@
 import requests
 from requests.auth import HTTPBasicAuth
 import pandas as pd
-from edmt.utils import clean_kwargs
+from edmt.contrib.utils import (
+    clean_kwargs,
+    normalize_column,
+    dataframe_to_dict,
+    clean_time_cols,
+    format_iso_time
+)
+
 
 
 class Airdata:
