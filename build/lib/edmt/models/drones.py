@@ -2,7 +2,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 import pandas as pd
 from edmt.contrib.utils import (
-    clean_kwargs,
+    clean_vars,
     normalize_column,
     dataframe_to_dict,
     clean_time_cols,
@@ -44,7 +44,7 @@ class Airdata:
     def account_keys(self):
         url = f"{self.base_url}/accounts/keys"
         auth = auth = HTTPBasicAuth(self.api_key, '')
-        params = clean_kwargs(url,auth)
+        params = clean_vars(url,auth)
 
         response = requests.get(**params)
         if response.status_code == 200:
