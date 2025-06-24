@@ -53,3 +53,72 @@ class Airdata:
             print(f"Error {response.status_code}: {response.text}")
             return pd.DataFrame()
 
+
+
+
+    def get_flights(self, since=None, until=None,detail_level=False,):
+        """
+        Fetch flight data based on provided query parameters.
+        
+        Parameters:
+            since : Formatted date - show flights that started after this date. Flight time is searched by local flight time.
+                Example: since=2019-05-01+00:00:00
+            until : show flights that started before this date.
+                Example: until=2019-05-01+00:00:00
+            detail_level : The amount of information to include in the response:
+                        basic for basic information, which takes False
+                        comprehensive for extended information, takes True
+                        Example: detail_level=True, for comprehensive
+
+            
+        """
+        since = format_iso_time(since)
+        until = format_iso_time(until)
+
+        if detail_level==True:
+            detail_level = "comprehensive"
+        else:
+            detail_level = "basic"
+
+        params = {
+            "start" : since,
+            "until" : until,
+            "detail_level" : detail_level
+        }
+
+        auth = self.authentication()
+        response = requests.get(self.base_url + "flights", auth=auth, params=params)
+
+        if response.status_code == 200:
+            data = response.json()
+            data = pd.DataFrame(data)
+            df = normalize_column(data, "data")
+            return df
+        else:
+            print(f"Error {response.status_code}: {response.text}")
+            return pd.DataFrame()
+        
+
+    # def get_subjectsources(
+    #     self, subjects: str | None = None, sources: str | None = None, **addl_kwargs
+    # ) -> pd.DataFrame:
+    #     """
+    #     Parameters
+    #     ----------
+    #     subjects: A comma-delimited list of Subject IDs.
+    #     sources: A comma-delimited list of Source IDs.
+    #     Returns
+    #     -------
+    #     subjectsources : pd.DataFrame
+    #     """
+    #     params = clean_kwargs(addl_kwargs, sources=sources, subjects=subjects)
+    #     df = pd.DataFrame(
+    #         self.get_objects_multithreaded(
+    #             object="subjectsources/",
+    #             threads=self.tcp_limit,
+    #             page_size=self.sub_page_size,
+    #             **params,
+    #         )
+    #     )
+    #     df = clean_time_cols(df)
+    #     return df
