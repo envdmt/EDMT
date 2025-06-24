@@ -178,7 +178,7 @@ class Airdata:
             if res.status == 200:
                 data = json.loads(res.read().decode("utf-8"))
                 df = pd.DataFrame(data)
-                # df = normalize_column(df, "data")
+                df = pd.json_normalize(df['data'])
                 return df
             else:
                 print(f"Failed to fetch flights. Status code: {res.status}")
