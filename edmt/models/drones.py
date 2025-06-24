@@ -163,11 +163,6 @@ class Airdata:
         conn = http.client.HTTPSConnection(self.base_url)
         conn.request("GET", url, headers=self.auth_header)
         res = conn.getresponse()
-
-        if res.status == 200:
-            data = json.loads(res.read().decode("utf-8"))
-            df = pd.DataFrame(data)
-            print(df)
         
         # Send request
         try:
@@ -177,8 +172,10 @@ class Airdata:
 
             if res.status == 200:
                 data = json.loads(res.read().decode("utf-8"))
-                df = pd.DataFrame(data)
-                df = pd.json_normalize(df['data'])
+                if "data" in data:
+                    df = pd.json_normalize(data["data"])
+                else:
+                    df = pd.DataFrame(data)
                 return df
             else:
                 print(f"Failed to fetch flights. Status code: {res.status}")
