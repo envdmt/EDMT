@@ -31,7 +31,6 @@ setup(
         'folium==0.18.0',
         'geopandas==0.12.2',
         'mapclassify==2.8.0',
-        'matplotlib==3.9.2',
         'plotly==5.24.1',
         'seaborn==0.13.2'
     ],
