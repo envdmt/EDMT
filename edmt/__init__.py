@@ -59,4 +59,13 @@ def init(silent=False, force=False):
         print(ASCII)
         print("EDMT initialized successfully.")
 
-__all__ = ["analysis", "base", "contrib", "init", "conversion", "mapping", "models", "plotting"]
+__all__ = [
+    "analysis", 
+    "base", 
+    "contrib", 
+    "init", 
+    "conversion", 
+    "mapping", 
+    "models", 
+    "plotting"
+    ]
