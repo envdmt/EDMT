@@ -82,7 +82,7 @@ class Airdata:
 
         params = {
             "start" : since,
-            "until" : until,
+            "end" : until,
             "detail_level" : detail_level
         }
 
