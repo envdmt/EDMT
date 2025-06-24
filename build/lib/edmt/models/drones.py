@@ -47,7 +47,7 @@ class Airdata:
         response = requests.get(url,auth)
         if response.status_code == 200:
             data = response.json()
-            df = pd.json_normalize(data)
+            df = pd.DataFrame(data)
             return df
         else:
             print(f"Error {response.status_code}: {response.text}")
