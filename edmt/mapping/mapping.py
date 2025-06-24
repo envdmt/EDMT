@@ -6,10 +6,10 @@ from pyproj import CRS
 
 from edmt.contrib.utils import clean_vars
 
-# class Mapping:
-#     def __init__(self):
-#         # Initialize any necessary attributes
-#         pass
+class Mapping:
+    def __init__(self):
+        # Initialize any necessary attributes
+        pass
 
 #     @staticmethod
 #     def gplot(df, column=None, title=None, legend=True, fill=None, grids=None, **additional_args):
