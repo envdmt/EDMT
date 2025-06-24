@@ -10,7 +10,7 @@ def clean_vars(addl_kwargs={}, **kwargs):
 
 
 def normalize_column(df, col):
-    print(col)
+    # print(col)
     for k, v in pd.json_normalize(df.pop(col), sep="__").add_prefix(f"{col}__").items():
         df[k] = v.values
 
@@ -44,3 +44,4 @@ def format_iso_time(date_string: str) -> str:
         return pd.to_datetime(date_string).isoformat()
     except ValueError:
         raise ValueError(f"Failed to parse timestamp'{date_string}'")
+    
