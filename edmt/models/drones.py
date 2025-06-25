@@ -12,6 +12,136 @@ import http.client
 import json
 import requests
 import pandas as pd
+import geopandas as gpd
+import io
+from io import StringIO
+
+def fetch_data_from_csv_links(
+    df: pd.DataFrame,
+    filter_ids: list | None = None,
+    log_errors: bool = True,
+) -> pd.DataFrame:
+    """
+    Fetch and merge metadata with corresponding CSV content from URLs provided in the input DataFrame.
+
+    Parameters:
+        df (pd.DataFrame):
+            A DataFrame containing at least two columns:
+                - 'id': Unique identifier for each row.
+                - 'csvLink': URL pointing to a CSV file.
+        filter_ids (list or None):
+            Optional list of IDs to restrict processing to specific rows.
+        log_errors (bool):
+            If True, prints errors encountered during CSV fetching or parsing. Defaults to True.
+
+    Returns:
+        pd.DataFrame: A DataFrame combining metadata with CSV content.
+                      Returns an empty DataFrame if no valid data was retrieved.
+
+    Raises:
+        ValueError:
+            If required columns ('id', 'csvLink') are missing from the input DataFrame.
+    
+    Example:
+        >>> df_input = pd.DataFrame({
+        ...     'id': [1, 2],
+        ...     'csvLink': ['https://example.com/file1.csv',  'https://example.com/file2.csv'], 
+        ...     'metadata_col': ['A', 'B']
+        ... })
+        >>> result_df = fetch_data_from_csv_links(df_input, filter_ids=[1])
+        >>> print(result_df.head())
+    """
+    required_cols = {'id', 'csvLink'}
+    if not required_cols.issubset(df.columns):
+        raise ValueError(f"Input DataFrame must contain columns: {required_cols}")
+
+    if filter_ids is not None:
+        df = df[df['id'].isin(filter_ids)]
+
+    all_combined_rows = []
+
+    for _, row in df.iterrows():
+        csv_url = row['csvLink']
+
+        try:
+            response = requests.get(csv_url)
+            response.raise_for_status()
+            csv_data = pd.read_csv(StringIO(response.text))
+            metadata_repeated = pd.DataFrame([row] * len(csv_data)).reset_index(drop=True)
+            combined = pd.concat([metadata_repeated.reset_index(drop=True), csv_data.reset_index(drop=True)], axis=1)
+            all_combined_rows.append(combined)
+
+        except Exception as e:
+            if log_errors:
+                print(f"Error fetching or parsing CSV for id {row['id']}: {e}")
+
+    if not all_combined_rows:
+        return pd.DataFrame()
+
+    df = pd.concat(all_combined_rows, ignore_index=True)
+    print("Data Extraction done")
+    return df
+
+
+def pd_to_gdf(
+    df: pd.DataFrame,
+    lon_col: str = 'longitude',
+    lat_col: str = 'latitude',
+    crs: int = 4326
+) -> gpd.GeoDataFrame:
+    """
+    Convert a pandas DataFrame with latitude and longitude columns into a GeoDataFrame 
+    with point geometries.
+
+    Parameters:
+        df (pd.DataFrame):
+            Input DataFrame containing geographic coordinates.
+        lon_col (str):
+            Name of the column in `df` that contains longitude values. Default is `'longitude'`.
+        lat_col (str):
+            Name of the column in `df` that contains latitude values. Default is `'latitude'`.
+        crs (int):
+            Coordinate Reference System (CRS) to assign to the resulting GeoDataFrame.
+            Defaults to 4326 (WGS84 - standard latitude/longitude).
+
+    Returns:
+        gpd.GeoDataFrame:
+            A GeoDataFrame with point geometries created from the latitude and longitude columns.
+            The original DataFrame columns are preserved.
+
+    Raises:
+        KeyError:
+            If either of the specified latitude or longitude columns is not present in the DataFrame.
+        ValueError:
+            If the CRS is invalid or not supported by GeoPandas.
+
+    Example:
+        >>> data = pd.DataFrame({
+        ...     'latitude': [37.7749, 40.7128],
+        ...     'longitude': [-122.4194, -74.0060],
+        ...     'name': ['San Francisco', 'New York']
+        ... })
+        >>> gdf = pd_to_gdf(data)
+        >>> print(gdf.head())
+                             name                   geometry
+        0         San Francisco  POINT (-122.41940 37.77490)
+        1              New York   POINT (-74.00600 40.71280)
+    """
+    
+    if lat_col not in df.columns or lon_col not in df.columns:
+        missing = [col for col in [lat_col, lon_col] if col not in df.columns]
+        raise KeyError(f"Missing required column(s): {missing}")
+
+    try:
+        gdf = gpd.GeoDataFrame(
+            df,
+            geometry=gpd.points_from_xy(df[lon_col], df[lat_col]),
+            crs=crs
+        )
+    except Exception as e:
+        raise ValueError(f"Failed to create GeoDataFrame: {e}")
+
+    return gdf
 
 
 class Airdata:
@@ -119,8 +249,8 @@ class Airdata:
 
         Example:
             >>> client.get_flights(
-            ...     since='2025-01-01T00:00:00',
-            ...     until='2025-03-31T23:59:59',
+            ...     since='2025-01-01 00:00:00',
+            ...     until='2025-03-31 23:59:59',
             ...     detail_level=True,
             ...     limit=5,
             ...     location=[37.7749, -122.4194]
@@ -174,6 +304,10 @@ class Airdata:
                 data = json.loads(res.read().decode("utf-8"))
                 if "data" in data:
                     df = pd.json_normalize(data["data"])
+                    # add the geometry from the csv file
+                    """
+                        How to get geometry from a csv link that has this columns
+                    """
                 else:
                     df = pd.DataFrame(data)
                 return df
@@ -184,11 +318,5 @@ class Airdata:
         except Exception as e:
             print(f"Error fetching flights: {e}")
             return None
-
-
-
-
-
-
 
 
