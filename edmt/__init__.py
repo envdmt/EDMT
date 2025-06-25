@@ -40,19 +40,25 @@ def init(silent=False, force=False):
         return
     
     import pandas as pd
+
+    pd.options.plotting.backend = "plotly"
+    pd.options.mode.copy_on_write = True
+
+    from tqdm.auto import tqdm
+
+    tqdm.pandas()
+
     import warnings
 
-    pd.set_option('display.max_columns', None)
-    pd.set_option('display.max_colwidth', None)
-    pd.set_option("plotting.backend", "matplotlib")
+    from shapely.errors import ShapelyDeprecationWarning
 
-    warnings.filterwarnings(
-        "ignore",
-        message="The 'shapely.geos' module is deprecated",
-        category=DeprecationWarning,
-        module='geopandas._compat'
-    )
-    warnings.filterwarnings("ignore", message="Unable to import Axes3D")
+    warnings.filterwarnings(action="ignore", category=ShapelyDeprecationWarning)
+    warnings.filterwarnings(action="ignore", category=FutureWarning)
+    warnings.filterwarnings("ignore", message=".*initial implementation of Parquet.*")
+
+    import plotly.io as pio  # type: ignore[import-untyped]
+
+    pio.templates.default = "seaborn"
 
     __initialized = True
     if not silent:

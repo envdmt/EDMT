@@ -13,8 +13,12 @@ import json
 import requests
 import pandas as pd
 import geopandas as gpd
-import io
+import requests
 from io import StringIO
+from tqdm import tqdm
+
+
+
 
 def fetch_data_from_csv_links(
     df: pd.DataFrame,
@@ -60,7 +64,7 @@ def fetch_data_from_csv_links(
 
     all_combined_rows = []
 
-    for _, row in df.iterrows():
+    for _, row in tqdm(df.iterrows(), total=len(df), desc="Processing CSV Links"):
         csv_url = row['csvLink']
 
         try:
@@ -255,7 +259,6 @@ class Airdata:
             ...     limit=5,
             ...     location=[37.7749, -122.4194]
             ... )
-            # Returns a DataFrame with up to 5 comprehensive flights near San Francisco
         """
 
         # Validate location format: must be None or a list with exactly 2 numeric items
@@ -280,7 +283,6 @@ class Airdata:
             "limit": limit
         }
 
-        # Remove None values from params
         params = {k: v for k, v in params.items() if v is not None}
 
         url = "/flights?" + "&".join([f"{k}={v}" for k, v in params.items()]) # Construct URL with query string
@@ -289,12 +291,7 @@ class Airdata:
         if not self.authenticated:
             print("Cannot fetch flights: Not authenticated.")
             return None
-        
-        conn = http.client.HTTPSConnection(self.base_url)
-        conn.request("GET", url, headers=self.auth_header)
-        res = conn.getresponse()
-        
-        # Send request
+                
         try:
             conn = http.client.HTTPSConnection(self.base_url)
             conn.request("GET", url, headers=self.auth_header)
@@ -303,11 +300,8 @@ class Airdata:
             if res.status == 200:
                 data = json.loads(res.read().decode("utf-8"))
                 if "data" in data:
-                    df = pd.json_normalize(data["data"])
-                    # add the geometry from the csv file
-                    """
-                        How to get geometry from a csv link that has this columns
-                    """
+                    normalized_data = list(tqdm(data["data"], desc="Downloading"))
+                    df = pd.json_normalize(normalized_data)
                 else:
                     df = pd.DataFrame(data)
                 return df
