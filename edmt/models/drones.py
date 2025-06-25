@@ -83,7 +83,7 @@ def fetch_data_from_csv_links(
     return df
 
 
-def pd_to_gdf(
+def df_to_gdf(
     df: pd.DataFrame,
     lon_col: str = 'longitude',
     lat_col: str = 'latitude',
