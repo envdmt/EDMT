@@ -75,7 +75,7 @@ def fetch_data(
 
     df = pd.concat(all_combined_rows, ignore_index=True)
 
-    return df.drop(
+    df =  df.drop(
         columns=[
             "displayLink","csvLink","kmlLink","gpxLink","originalLink","participants.object",
             "flightApp.name","flightApp.version","batteryPercent.takeOff","batteryPercent.landing",
@@ -90,6 +90,15 @@ def fetch_data(
         ],
         errors='ignore'
     )
+    col = "participants.data"
+    expanded = pd.json_normalize(
+                df[col].explode(
+                    ignore_index=True
+            )
+        )
+    expanded.columns = [f"{col}.{subcol}" for subcol in expanded.columns]
+    
+    return df.join(expanded).drop(columns=[col])
 
 
 def df_to_gdf(
