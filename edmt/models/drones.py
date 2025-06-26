@@ -3,7 +3,8 @@ from edmt.contrib.utils import (
     normalize_column,
     dataframe_to_dict,
     clean_time_cols,
-    format_iso_time
+    format_iso_time,
+    dict_columns
 )
 
 
@@ -23,6 +24,7 @@ def fetch_data(
     df: pd.DataFrame,
     filter_ids: list | None = None,
     log_errors: bool = True,
+    line : bool = True
     ) -> pd.DataFrame:
     """
     Fetch and merge metadata with corresponding CSV content from URLs provided in the input DataFrame.
@@ -73,7 +75,28 @@ def fetch_data(
         return pd.DataFrame()
 
     df = pd.concat(all_combined_rows, ignore_index=True)
-    return df
+    df = df.drop(
+        columns=[
+            "displayLink","csvLink","kmlLink","gpxLink","originalLink","participants.object",
+            "flightApp.name","flightApp.version","batteryPercent.takeOff","batteryPercent.landing",
+            "satellites","gpslevel","voltage(v)","xSpeed(mph)","ySpeed(mph)","zSpeed(mph)",
+            "compass_heading(degrees)","pitch(degrees)","roll(degrees)", "isPhoto","isVideo",
+            "rc_elevator","rc_aileron","rc_throttle","rc_rudder","rc_elevator(percent)",
+            "rc_aileron(percent)",	"rc_throttle(percent)",	"rc_rudder(percent)",  	
+            "gimbal_heading(degrees)","gimbal_pitch(degrees)","gimbal_roll(degrees)",
+            "battery_percent","voltageCell1","voltageCell2","voltageCell3",
+            "voltageCell4",	"voltageCell5",	"voltageCell6",	"current(A)",
+            "pitch(degrees)","roll(degrees)"
+        ],
+        errors='ignore'
+    )
+    
+    df = dict_columns(df,columns=['participants.data', 'batteries.data'])
+
+    if not line:
+        return points_to_line(df)
+    else:
+        return points_to_segment(df)
 
 
 def df_to_gdf(
@@ -140,7 +163,7 @@ def points_to_segment(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """
     segments = []
     gdf = gdf[gdf['geometry'] != Point(0, 0)]
-    for flight_id in tqdm(gdf['id'].unique(), desc="Creating segments"):
+    for flight_id in tqdm(gdf['id'].unique(), desc="Creating segments \n"):
         flight_data = gdf[gdf['id'] == flight_id].sort_values(by='time(millisecond)')
         assert flight_data['time(millisecond)'].is_monotonic_increasing, \
             f"time(millisecond) is not ascending for id: {flight_id}"
@@ -181,7 +204,7 @@ def points_to_line(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     corresponding LineString geometry.
   """
 
-  for flight_id in tqdm(gdf['id'].unique(), desc="Points to tracks"):
+  for flight_id in tqdm(gdf['id'].unique(), desc="Points to tracks \n"):
     flight_data = gdf[gdf['id'] == flight_id].sort_values(by='time(millisecond)')
     assert flight_data['time(millisecond)'].is_monotonic_increasing, \
       f"time(millisecond) is not ascending for id: {flight_id}"
@@ -346,7 +369,7 @@ class Airdata:
             if res.status == 200:
                 data = json.loads(res.read().decode("utf-8"))
                 if "data" in data: # to-do : automatically identify the column to normalize
-                    normalized_data = list(tqdm(data["data"], desc="Downloading"))
+                    normalized_data = list(tqdm(data["data"], desc="Downloading \n"))
                     df = pd.json_normalize(normalized_data)
                 else:
                    df = pd.json_normalize(data)

@@ -45,3 +45,29 @@ def format_iso_time(date_string: str) -> str:
         raise ValueError(f"Failed to parse timestamp'{date_string}'")
     
 
+
+def dict_columns(df: pd.DataFrame, columns: list) -> pd.DataFrame:
+    """
+    Expands columns in the DataFrame that contain lists of dictionaries (or stringified ones),
+    turning each dictionary into separate flat columns.
+
+    Args:
+        df (pd.DataFrame): The input DataFrame.
+        columns (list): List of column names to expand.
+
+    Returns:
+        pd.DataFrame: A new DataFrame with expanded columns.
+    """
+    df = df.copy()
+
+    for col in columns:
+        if col not in df.columns:
+            raise ValueError(f"Column '{col}' not found in DataFrame")
+        expanded = df[col].apply(pd.Series).stack().apply(pd.Series)
+        expanded = expanded.reset_index(level=1, drop=True)
+        expanded.index = df.index 
+        expanded.columns = [f"{col}.{subcol}" for subcol in expanded.columns]
+
+    return pd.concat([df.drop(col, axis=1), expanded], axis=1)
+
+

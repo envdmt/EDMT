@@ -13,7 +13,8 @@ from .utils import (
     normalize_column,
     dataframe_to_dict,
     clean_time_cols,
-    format_iso_time
+    format_iso_time,
+    dict_columns
 )
 
 __all__ = [
@@ -26,4 +27,5 @@ __all__ = [
     "dataframe_to_dict",
     "clean_time_cols",
     "format_iso_time"
+    "dict_columns"
     ]
