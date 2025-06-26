@@ -345,13 +345,12 @@ class Airdata:
 
             if res.status == 200:
                 data = json.loads(res.read().decode("utf-8"))
-                # if "data" in data: # to-do : automatically identify the column to normalize
-                #     normalized_data = list(tqdm(data["data"], desc="Downloading"))
-                #     df = pd.json_normalize(normalized_data)
-                #     df = fetch_data(df)
-                # else:
-                #    df = pd.json_normalize(data)
-                df = pd.json_normalize(data)
+                if "data" in data: # to-do : automatically identify the column to normalize
+                    normalized_data = list(tqdm(data["data"], desc="Downloading"))
+                    df = pd.json_normalize(normalized_data)
+                    df = fetch_data(df)
+                else:
+                   df = pd.json_normalize(data)
                 return df
             else:
                 print(f"Failed to fetch flights. Status code: {res.status}")
