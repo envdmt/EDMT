@@ -348,7 +348,6 @@ class Airdata:
                 if "data" in data: # to-do : automatically identify the column to normalize
                     normalized_data = list(tqdm(data["data"], desc="Downloading"))
                     df = pd.json_normalize(normalized_data)
-                    df = fetch_data(df)
                 else:
                    df = pd.json_normalize(data)
                 return df
