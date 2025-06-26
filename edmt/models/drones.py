@@ -366,8 +366,16 @@ class Airdata:
                 if "data" in data: # to-do : automatically identify the column to normalize
                     normalized_data = list(tqdm(data["data"], desc="Downloading \n"))
                     df = pd.json_normalize(normalized_data)
+                    df = df.drop(
+                        columns=[
+                            "displayLink","kmlLink",
+                            "gpxLink","originalLink",
+                            "participants.object"
+                        ],
+                        errors='ignore'
+                    )
                 else:
-                   df = pd.json_normalize(data)
+                   df = pd.DataFrame(data)
                 return df
             else:
                 print(f"Failed to fetch flights. Status code: {res.status}")
