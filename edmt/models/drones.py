@@ -20,11 +20,11 @@ from tqdm import tqdm
 
 
 
-def fetch_data_from_csv_links(
+def fetch_data(
     df: pd.DataFrame,
     filter_ids: list | None = None,
     log_errors: bool = True,
-) -> pd.DataFrame:
+    ) -> pd.DataFrame:
     """
     Fetch and merge metadata with corresponding CSV content from URLs provided in the input DataFrame.
 
@@ -64,7 +64,7 @@ def fetch_data_from_csv_links(
 
     all_combined_rows = []
 
-    for _, row in tqdm(df.iterrows(), total=len(df), desc="Processing CSV Links"):
+    for _, row in tqdm(df.iterrows(), total=len(df), desc="Processing"):
         csv_url = row['csvLink']
 
         try:
@@ -92,7 +92,7 @@ def df_to_gdf(
     lon_col: str = 'longitude',
     lat_col: str = 'latitude',
     crs: int = 4326
-) -> gpd.GeoDataFrame:
+    ) -> gpd.GeoDataFrame:
     """
     Convert a pandas DataFrame with latitude and longitude columns into a GeoDataFrame 
     with point geometries.
@@ -169,7 +169,10 @@ class Airdata:
             "Authorization": f"Basic {encoded_key}"
         }
 
-    def authenticate(self, validate=True):
+    def authenticate(
+        self, 
+        validate=True
+        ):
         """
         Authenticates with the Airdata API by calling /version or /flights.
         Sets self.authenticated = True if successful.
@@ -217,7 +220,8 @@ class Airdata:
         battery_ids: list | None = None,
         pilot_ids: list | None = None,
         location: list | None = None,  # Should be [lat, lon]
-    ) -> pd.DataFrame:
+        ) -> pd.DataFrame:
+
         """
         Fetch flight data from the Airdata API based on the provided query parameters.
 
