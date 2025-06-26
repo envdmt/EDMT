@@ -1,5 +1,6 @@
 from dateutil import parser
 import pandas as pd
+import json
 
 def clean_vars(addl_kwargs={}, **kwargs):
     for k in addl_kwargs.keys():
@@ -57,22 +58,28 @@ def dict_columns(df: pd.DataFrame, columns: list) -> pd.DataFrame:
     Returns:
         pd.DataFrame: A new DataFrame with expanded columns.
     """
+    def safe_parse(x):
+        if isinstance(x, str):
+            try:
+                return json.loads(x)
+            except (TypeError, ValueError):
+                return {}
+        elif isinstance(x, dict):
+            return x
+        else:
+            return {}
+        
     df = df.copy()
 
     for col in columns:
         if col not in df.columns:
             raise ValueError(f"Column '{col}' not found in DataFrame")
-
-        parsed = df[col].apply(
-            lambda x: pd.Series(x) if isinstance(x, dict) else pd.NA
-        )
+        
+        parsed = df[col].apply(safe_parse)
         expanded = pd.json_normalize(parsed)
         expanded.columns = [f"{col}.{subcol}" for subcol in expanded.columns]
-        df = df.join(expanded).drop(columns=[col])
 
-    return df.drop(
-        columns=columns
-    )
+    return df.join(expanded).drop(columns=[col])
 
 
 
