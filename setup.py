@@ -32,7 +32,8 @@ setup(
         'geopandas==0.12.2',
         'mapclassify==2.8.0',
         'plotly==5.24.1',
-        'seaborn==0.13.2'
+        'seaborn==0.13.2',
+        'tqdm'
     ],
     entry_points={
         'console_scripts': [
