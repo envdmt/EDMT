@@ -74,7 +74,8 @@ def fetch_data(
         return pd.DataFrame()
 
     df = pd.concat(all_combined_rows, ignore_index=True)
-    df = df.drop(
+
+    return df.drop(
         columns=[
             "displayLink","csvLink","kmlLink","gpxLink","originalLink","participants.object",
             "flightApp.name","flightApp.version","batteryPercent.takeOff","batteryPercent.landing",
@@ -89,11 +90,6 @@ def fetch_data(
         ],
         errors='ignore'
     )
-
-    if not line:
-        return points_to_line(df)
-    else:
-        return points_to_segment(df)
 
 
 def df_to_gdf(
