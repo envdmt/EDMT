@@ -305,15 +305,6 @@ class Airdata:
         Raises:
             ValueError: 
                 If `location` is not a list of exactly two numeric values (latitude and longitude).
-
-        Example:
-            >>> client.get_flights(
-            ...     since='2025-01-01 00:00:00',
-            ...     until='2025-03-31 23:59:59',
-            ...     detail_level=True,
-            ...     limit=5,
-            ...     location=[37.7749, -122.4194]
-            ... )
         """
 
         # Validate location format: must be None or a list with exactly 2 numeric items
@@ -354,11 +345,13 @@ class Airdata:
 
             if res.status == 200:
                 data = json.loads(res.read().decode("utf-8"))
-                if "data" in data:
-                    normalized_data = list(tqdm(data["data"], desc="Downloading"))
-                    df = pd.json_normalize(normalized_data)
-                else:
-                    df = pd.DataFrame(data)
+                # if "data" in data: # to-do : automatically identify the column to normalize
+                #     normalized_data = list(tqdm(data["data"], desc="Downloading"))
+                #     df = pd.json_normalize(normalized_data)
+                #     df = fetch_data(df)
+                # else:
+                #    df = pd.json_normalize(data)
+                df = pd.json_normalize(data)
                 return df
             else:
                 print(f"Failed to fetch flights. Status code: {res.status}")
