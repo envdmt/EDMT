@@ -3,8 +3,7 @@ from edmt.contrib.utils import (
     normalize_column,
     dataframe_to_dict,
     clean_time_cols,
-    format_iso_time,
-    dict_columns
+    format_iso_time
 )
 
 
@@ -90,8 +89,6 @@ def fetch_data(
         ],
         errors='ignore'
     )
-    
-    df = dict_columns(df,columns=['participants.data', 'batteries.data'])
 
     if not line:
         return points_to_line(df)
@@ -146,6 +143,7 @@ def df_to_gdf(
         raise ValueError(f"Failed to create GeoDataFrame: {e}")
 
     return gdf
+
 
 def points_to_segment(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """
@@ -221,6 +219,7 @@ def points_to_line(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
             left_index=True,
             right_index=True
         ).reset_index()
+
 
 class Airdata:
     def __init__(self, api_key):
