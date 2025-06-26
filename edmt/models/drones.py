@@ -13,11 +13,10 @@ import json
 import requests
 import pandas as pd
 import geopandas as gpd
+from shapely.geometry import LineString, Point
 import requests
 from io import StringIO
 from tqdm import tqdm
-
-
 
 
 def fetch_data(
@@ -45,15 +44,6 @@ def fetch_data(
     Raises:
         ValueError:
             If required columns ('id', 'csvLink') are missing from the input DataFrame.
-    
-    Example:
-        >>> df_input = pd.DataFrame({
-        ...     'id': [1, 2],
-        ...     'csvLink': ['https://example.com/file1.csv',  'https://example.com/file2.csv'], 
-        ...     'metadata_col': ['A', 'B']
-        ... })
-        >>> result_df = fetch_data_from_csv_links(df_input, filter_ids=[1])
-        >>> print(result_df.head())
     """
     required_cols = {'id', 'csvLink'}
     if not required_cols.issubset(df.columns):
@@ -83,7 +73,6 @@ def fetch_data(
         return pd.DataFrame()
 
     df = pd.concat(all_combined_rows, ignore_index=True)
-    print("Data Extraction done")
     return df
 
 
@@ -118,18 +107,6 @@ def df_to_gdf(
             If either of the specified latitude or longitude columns is not present in the DataFrame.
         ValueError:
             If the CRS is invalid or not supported by GeoPandas.
-
-    Example:
-        >>> data = pd.DataFrame({
-        ...     'latitude': [37.7749, 40.7128],
-        ...     'longitude': [-122.4194, -74.0060],
-        ...     'name': ['San Francisco', 'New York']
-        ... })
-        >>> gdf = pd_to_gdf(data)
-        >>> print(gdf.head())
-                             name                   geometry
-        0         San Francisco  POINT (-122.41940 37.77490)
-        1              New York   POINT (-74.00600 40.71280)
     """
     
     if lat_col not in df.columns or lon_col not in df.columns:
@@ -147,6 +124,80 @@ def df_to_gdf(
 
     return gdf
 
+def points_to_segment(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """
+    Converts a GeoDataFrame with point geometries into a GeoDataFrame with
+    LineString segment geometries for each pair of consecutive points,
+    grouped by 'id' and ordered by 'time(millisecond)'.
+
+    Args:
+        gdf: The input GeoDataFrame with 'id', 'time(millisecond)', and 'geometry'
+             (Point) columns.
+
+    Returns:
+        A new GeoDataFrame where each row represents a line segment between two
+        consecutive points.
+    """
+    segments = []
+    gdf = gdf[gdf['geometry'] != Point(0, 0)]
+    for flight_id in tqdm(gdf['id'].unique(), desc="Creating segments"):
+        flight_data = gdf[gdf['id'] == flight_id].sort_values(by='time(millisecond)')
+        assert flight_data['time(millisecond)'].is_monotonic_increasing, \
+            f"time(millisecond) is not ascending for id: {flight_id}"
+
+        flight_data = flight_data.reset_index(drop=True)
+        for i in range(len(flight_data) - 1):
+            pt1 = flight_data.loc[i, 'geometry']
+            pt2 = flight_data.loc[i + 1, 'geometry']
+            segment = LineString([pt1, pt2])
+
+            other_cols_data = flight_data.loc[i].drop(['geometry', 'time(millisecond)'])
+            seg_dict = {
+                'id': flight_id,
+                't1': flight_data.loc[i, 'time(millisecond)'],
+                't2': flight_data.loc[i + 1, 'time(millisecond)'],
+                'geometry': segment
+            }
+            seg_dict.update(other_cols_data.to_dict())
+            segments.append(seg_dict)
+
+    if not segments:
+      return gpd.GeoDataFrame(columns=['id', 't1', 't2', 'geometry'])
+
+    return gpd.GeoDataFrame(segments, geometry='geometry')
+
+
+def points_to_line(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+  """
+  Converts a GeoDataFrame with point geometries into a GeoDataFrame with
+  LineString geometries for each unique 'id', ordered by 'time(millisecond)'.
+
+  Args:
+    gdf: The input GeoDataFrame with 'id', 'time(millisecond)', and 'geometry'
+         (Point) columns.
+
+  Returns:
+    A new GeoDataFrame where each row represents a unique 'id' and its
+    corresponding LineString geometry.
+  """
+
+  for flight_id in tqdm(gdf['id'].unique(), desc="Points to tracks"):
+    flight_data = gdf[gdf['id'] == flight_id].sort_values(by='time(millisecond)')
+    assert flight_data['time(millisecond)'].is_monotonic_increasing, \
+      f"time(millisecond) is not ascending for id: {flight_id}"
+
+  gdf = gdf[gdf['geometry'] != Point(0, 0)]
+  line_geometries = gdf.sort_values(by='time(millisecond)').groupby('id')['geometry'].apply(
+      lambda x: LineString(x.tolist()) if len(x) > 1 else None
+  )
+  line_gdf = gpd.GeoDataFrame(line_geometries, geometry='geometry')
+  other_cols = [col for col in gdf.columns if col not in ['geometry', 'time(millisecond)']]
+
+  return line_gdf.merge(
+            gdf[other_cols].drop_duplicates(subset=['id']).set_index('id'),
+            left_index=True,
+            right_index=True
+        ).reset_index()
 
 class Airdata:
     def __init__(self, api_key):
