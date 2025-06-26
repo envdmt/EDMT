@@ -86,7 +86,7 @@ def fetch_data(
             "gimbal_heading(degrees)","gimbal_pitch(degrees)","gimbal_roll(degrees)",
             "battery_percent","voltageCell1","voltageCell2","voltageCell3",
             "voltageCell4",	"voltageCell5",	"voltageCell6",	"current(A)",
-            "pitch(degrees)","roll(degrees)"
+            "pitch(degrees)","roll(degrees)","object"
         ],
         errors='ignore'
     )
@@ -97,7 +97,7 @@ def fetch_data(
             )
         )
     expanded.columns = [f"{col}.{subcol}" for subcol in expanded.columns]
-    
+
     return df.join(expanded).drop(columns=[col])
 
 
