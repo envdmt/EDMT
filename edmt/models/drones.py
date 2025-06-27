@@ -175,9 +175,8 @@ class Airdata:
             return None
 
 
-def fetch_data(df: pd.DataFrame, filter_ids: list | None = None,log_errors: bool = True) -> gpd.GeoDataFrame:
+def fetch_data(df: pd.DataFrame, filter_ids: Optional[list] = None,log_errors: bool = True) -> gpd.GeoDataFrame:
     """
-
     Parameters:
         df (pd.DataFrame):
             A DataFrame containing at least two columns:
