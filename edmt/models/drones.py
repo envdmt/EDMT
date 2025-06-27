@@ -299,7 +299,7 @@ def df_to_gdf( df: pd.DataFrame,lon_col: str = 'longitude',lat_col: str = 'latit
 
     return gdf
 
-def points_to_line(gdf: pd.DataFrame) -> gpd.GeoDataFrame:
+def points_to_line(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """
     Converts a GeoDataFrame with point geometries into a GeoDataFrame with
     LineString geometries for each unique 'id', ordered by 'time(millisecond)'.
@@ -312,8 +312,8 @@ def points_to_line(gdf: pd.DataFrame) -> gpd.GeoDataFrame:
         A new GeoDataFrame where each row represents a unique 'id' and its
         corresponding LineString geometry.
     """
-
     gdf = gdf[gdf['geometry'] != Point(0, 0)]
+
     grouped = []
     for flight_id in tqdm(gdf['id'].unique(), desc="Processing flights"):
         flight_data = gdf[gdf['id'] == flight_id].sort_values(by='time(millisecond)')
@@ -321,16 +321,23 @@ def points_to_line(gdf: pd.DataFrame) -> gpd.GeoDataFrame:
         grouped.append(flight_data)
 
     gdf_sorted = pd.concat(grouped)
+
     line_geometries = (
         gdf_sorted.groupby('id')['geometry']
         .apply(lambda x: LineString(x.tolist()) if len(x) > 1 else None)
     )
-    line_gdf = gpd.GeoDataFrame(line_geometries, geometry='geometry')
+
+    line_gdf = gpd.GeoDataFrame(
+        line_geometries, 
+        geometry='geometry', 
+        crs="EPSG:4326"
+        )
     other_cols = [col for col in gdf.columns if col not in ['geometry', 'time(millisecond)']]
     metadata = gdf[other_cols].drop_duplicates(subset=['id']).set_index('id')
-
     line_gdf = line_gdf.merge(metadata, left_index=True, right_index=True).reset_index()
-    return append_cols(line_gdf, cols='geometry')
+
+    return append_cols(line_gdf, cols='geometry').to_crs(4326)
+
 
 def points_to_segment(gdf: pd.DataFrame) -> gpd.GeoDataFrame:
     """
