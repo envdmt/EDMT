@@ -377,9 +377,9 @@ def points_to_segment(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
             segments.append(seg_dict)
 
     if not segments:
-      return gpd.GeoDataFrame(columns=['id', 't1', 't2', 'geometry'])
+      return gpd.GeoDataFrame(columns=['id', 't1', 't2', 'geometry']).to_crs(4326)
 
-    return gpd.GeoDataFrame(segments, geometry='geometry')
+    return gpd.GeoDataFrame(segments, geometry='geometry').to_crs(4326)
 
 
 def points_to_line(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
@@ -413,7 +413,7 @@ def points_to_line(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     metadata = gdf[other_cols].drop_duplicates(subset=['id']).set_index('id')
 
     line_gdf = line_gdf.merge(metadata, left_index=True, right_index=True).reset_index()
-    return append_cols(line_gdf, cols='geometry')
+    return append_cols(line_gdf, cols='geometry').to_crs(4326)
 
 
 
