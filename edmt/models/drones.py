@@ -82,8 +82,8 @@ class Airdata:
 
     def get_flights(
         self,
-        since: str | None = None,
-        until: str | None = None,
+        since: str,
+        until: str,
         detail_level: bool = False,
         limit: int | None = None,
         created_after: str | None = None,
@@ -165,7 +165,7 @@ class Airdata:
             if res.status == 200:
                 data = json.loads(res.read().decode("utf-8"))
                 if "data" in data: # to-do : automatically identify the column to normalize
-                    normalized_data = list(tqdm(data["data"], desc="Downloading \n"))
+                    normalized_data = list(tqdm(data["data"], desc="Downloading"))
                     df = pd.json_normalize(normalized_data)
                     df = df.drop(
                         columns=[
@@ -350,7 +350,7 @@ def points_to_segment(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """
     segments = []
     gdf = gdf[gdf['geometry'] != Point(0, 0)]
-    for flight_id in tqdm(gdf['id'].unique(), desc="Creating segments \n"):
+    for flight_id in tqdm(gdf['id'].unique(), desc="Creating segments"):
         flight_data = gdf[gdf['id'] == flight_id].sort_values(by='time(millisecond)')
         assert flight_data['time(millisecond)'].is_monotonic_increasing, \
             f"time(millisecond) is not ascending for id: {flight_id}"
@@ -397,8 +397,7 @@ def points_to_line(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     grouped = []
     for flight_id in tqdm(gdf['id'].unique(), desc="Processing flights"):
         flight_data = gdf[gdf['id'] == flight_id].sort_values(by='time(millisecond)')
-        assert flight_data['time(millisecond)'].is_monotonic_increasing, \
-            f"time(millisecond) is not ascending for id: {flight_id}"
+        assert flight_data['time(millisecond)'].is_monotonic_increasing, f"time(millisecond) is not ascending for id: {flight_id}"
         grouped.append(flight_data)
 
     gdf_sorted = pd.concat(grouped)
