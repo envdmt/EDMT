@@ -18,6 +18,10 @@ import requests
 from io import StringIO
 from tqdm import tqdm
 
+# def arr_cols(df: pd.DataFrame col : str) -> pd.DataFrame:
+#     return df[[col for col in df.columns if col != col] + [col]]
+
+
 
 def fetch_data(
     df: pd.DataFrame,
@@ -112,7 +116,7 @@ def fetch_data(
 
         if dfs_to_join:
             expanded_df = pd.concat(dfs_to_join, axis=1)
-            
+
         return df.join(expanded_df).drop(columns=cols)
     else:
         return df.drop(columns=cols)
@@ -236,11 +240,14 @@ def points_to_line(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
   line_gdf = gpd.GeoDataFrame(line_geometries, geometry='geometry')
   other_cols = [col for col in gdf.columns if col not in ['geometry', 'time(millisecond)']]
 
-  return line_gdf.merge(
+  gdf = line_gdf.merge(
             gdf[other_cols].drop_duplicates(subset=['id']).set_index('id'),
             left_index=True,
             right_index=True
         ).reset_index()
+  
+  return gdf[[col for col in gdf.columns if col != 'geometry'] + ['geometry']]
+
 
 
 class Airdata:
