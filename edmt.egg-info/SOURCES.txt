@@ -20,7 +20,6 @@ edmt/conversion/__init__.py
 edmt/conversion/computational.py
 edmt/conversion/conversion.py
 edmt/mapping/__init__.py
-edmt/mapping/map_test.py
 edmt/mapping/mapping.py
 edmt/mapping/maps.py
 edmt/models/__init__.py
