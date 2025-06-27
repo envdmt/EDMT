@@ -360,6 +360,8 @@ def points_to_segment(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
             pt1 = flight_data.loc[i, 'geometry']
             pt2 = flight_data.loc[i + 1, 'geometry']
             segment = LineString([pt1, pt2])
+            # compute distance and time taken 
+            # distance_comp = 
 
             other_cols_data = flight_data.loc[i].drop(['geometry', 'time(millisecond)'])
             seg_dict = {
@@ -409,7 +411,8 @@ def points_to_line(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     metadata = gdf[other_cols].drop_duplicates(subset=['id']).set_index('id')
 
     line_gdf = line_gdf.merge(metadata, left_index=True, right_index=True).reset_index()
-    return append_cols(line_gdf, columns='geometry')
+    return line_gdf
+    # return append_cols(line_gdf, columns='geometry')
 
 
 
