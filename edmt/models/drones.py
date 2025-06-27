@@ -3,10 +3,13 @@ from edmt.contrib.utils import (
     normalize_column,
     dataframe_to_dict,
     clean_time_cols,
-    format_iso_time
+    format_iso_time,
+    append_cols
 )
 
-
+import os
+import sys
+from typing import Union
 import base64
 import http.client
 import json
@@ -17,10 +20,6 @@ from shapely.geometry import LineString, Point
 import requests
 from io import StringIO
 from tqdm import tqdm
-
-# def arr_cols(df: pd.DataFrame col : str) -> pd.DataFrame:
-#     return df[[col for col in df.columns if col != col] + [col]]
-
 
 
 def fetch_data(
@@ -228,7 +227,7 @@ def points_to_line(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     corresponding LineString geometry.
   """
 
-  for flight_id in tqdm(gdf['id'].unique(), desc="Points to tracks \n"):
+  for flight_id in tqdm(gdf['id'].unique(), desc="Processing flights"):
     flight_data = gdf[gdf['id'] == flight_id].sort_values(by='time(millisecond)')
     assert flight_data['time(millisecond)'].is_monotonic_increasing, \
       f"time(millisecond) is not ascending for id: {flight_id}"
@@ -246,7 +245,7 @@ def points_to_line(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
             right_index=True
         ).reset_index()
   
-  return gdf[[col for col in gdf.columns if col != 'geometry'] + ['geometry']]
+  return append_cols(gdf,'geometry')
 
 
 

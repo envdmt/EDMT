@@ -1,6 +1,10 @@
+import os
+import sys
 from dateutil import parser
 import pandas as pd
+from typing import Union
 import json
+from contextlib import contextmanager
 
 def clean_vars(addl_kwargs={}, **kwargs):
     for k in addl_kwargs.keys():
@@ -45,7 +49,7 @@ def format_iso_time(date_string: str) -> str:
     except ValueError:
         raise ValueError(f"Failed to parse timestamp'{date_string}'")
     
-
+# to-do : Reconfigure this section to pick same as what is being used in drones to expand_dict
 def dict_columns(df: pd.DataFrame, columns: list) -> pd.DataFrame:
     """
     Expands columns in the DataFrame that contain lists of dictionaries (or stringified ones),
@@ -82,5 +86,39 @@ def dict_columns(df: pd.DataFrame, columns: list) -> pd.DataFrame:
     return df.join(expanded).drop(columns=[col])
 
 
+
+@contextmanager
+def suppress_output():
+    """
+    A context manager to suppress stdout.
+    """
+    try:
+        stdout_fd = sys.stdout.fileno()
+        devnull = os.open(os.devnull, os.O_WRONLY)
+        old_stdout = os.dup(stdout_fd)
+        os.dup2(devnull, stdout_fd)
+        yield
+    finally:
+        os.dup2(old_stdout, stdout_fd)
+        os.close(devnull)
+        os.close(old_stdout)
+
+
+def append_cols(df: pd.DataFrame, columns: Union[str, list]) -> pd.DataFrame:
+    """
+    Move specified column(s) to the end of the DataFrame.
+    
+    Parameters:
+        df (pd.DataFrame): Input DataFrame.
+        cols (str or list): Column name(s) to move to the end.
+    
+    Returns:
+        pd.DataFrame: DataFrame with columns reordered.
+    """
+    if isinstance(cols, str):
+        cols = [cols]
+        
+    remaining_cols = [col for col in df.columns if col not in cols]
+    return df[remaining_cols + cols]
 
 

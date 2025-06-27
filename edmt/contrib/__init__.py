@@ -14,7 +14,8 @@ from .utils import (
     dataframe_to_dict,
     clean_time_cols,
     format_iso_time,
-    dict_columns
+    dict_columns,
+    append_cols
 )
 
 __all__ = [
@@ -27,5 +28,6 @@ __all__ = [
     "dataframe_to_dict",
     "clean_time_cols",
     "format_iso_time"
-    "dict_columns"
+    "dict_columns",
+    "append_cols"
     ]
