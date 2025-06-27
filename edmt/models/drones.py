@@ -185,36 +185,6 @@ class Airdata:
             return None
 
 
-def df_to_gdf(df: pd.DataFrame) -> gpd.GeoDataFrame:
-
-    """ 
-    Parameters:
-            df (pd.DataFrame):
-                Input DataFrame containing geographic coordinates.
-            crs (int):
-                Coordinate Reference System (CRS) to assign to the resulting GeoDataFrame.
-                Defaults to 4326 (WGS84 - standard latitude/longitude).
-
-        Returns:
-            gpd.GeoDataFrame:
-                A GeoDataFrame with point geometries created from the latitude and longitude columns.
-                The original DataFrame columns are preserved.
-
-        Raises:
-            KeyError:
-                If either of the specified latitude or longitude columns is not present in the DataFrame.
-            ValueError:
-                If the CRS is invalid or not supported by GeoPandas.
-    """
-   
-    longitude, latitude = (0, 1) if isinstance(df["location"].iat[0], list) else ("longitude", "latitude")
-    return gpd.GeoDataFrame(
-        df,
-        geometry=gpd.points_from_xy(df["location"].str[longitude], df["location"].str[latitude]),
-        crs=4326,
-    )
-
-
 def fetch_data(
     df: pd.DataFrame,
     filter_ids: list | None = None,
@@ -307,11 +277,55 @@ def fetch_data(
     if dfs_to_join:
         expanded_df = pd.concat(dfs_to_join, axis=1)
 
-    df = df.join(expanded_df).drop(columns=cols)
-    return df
-    # return df_to_gdf(df)
+    return df.join(expanded_df).drop(columns=cols)
+  
 
+def df_to_gdf(
+    df: pd.DataFrame,
+    lon: str = 'longitude',
+    lat: str = 'latitude',
+    ) -> gpd.GeoDataFrame:
+    """
+    Convert a pandas DataFrame with latitude and longitude columns into a GeoDataFrame 
+    with point geometries.
 
+    Parameters:
+        df (pd.DataFrame):
+            Input DataFrame containing geographic coordinates.
+        lon_col (str):
+            Name of the column in `df` that contains longitude values. Default is `'longitude'`.
+        lat_col (str):
+            Name of the column in `df` that contains latitude values. Default is `'latitude'`.
+        crs (int):
+            Coordinate Reference System (CRS) to assign to the resulting GeoDataFrame.
+            Defaults to 4326 (WGS84 - standard latitude/longitude).
+
+    Returns:
+        gpd.GeoDataFrame:
+            A GeoDataFrame with point geometries created from the latitude and longitude columns.
+            The original DataFrame columns are preserved.
+
+    Raises:
+        KeyError:
+            If either of the specified latitude or longitude columns is not present in the DataFrame.
+        ValueError:
+            If the CRS is invalid or not supported by GeoPandas.
+    """
+    
+    if lat not in df.columns or lon not in df.columns:
+        missing = [col for col in [lat, lon] if col not in df.columns]
+        raise KeyError(f"Missing required column(s): {missing}")
+
+    try:
+        gdf = gpd.GeoDataFrame(
+            df,
+            geometry=gpd.points_from_xy(df[lon_col], df[lat_col]),
+            crs=4326
+        )
+    except Exception as e:
+        raise ValueError(f"Failed to create GeoDataFrame: {e}")
+
+    return gdf
 
 def points_to_segment(gdf: pd.DataFrame) -> gpd.GeoDataFrame:
     """
