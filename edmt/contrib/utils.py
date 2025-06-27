@@ -2,6 +2,7 @@ import os
 import sys
 from dateutil import parser
 import pandas as pd
+import geopandas as gpd
 from typing import Union
 import json
 from contextlib import contextmanager
@@ -85,23 +86,6 @@ def dict_columns(df: pd.DataFrame, columns: list) -> pd.DataFrame:
 
     return df.join(expanded).drop(columns=[col])
 
-
-
-@contextmanager
-def suppress_output():
-    """
-    A context manager to suppress stdout.
-    """
-    try:
-        stdout_fd = sys.stdout.fileno()
-        devnull = os.open(os.devnull, os.O_WRONLY)
-        old_stdout = os.dup(stdout_fd)
-        os.dup2(devnull, stdout_fd)
-        yield
-    finally:
-        os.dup2(old_stdout, stdout_fd)
-        os.close(devnull)
-        os.close(old_stdout)
 
 
 def append_cols(df: pd.DataFrame, columns: Union[str, list]) -> pd.DataFrame:
