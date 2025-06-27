@@ -25,15 +25,15 @@ setup(
     ],
     python_requires='>=3.9',  
     install_requires=[
-        'contextily==1.4.0',
-        'contourpy==1.2.1',
+        'contextily>=1.4.0',
+        'contourpy>=1.2.1',
         'fiona==1.9.6',
-        'folium==0.18.0',
-        'geopandas==0.12.2',
-        'mapclassify==2.8.0',
-        'plotly==5.24.1',
-        'seaborn==0.13.2',
-        'tqdm'
+        'folium>=0.18.0',
+        'geopandas>=0.12.2',
+        'mapclassify>=2.8.0',
+        'plotly>=5.24.1',
+        'seaborn>=0.13.2',
+        'tqdm>=4',
     ],
     entry_points={
         'console_scripts': [
