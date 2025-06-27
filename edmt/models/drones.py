@@ -84,7 +84,6 @@ class Airdata:
         self,
         since: str,
         until: str,
-        detail_level: bool = False,
         limit: int | None = None,
         created_after: str | None = None,
         battery_ids: list | None = None,
@@ -134,7 +133,7 @@ class Airdata:
         since = format_iso_time(since).replace("T", "+") if since else None
         until = format_iso_time(until).replace("T", "+") if until else None
         created_after = format_iso_time(created_after).replace("T", "+") if created_after else None
-        detail_level_str = "comprehensive" if detail_level else "basic"
+        detail_level_str = "comprehensive"
 
         params = {
             "start": since,
