@@ -16,9 +16,6 @@ from io import StringIO
 from tqdm import tqdm
 from typing import Union, Optional
 
-def example(created_after: Optional[str] = None):
-    print(created_after)
-
 
 class Airdata:
     def __init__(self, api_key):
@@ -188,54 +185,6 @@ class Airdata:
             return None
 
 
-def df_to_gdf(
-    df: pd.DataFrame,
-    lon_col: str = 'longitude',
-    lat_col: str = 'latitude',
-    ) -> gpd.GeoDataFrame:
-    """
-    Convert a pandas DataFrame with latitude and longitude columns into a GeoDataFrame 
-    with point geometries.
-
-    Parameters:
-        df (pd.DataFrame):
-            Input DataFrame containing geographic coordinates.
-        lon_col (str):
-            Name of the column in `df` that contains longitude values. Default is `'longitude'`.
-        lat_col (str):
-            Name of the column in `df` that contains latitude values. Default is `'latitude'`.
-        crs (int):
-            Coordinate Reference System (CRS) to assign to the resulting GeoDataFrame.
-            Defaults to 4326 (WGS84 - standard latitude/longitude).
-
-    Returns:
-        gpd.GeoDataFrame:
-            A GeoDataFrame with point geometries created from the latitude and longitude columns.
-            The original DataFrame columns are preserved.
-
-    Raises:
-        KeyError:
-            If either of the specified latitude or longitude columns is not present in the DataFrame.
-        ValueError:
-            If the CRS is invalid or not supported by GeoPandas.
-    """
-    
-    if lat_col not in df.columns or lon_col not in df.columns:
-        missing = [col for col in [lat_col, lon_col] if col not in df.columns]
-        raise KeyError(f"Missing required column(s): {missing}")
-
-    try:
-        gdf = gpd.GeoDataFrame(
-            df,
-            geometry=gpd.points_from_xy(df[lon_col], df[lat_col]),
-            crs=4326
-        )
-    except Exception as e:
-        raise ValueError(f"Failed to create GeoDataFrame: {e}")
-
-    return gdf
-
-
 def fetch_data(
     df: pd.DataFrame,
     filter_ids: list | None = None,
@@ -331,8 +280,61 @@ def fetch_data(
     df = df.join(expanded_df).drop(columns=cols)
     return df_to_gdf(df)
 
+# def df_to_gdf(
+#     df: pd.DataFrame,
+#     lon_col: str = 'longitude',
+#     lat_col: str = 'latitude',
+#     ) -> gpd.GeoDataFrame:
+#     """
+#     Convert a pandas DataFrame with latitude and longitude columns into a GeoDataFrame 
+#     with point geometries.
 
-def points_to_segment(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+#     Parameters:
+#         df (pd.DataFrame):
+#             Input DataFrame containing geographic coordinates.
+#         lon_col (str):
+#             Name of the column in `df` that contains longitude values. Default is `'longitude'`.
+#         lat_col (str):
+#             Name of the column in `df` that contains latitude values. Default is `'latitude'`.
+#         crs (int):
+#             Coordinate Reference System (CRS) to assign to the resulting GeoDataFrame.
+#             Defaults to 4326 (WGS84 - standard latitude/longitude).
+
+#     Returns:
+#         gpd.GeoDataFrame:
+#             A GeoDataFrame with point geometries created from the latitude and longitude columns.
+#             The original DataFrame columns are preserved.
+
+#     Raises:
+#         KeyError:
+#             If either of the specified latitude or longitude columns is not present in the DataFrame.
+#         ValueError:
+#             If the CRS is invalid or not supported by GeoPandas.
+#     """
+    
+#     if lat_col not in df.columns or lon_col not in df.columns:
+#         missing = [col for col in [lat_col, lon_col] if col not in df.columns]
+#         raise KeyError(f"Missing required column(s): {missing}")
+
+#     try:
+#         gdf = gpd.GeoDataFrame(
+#             df,
+#             geometry=gpd.points_from_xy(df[lon_col], df[lat_col]),
+#             crs=4326
+#         )
+#     except Exception as e:
+#         raise ValueError(f"Failed to create GeoDataFrame: {e}")
+
+#     return gdf
+
+def df_to_gdf(df: pd.DataFrame) -> gpd.GeoDataFrame:
+    longitude, latitude = (0, 1) if isinstance(df["location"].iat[0], list) else ("longitude", "latitude")
+    return gpd.GeoDataFrame(
+        df,
+        geometry=gpd.points_from_xy(df["location"].str[longitude], df["location"].str[latitude]),
+        crs=4326,
+    )
+def points_to_segment(gdf: pd.DataFrame) -> gpd.GeoDataFrame:
     """
     Converts a GeoDataFrame with point geometries into a GeoDataFrame with
     LineString segment geometries for each pair of consecutive points,
@@ -376,7 +378,7 @@ def points_to_segment(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     return gpd.GeoDataFrame(segments, geometry='geometry')
 
 
-def points_to_line(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+def points_to_line(gdf: pd.DataFrame) -> gpd.GeoDataFrame:
     """
     Converts a GeoDataFrame with point geometries into a GeoDataFrame with
     LineString geometries for each unique 'id', ordered by 'time(millisecond)'.
