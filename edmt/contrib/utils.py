@@ -85,7 +85,7 @@ def dict_columns(
 
 
 
-def append_cols(df: pd.DataFrame, cols: Union[str, list]) -> pd.DataFrame:
+def append_cols(df: pd.DataFrame, cols: Union[str, list]):
     """
     Move specified column(s) to the end of the DataFrame.
 
