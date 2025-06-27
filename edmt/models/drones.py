@@ -319,7 +319,7 @@ def df_to_gdf(
     try:
         gdf = gpd.GeoDataFrame(
             df,
-            geometry=gpd.points_from_xy(df[lon_col], df[lat_col]),
+            geometry=gpd.points_from_xy(df[lon], df[lat]),
             crs=4326
         )
     except Exception as e:
