@@ -23,8 +23,8 @@ def fetch_data(
     df: pd.DataFrame,
     filter_ids: list | None = None,
     log_errors: bool = True,
-    line : bool = True
-    ) -> pd.DataFrame:
+    expand_dict: bool = False
+) -> pd.DataFrame:
     """
     Fetch and merge metadata with corresponding CSV content from URLs provided in the input DataFrame.
 
@@ -37,6 +37,8 @@ def fetch_data(
             Optional list of IDs to restrict processing to specific rows.
         log_errors (bool):
             If True, prints errors encountered during CSV fetching or parsing. Defaults to True.
+        expand_dict (bool):
+            If True, expands dictionary fields like participants.data and batteries.data into separate columns.
 
     Returns:
         pd.DataFrame: A DataFrame combining metadata with CSV content.
@@ -62,43 +64,58 @@ def fetch_data(
             response = requests.get(csv_url)
             response.raise_for_status()
             csv_data = pd.read_csv(StringIO(response.text))
-            metadata_repeated = pd.DataFrame([row] * len(csv_data)).reset_index(drop=True)
-            combined = pd.concat([metadata_repeated.reset_index(drop=True), csv_data.reset_index(drop=True)], axis=1)
+            metadata_repeated = pd.DataFrame([row] * len(csv_data), index=csv_data.index)
+            combined = pd.concat([metadata_repeated, csv_data], axis=1)
             all_combined_rows.append(combined)
 
+        except requests.RequestException as e:
+            if log_errors:
+                print(f"Network error for id {row['id']}: {e}")
+        except pd.errors.ParserError as e:
+            if log_errors:
+                print(f"Parsing error for CSV at id {row['id']}: {e}")
         except Exception as e:
             if log_errors:
-                print(f"Error fetching or parsing CSV for id {row['id']}: {e}")
+                print(f"Unexpected error for id {row['id']}: {e}")
 
     if not all_combined_rows:
         return pd.DataFrame()
 
     df = pd.concat(all_combined_rows, ignore_index=True)
 
-    df =  df.drop(
-        columns=[
-            "displayLink","csvLink","kmlLink","gpxLink","originalLink","participants.object",
-            "flightApp.name","flightApp.version","batteryPercent.takeOff","batteryPercent.landing",
-            "satellites","gpslevel","voltage(v)","xSpeed(mph)","ySpeed(mph)","zSpeed(mph)",
-            "compass_heading(degrees)","pitch(degrees)","roll(degrees)", "isPhoto","isVideo",
-            "rc_elevator","rc_aileron","rc_throttle","rc_rudder","rc_elevator(percent)",
-            "rc_aileron(percent)",	"rc_throttle(percent)",	"rc_rudder(percent)",  	
-            "gimbal_heading(degrees)","gimbal_pitch(degrees)","gimbal_roll(degrees)",
-            "battery_percent","voltageCell1","voltageCell2","voltageCell3",
-            "voltageCell4",	"voltageCell5",	"voltageCell6",	"current(A)",
-            "pitch(degrees)","roll(degrees)","object"
-        ],
-        errors='ignore'
-    )
-    col = "participants.data"
-    expanded = pd.json_normalize(
-                df[col].explode(
-                    ignore_index=True
-            )
-        )
-    expanded.columns = [f"{col}.{subcol}" for subcol in expanded.columns]
+    columns_to_drop = [
+        "displayLink", "csvLink", "kmlLink", "gpxLink", "originalLink", "participants.object",
+        "flightApp.name", "flightApp.version", "batteryPercent.takeOff", "batteryPercent.landing",
+        "satellites", "gpslevel", "voltage(v)", "xSpeed(mph)", "ySpeed(mph)", "zSpeed(mph)",
+        "compass_heading(degrees)", "pitch(degrees)", "roll(degrees)", "isPhoto", "isVideo",
+        "rc_elevator", "rc_aileron", "rc_throttle", "rc_rudder", "rc_elevator(percent)",
+        "rc_aileron(percent)", "rc_throttle(percent)", "rc_rudder(percent)",
+        "gimbal_heading(degrees)", "gimbal_pitch(degrees)", "gimbal_roll(degrees)",
+        "battery_percent", "voltageCell1", "voltageCell2", "voltageCell3",
+        "voltageCell4", "voltageCell5", "voltageCell6", "current(A)",
+        "pitch(degrees)", "roll(degrees)", "batteries.object", "object"
+    ]
 
-    return df.join(expanded).drop(columns=[col])
+    df = df.drop(columns=columns_to_drop, errors='ignore')
+
+    if expand_dict:
+        cols = ["participants.data", "batteries.data"]
+        dfs_to_join = []
+
+        for col in cols:
+            try:
+                expanded = pd.json_normalize(df[col].explode(ignore_index=True))
+                expanded.columns = [f"{col}.{subcol}" for subcol in expanded.columns]
+                dfs_to_join.append(expanded)
+            except Exception as e:
+                if log_errors:
+                    print(f"Error expanding column '{col}': {e}")
+
+        if dfs_to_join:
+            expanded_df = pd.concat(dfs_to_join, axis=1)
+            df = df.join(expanded_df).drop(columns=cols)
+
+    return df
 
 
 def df_to_gdf(
