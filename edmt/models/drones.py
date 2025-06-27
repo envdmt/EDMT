@@ -14,7 +14,10 @@ from shapely.geometry import LineString, Point
 import requests
 from io import StringIO
 from tqdm import tqdm
-from typing import Union
+from typing import Union, Optional
+
+def example(created_after: Optional[str] = None):
+    print(created_after)
 
 
 class Airdata:
@@ -83,9 +86,8 @@ class Airdata:
         self,
         since: str,
         until: str,
-        detail_level: bool = False,
         limit: Union[int, None] = None,
-        created_after: str | None = None,
+        created_after: Optional[str] = None,
         battery_ids: list | None = None,
         pilot_ids: list | None = None,
         location: list | None = None,  # Should be [lat, lon]
