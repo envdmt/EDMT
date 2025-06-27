@@ -191,6 +191,8 @@ def generate_uuid(df, index=False):
 
     return df
        
+
+       
 def get_utm_epsg(longitude=None):
     if longitude is None:
        print("KeyError : Select column with longitude values")
