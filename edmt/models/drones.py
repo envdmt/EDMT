@@ -1,4 +1,5 @@
 from edmt.contrib.utils import (
+    clean_vars,
     format_iso_time,
     append_cols,
     suppress_output

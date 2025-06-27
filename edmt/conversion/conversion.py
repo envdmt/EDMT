@@ -7,8 +7,9 @@ import geopandas as gpd
 # from osgeo import ogr
 import requests
 from shapely import make_valid
-
-from edmt.contrib import clean_vars
+from edmt.contrib.utils import (
+    clean_vars
+)
 
 """
 A unit of time is any particular time interval, used as a standard way of measuring or
