@@ -85,8 +85,8 @@ class Airdata:
         until: str,
         limit: Union[int, None] = None,
         created_after: Optional[str] = None,
-        battery_ids: list | None = None,
-        pilot_ids: list | None = None,
+        battery_ids: Optional[Union[str, list]] = None,
+        pilot_ids: Optional[Union[str, list]] = None,
         location: list | None = None,  # Should be [lat, lon]
         ) -> pd.DataFrame:
 
