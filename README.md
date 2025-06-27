@@ -1,3 +1,3 @@
 # edmt
 
-### Documentattion
+### Documentation

@@ -133,7 +133,7 @@ class Airdata:
         since = format_iso_time(since).replace("T", "+") if since else None
         until = format_iso_time(until).replace("T", "+") if until else None
         created_after = format_iso_time(created_after).replace("T", "+") if created_after else None
-        detail_level_str = "comprehensive" if detail_level else "basic"
+        detail_level_str = "comprehensive"
 
         params = {
             "start": since,
@@ -190,7 +190,6 @@ def df_to_gdf(
     df: pd.DataFrame,
     lon_col: str = 'longitude',
     lat_col: str = 'latitude',
-    crs: int = 4326
     ) -> gpd.GeoDataFrame:
     """
     Convert a pandas DataFrame with latitude and longitude columns into a GeoDataFrame 
@@ -227,7 +226,7 @@ def df_to_gdf(
         gdf = gpd.GeoDataFrame(
             df,
             geometry=gpd.points_from_xy(df[lon_col], df[lat_col]),
-            crs=crs
+            crs=4326
         )
     except Exception as e:
         raise ValueError(f"Failed to create GeoDataFrame: {e}")
@@ -239,7 +238,6 @@ def fetch_data(
     df: pd.DataFrame,
     filter_ids: list | None = None,
     log_errors: bool = True,
-    expand_dict: bool = False
     ) -> pd.DataFrame:
     """
 
@@ -314,27 +312,22 @@ def fetch_data(
     df = df.drop(columns=columns_to_drop, errors='ignore')
     cols = ["participants.data", "batteries.data"]
 
-    if expand_dict:
-        dfs_to_join = []
+    dfs_to_join = []
 
-        for col in cols:
-            try:
-                expanded = pd.json_normalize(df[col].explode(ignore_index=True))
-                expanded.columns = [f"{col}.{subcol}" for subcol in expanded.columns]
-                dfs_to_join.append(expanded)
-            except Exception as e:
-                if log_errors:
-                    print(f"Error expanding column '{col}': {e}")
+    for col in cols:
+        try:
+            expanded = pd.json_normalize(df[col].explode(ignore_index=True))
+            expanded.columns = [f"{col}.{subcol}" for subcol in expanded.columns]
+            dfs_to_join.append(expanded)
+        except Exception as e:
+            if log_errors:
+                print(f"Error expanding column '{col}': {e}")
 
-        if dfs_to_join:
-            expanded_df = pd.concat(dfs_to_join, axis=1)
+    if dfs_to_join:
+        expanded_df = pd.concat(dfs_to_join, axis=1)
 
-        df = df.join(expanded_df).drop(columns=cols)
-        return df_to_gdf(df)
-    
-    else:
-        df = df.drop(columns=cols)
-        return df_to_gdf(df)
+    df = df.join(expanded_df).drop(columns=cols)
+    return df_to_gdf(df)
 
 
 def points_to_segment(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
@@ -376,9 +369,9 @@ def points_to_segment(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
             segments.append(seg_dict)
 
     if not segments:
-      return gpd.GeoDataFrame(columns=['id', 't1', 't2', 'geometry']).to_crs(4326)
-
-    return gpd.GeoDataFrame(segments, geometry='geometry').to_crs(4326)
+      return gpd.GeoDataFrame(columns=['id', 't1', 't2', 'geometry'])
+    
+    return gpd.GeoDataFrame(segments, geometry='geometry')
 
 
 def points_to_line(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
@@ -412,7 +405,7 @@ def points_to_line(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     metadata = gdf[other_cols].drop_duplicates(subset=['id']).set_index('id')
 
     line_gdf = line_gdf.merge(metadata, left_index=True, right_index=True).reset_index()
-    return append_cols(line_gdf, cols='geometry').to_crs(4326)
+    return append_cols(line_gdf, cols='geometry')
 
 
 
