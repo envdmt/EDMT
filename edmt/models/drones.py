@@ -38,10 +38,7 @@ class Airdata:
             "Authorization": f"Basic {encoded_key}"
         }
 
-    def authenticate(
-        self, 
-        validate=True
-        ):
+    def authenticate(self,validate=True):
         """
         Authenticates with the Airdata API by calling /version or /flights.
         Sets self.authenticated = True if successful.
@@ -80,14 +77,9 @@ class Airdata:
                 raise
 
     def get_flights(
-        self,
-        since: str,
-        until: str,
-        limit: Union[int, None] = None,
-        created_after: Optional[str] = None,
-        battery_ids: Optional[Union[str, list]] = None,
-        pilot_ids: Optional[Union[str, list]] = None,
-        location: list | None = None,  # Should be [lat, lon]
+            self,since: str,until: str,limit: Union[int, None] = None,
+            created_after: Optional[str] = None,battery_ids: Optional[Union[str, list]] = None,
+            pilot_ids: Optional[Union[str, list]] = None,location: Optional[list] = None,
         ) -> pd.DataFrame:
 
         """
@@ -124,7 +116,6 @@ class Airdata:
                 If `location` is not a list of exactly two numeric values (latitude and longitude).
         """
 
-        # Validate location format: must be None or a list with exactly 2 numeric items
         if location is not None:
             if not isinstance(location, list) or len(location) != 2 or not all(isinstance(x, (int, float)) for x in location):
                 raise ValueError("Location must be a list of exactly two numbers: [latitude, longitude]")
@@ -148,9 +139,8 @@ class Airdata:
 
         params = {k: v for k, v in params.items() if v is not None}
 
-        url = "/flights?" + "&".join([f"{k}={v}" for k, v in params.items()]) # Construct URL with query string
+        url = "/flights?" + "&".join([f"{k}={v}" for k, v in params.items()])
         
-        # Make sure user is authenticated
         if not self.authenticated:
             print("Cannot fetch flights: Not authenticated.")
             return None
