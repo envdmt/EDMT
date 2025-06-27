@@ -352,8 +352,7 @@ def points_to_segment(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     gdf = gdf[gdf['geometry'] != Point(0, 0)]
     for flight_id in tqdm(gdf['id'].unique(), desc="Creating segments"):
         flight_data = gdf[gdf['id'] == flight_id].sort_values(by='time(millisecond)')
-        assert flight_data['time(millisecond)'].is_monotonic_increasing, \
-            f"time(millisecond) is not ascending for id: {flight_id}"
+        assert flight_data['time(millisecond)'].is_monotonic_increasing, f"time(millisecond) is not ascending for id: {flight_id}"
 
         flight_data = flight_data.reset_index(drop=True)
         for i in range(len(flight_data) - 1):
