@@ -409,8 +409,8 @@ def points_to_line(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     metadata = gdf[other_cols].drop_duplicates(subset=['id']).set_index('id')
 
     line_gdf = line_gdf.merge(metadata, left_index=True, right_index=True).reset_index()
-    return line_gdf
-    # return append_cols(line_gdf, columns='geometry')
+    return append_cols(line_gdf, cols='geometry')
+
 
 
 

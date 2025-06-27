@@ -50,8 +50,12 @@ def format_iso_time(date_string: str) -> str:
     except ValueError:
         raise ValueError(f"Failed to parse timestamp'{date_string}'")
     
+   
 # to-do : Reconfigure this section to pick same as what is being used in drones to expand_dict
-def dict_columns(df: pd.DataFrame, columns: list) -> pd.DataFrame:
+def dict_columns(
+        df: pd.DataFrame,
+        cols: list
+        ) -> pd.DataFrame:
     """
     Expands columns in the DataFrame that contain lists of dictionaries (or stringified ones),
     turning each dictionary into separate flat columns.
@@ -63,32 +67,51 @@ def dict_columns(df: pd.DataFrame, columns: list) -> pd.DataFrame:
     Returns:
         pd.DataFrame: A new DataFrame with expanded columns.
     """
-    def safe_parse(x):
-        if isinstance(x, str):
-            try:
-                return json.loads(x)
-            except (TypeError, ValueError):
-                return {}
-        elif isinstance(x, dict):
-            return x
-        else:
-            return {}
+    # def safe_parse(x):
+    #     if isinstance(x, str):
+    #         try:
+    #             return json.loads(x)
+    #         except (TypeError, ValueError):
+    #             return {}
+    #     elif isinstance(x, dict):
+    #         return x
+    #     else:
+    #         return {}
         
-    df = df.copy()
+    # df = df.copy()
 
-    for col in columns:
-        if col not in df.columns:
-            raise ValueError(f"Column '{col}' not found in DataFrame")
+    # for col in columns:
+    #     if col not in df.columns:
+    #         raise ValueError(f"Column '{col}' not found in DataFrame")
         
-        parsed = df[col].apply(safe_parse)
-        expanded = pd.json_normalize(parsed)
-        expanded.columns = [f"{col}.{subcol}" for subcol in expanded.columns]
+    #     parsed = df[col].apply(safe_parse)
+    #     expanded = pd.json_normalize(parsed)
+    #     expanded.columns = [f"{col}.{subcol}" for subcol in expanded.columns]
 
-    return df.join(expanded).drop(columns=[col])
+    # return df.join(expanded).drop(columns=[col])
+
+    """
+    Try out this option
+    """
+    
+    dfs_to_join = []
+
+    for col in cols:
+        try:
+            expanded = pd.json_normalize(df[col].explode(ignore_index=True))
+            expanded.columns = [f"{col}.{subcol}" for subcol in expanded.columns]
+            dfs_to_join.append(expanded)
+        except Exception as e:
+                print(f"Error expanding column '{col}': {e}")
+
+    if dfs_to_join:
+        expanded_df = pd.concat(dfs_to_join, axis=1)
+
+    return df.join(expanded_df).drop(columns=cols)
 
 
 
-def append_cols(df: pd.DataFrame, columns: Union[str, list]) -> pd.DataFrame:
+def append_cols(df: pd.DataFrame, cols: Union[str, list]) -> pd.DataFrame:
     """
     Move specified column(s) to the end of the DataFrame.
     
