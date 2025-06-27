@@ -3,8 +3,6 @@ from edmt.contrib.utils import (
     append_cols
 )
 
-import os
-import sys
 from typing import Union
 import base64
 import http.client
@@ -16,6 +14,7 @@ from shapely.geometry import LineString, Point
 import requests
 from io import StringIO
 from tqdm import tqdm
+from typing import Union
 
 
 class Airdata:
@@ -85,7 +84,7 @@ class Airdata:
         since: str,
         until: str,
         detail_level: bool = False,
-        limit: int | None = None,
+        limit: Union[int, None] = None,
         created_after: str | None = None,
         battery_ids: list | None = None,
         pilot_ids: list | None = None,
