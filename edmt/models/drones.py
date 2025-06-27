@@ -26,7 +26,6 @@ def fetch_data(
     expand_dict: bool = False
 ) -> pd.DataFrame:
     """
-    Fetch and merge metadata with corresponding CSV content from URLs provided in the input DataFrame.
 
     Parameters:
         df (pd.DataFrame):
@@ -97,9 +96,9 @@ def fetch_data(
     ]
 
     df = df.drop(columns=columns_to_drop, errors='ignore')
+    cols = ["participants.data", "batteries.data"]
 
     if expand_dict:
-        cols = ["participants.data", "batteries.data"]
         dfs_to_join = []
 
         for col in cols:
@@ -113,9 +112,10 @@ def fetch_data(
 
         if dfs_to_join:
             expanded_df = pd.concat(dfs_to_join, axis=1)
-            df = df.join(expanded_df).drop(columns=cols)
-
-    return df
+            
+        return df.join(expanded_df).drop(columns=cols)
+    else:
+        return df.drop(columns=cols)
 
 
 def df_to_gdf(
