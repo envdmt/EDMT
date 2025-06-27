@@ -240,7 +240,7 @@ def fetch_data(
     df: pd.DataFrame,
     filter_ids: list | None = None,
     log_errors: bool = True,
-    ) -> pd.DataFrame:
+    ) -> gpd.GeoDataFrame:
     """
 
     Parameters:
