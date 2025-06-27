@@ -1,0 +1,2 @@
+[console_scripts]
+edmt-version = edmt.version:print_version
