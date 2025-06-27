@@ -1,8 +1,6 @@
 from edmt.contrib.utils import (
-    clean_vars,
     format_iso_time,
-    append_cols,
-    suppress_output
+    append_cols
 )
 
 import os
@@ -380,39 +378,43 @@ def points_to_segment(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
 
 def points_to_line(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-  """
-  Converts a GeoDataFrame with point geometries into a GeoDataFrame with
-  LineString geometries for each unique 'id', ordered by 'time(millisecond)'.
+    """
+    Converts a GeoDataFrame with point geometries into a GeoDataFrame with
+    LineString geometries for each unique 'id', ordered by 'time(millisecond)'.
 
-  Args:
-    gdf: The input GeoDataFrame with 'id', 'time(millisecond)', and 'geometry'
-         (Point) columns.
+    Args:
+        gdf: The input GeoDataFrame with 'id', 'time(millisecond)', and 'geometry'
+            (Point) columns.
 
-  Returns:
-    A new GeoDataFrame where each row represents a unique 'id' and its
-    corresponding LineString geometry.
-  """
-
-  for flight_id in tqdm(gdf['id'].unique(), desc="Processing flights"):
-    with suppress_output():
-        flight_data = gdf[gdf['id'] == flight_id].sort_values(by='time(millisecond)')
-        assert flight_data['time(millisecond)'].is_monotonic_increasing, \
-        f"time(millisecond) is not ascending for id: {flight_id}"
+    Returns:
+        A new GeoDataFrame where each row represents a unique 'id' and its
+        corresponding LineString geometry.
+    """
 
     gdf = gdf[gdf['geometry'] != Point(0, 0)]
-    line_geometries = gdf.sort_values(by='time(millisecond)').groupby('id')['geometry'].apply(
-        lambda x: LineString(x.tolist()) if len(x) > 1 else None
+    grouped = []
+    for flight_id in tqdm(gdf['id'].unique(), desc="Processing flights"):
+        flight_data = gdf[gdf['id'] == flight_id].sort_values(by='time(millisecond)')
+        assert flight_data['time(millisecond)'].is_monotonic_increasing, \
+            f"time(millisecond) is not ascending for id: {flight_id}"
+        grouped.append(flight_data)
+
+    gdf_sorted = pd.concat(grouped)
+    line_geometries = (
+        gdf_sorted.groupby('id')['geometry']
+        .apply(lambda x: LineString(x.tolist()) if len(x) > 1 else None)
     )
     line_gdf = gpd.GeoDataFrame(line_geometries, geometry='geometry')
     other_cols = [col for col in gdf.columns if col not in ['geometry', 'time(millisecond)']]
+    metadata = gdf[other_cols].drop_duplicates(subset=['id']).set_index('id')
 
-    gdf = line_gdf.merge(
-                gdf[other_cols].drop_duplicates(subset=['id']).set_index('id'),
-                left_index=True,
-                right_index=True
-            ).reset_index()
-    
-    return append_cols(gdf,'geometry')
+    line_gdf = line_gdf.merge(metadata, left_index=True, right_index=True).reset_index()
+    return append_cols(line_gdf, 'geometry')
+
+
+
+
+
   
 
 
