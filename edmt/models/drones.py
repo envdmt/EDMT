@@ -1,10 +1,7 @@
 from edmt.contrib.utils import (
-    clean_vars,
-    normalize_column,
-    dataframe_to_dict,
-    clean_time_cols,
     format_iso_time,
-    append_cols
+    append_cols,
+    suppress_output
 )
 
 import os
@@ -228,24 +225,25 @@ def points_to_line(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
   """
 
   for flight_id in tqdm(gdf['id'].unique(), desc="Processing flights"):
-    flight_data = gdf[gdf['id'] == flight_id].sort_values(by='time(millisecond)')
-    assert flight_data['time(millisecond)'].is_monotonic_increasing, \
-      f"time(millisecond) is not ascending for id: {flight_id}"
+    with suppress_output():
+        flight_data = gdf[gdf['id'] == flight_id].sort_values(by='time(millisecond)')
+        assert flight_data['time(millisecond)'].is_monotonic_increasing, \
+        f"time(millisecond) is not ascending for id: {flight_id}"
 
-  gdf = gdf[gdf['geometry'] != Point(0, 0)]
-  line_geometries = gdf.sort_values(by='time(millisecond)').groupby('id')['geometry'].apply(
-      lambda x: LineString(x.tolist()) if len(x) > 1 else None
-  )
-  line_gdf = gpd.GeoDataFrame(line_geometries, geometry='geometry')
-  other_cols = [col for col in gdf.columns if col not in ['geometry', 'time(millisecond)']]
+    gdf = gdf[gdf['geometry'] != Point(0, 0)]
+    line_geometries = gdf.sort_values(by='time(millisecond)').groupby('id')['geometry'].apply(
+        lambda x: LineString(x.tolist()) if len(x) > 1 else None
+    )
+    line_gdf = gpd.GeoDataFrame(line_geometries, geometry='geometry')
+    other_cols = [col for col in gdf.columns if col not in ['geometry', 'time(millisecond)']]
 
-  gdf = line_gdf.merge(
-            gdf[other_cols].drop_duplicates(subset=['id']).set_index('id'),
-            left_index=True,
-            right_index=True
-        ).reset_index()
-  
-  return append_cols(gdf,'geometry')
+    gdf = line_gdf.merge(
+                gdf[other_cols].drop_duplicates(subset=['id']).set_index('id'),
+                left_index=True,
+                right_index=True
+            ).reset_index()
+    
+    return append_cols(gdf,'geometry')
 
 
 

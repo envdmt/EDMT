@@ -9,10 +9,6 @@ from .load import (
 )
 
 from .utils import (
-    clean_vars,
-    normalize_column,
-    dataframe_to_dict,
-    clean_time_cols,
     format_iso_time,
     dict_columns,
     append_cols
@@ -23,10 +19,6 @@ __all__ = [
     "filler",
     "read_url",
     "config",
-    "clean_vars",
-    "normalize_column",
-    "dataframe_to_dict",
-    "clean_time_cols",
     "format_iso_time"
     "dict_columns",
     "append_cols"
