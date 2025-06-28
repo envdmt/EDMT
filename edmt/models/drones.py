@@ -102,16 +102,14 @@ class Airdata:
             conn.request("GET", url, headers=self.auth_header)
             res = conn.getresponse()
 
-            if res.status != 200:
-                error_body = res.read().decode('utf-8')[:500]
-                logger.warning(f"Failed to fetch data from endpoint '{endpoint}'. Status code: {res.status}")
-                logger.warning(f"Response: {error_body}")
-                return None
-            data_str = res.read().decode("utf-8")
-            data = json.loads(data_str)
-            normalized_data = list(tqdm(data, desc="Downloading"))
-            df = pd.json_normalize(normalized_data)
-            return df
+            if res.status == 200:
+                data = json.loads(res.read().decode("utf-8"))
+                data = json.loads(data)
+                normalized_data = list(tqdm(data, desc="Downloading"))
+                df = pd.json_normalize(normalized_data)
+                return df
+            else:
+                logging.warning(f"Failed to fetch {endpoint}")
 
         except Exception as e:
             logger.warning(f"Error fetching data from endpoint '{endpoint}': {e}")
