@@ -202,7 +202,8 @@ def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None,log_errors: boo
             If required columns ('id', 'csvLink') are missing from the input DataFrame.
     """
     
-    df["checktime"] = pd.Timestamp(df["timeISO"])
+    df["checktime"] = pd.to_datetime(df["timeISO"], errors='coerce')
+    df.loc[df["checktime"].isna(), "checktime"] = pd.to_datetime(df.loc[df["checktime"].isna(), "time"], errors='coerce')
 
     required_cols = {'id', 'csvLink'}
     if not required_cols.issubset(df.columns):
