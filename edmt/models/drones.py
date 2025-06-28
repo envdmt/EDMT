@@ -17,6 +17,7 @@ from shapely.geometry import LineString, Point
 from io import StringIO
 from tqdm import tqdm
 from typing import Union, Optional
+from urllib.parse import urlencode
 
 
 from pyproj import Geod
@@ -86,32 +87,48 @@ class Airdata:
         Sends a GET request to the specified API endpoint and returns normalized data as a DataFrame.
 
         Parameters:
-            endpoint (str): The API endpoint to access.
+            endpoint (str): The full API path including query parameters (e.g., 'flights?start=...').
 
         Returns:
             Optional[pd.DataFrame]: A DataFrame containing the retrieved data, or None if the request fails.
         """
-        url = f"/{endpoint}?"
-
         if not self.authenticated:
             logger.warning("Cannot fetch data: Not authenticated.")
             return None
 
         try:
             conn = http.client.HTTPSConnection(self.base_url)
-            conn.request("GET", url, headers=self.auth_header)
-            res = conn.getresponse()
+            try:
+                conn.request("GET", f"/{endpoint}", headers=self.auth_header)
+                res = conn.getresponse()
+                if res.status == 200:
+                    raw_data = res.read().decode("utf-8")
+                    try:
+                        data = json.loads(raw_data)
+                    except json.JSONDecodeError as e:
+                        logger.warning(f"Failed to decode JSON response: {e}")
+                        return None
 
-            if res.status == 200:
-                data = json.loads(res.read().decode("utf-8"))
-                normalized_data = list(tqdm(data, desc="Downloading"))
-                df = pd.json_normalize(normalized_data)
-                return df
-            else:
-                logging.warning(f"Failed to fetch {endpoint}")
+                    if isinstance(data, list):
+                        normalized_data = list(tqdm(data, desc="Downloading"))
+                    else:
+                        logger.info("Response data is not a list; returning raw.")
+                        normalized_data = data
+
+                    if not isinstance(normalized_data, (list, dict)):
+                        logger.warning("Data is not a valid type for json_normalize.")
+                        return None
+
+                    df = pd.json_normalize(normalized_data)
+                    return df
+                else:
+                    logger.warning(f"Failed to fetch '{endpoint}'.")
+                    return None
+            finally:
+                conn.close()
 
         except Exception as e:
-            logger.warning(f"Error fetching data from endpoint '{endpoint}': {e}")
+            logger.warning(f"Network error while fetching '{endpoint}': {e}")
             return None
     
     def get_flights(
@@ -177,7 +194,7 @@ class Airdata:
 
         params = {k: v for k, v in params.items() if v is not None}
 
-        endpoint = "flights?" + "&".join([f"{k}={v}" for k, v in params.items()])
+        endpoint = "/flights?" + urlencode(params)
         df = self.AccessAPI(endpoint=endpoint)
         return df if df is not None else pd.DataFrame()
     
@@ -194,27 +211,24 @@ class Airdata:
             pd.DataFrame: DataFrame containing retrieved flight data.
                         Returns empty DataFrame if request fails or no data found.
         """
-        # If ID is given, ignore sorting and fetch directly
         if id is not None:
-            url = f"/flightgroups/{id}"
-            df = self.AccessAPI(endpoint=url)
+            endpoint = f"/flightgroup/{id}"
+            df = self.AccessAPI(endpoint=endpoint)
             return df if df is not None else pd.DataFrame()
-
-        # Build query params for sorted list view
+        
         params = {}
         if sort_by is not None:
             params["sort_by"] = sort_by
             params["sort_dir"] = "asc" if ascending else "desc"
 
-        # Construct URL with optional query string
         base_url = "/flightgroups"
         if params:
-            query_string = "&".join([f"{k}={v}" for k, v in params.items()])
-            url = f"{base_url}?{query_string}"
+            query_string = urlencode({k: v for k, v in params.items() if v is not None})
+            endpoint = f"{base_url}?{query_string}"
         else:
-            url = base_url
+            endpoint = base_url
 
-        df = self.AccessAPI(endpoint=url)
+        df = self.AccessAPI(endpoint=endpoint)
         return df if df is not None else pd.DataFrame()
                
     def get_drones(self) -> pd.DataFrame:
@@ -254,7 +268,6 @@ class Airdata:
 
         df = self.AccessAPI(endpoint="pilots")
         return df if df is not None else pd.DataFrame()
-
 
 
 def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None,log_errors: bool = True) -> gpd.GeoDataFrame:
