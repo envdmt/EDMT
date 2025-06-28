@@ -104,7 +104,6 @@ class Airdata:
 
             if res.status == 200:
                 data = json.loads(res.read().decode("utf-8"))
-                data = json.loads(data)
                 normalized_data = list(tqdm(data, desc="Downloading"))
                 df = pd.json_normalize(normalized_data)
                 return df
@@ -178,9 +177,8 @@ class Airdata:
 
         params = {k: v for k, v in params.items() if v is not None}
 
-        url = "/flights?" + "&".join([f"{k}={v}" for k, v in params.items()])
-
-        df = self.AccessAPI(endpoint=url)
+        endpoint = "flights?" + "&".join([f"{k}={v}" for k, v in params.items()])
+        df = self.AccessAPI(endpoint=endpoint)
         return df if df is not None else pd.DataFrame()
     
     def get_flightgroup(self,sort_by: str = None, ascending: bool = True,id: str = None ) -> pd.DataFrame:
