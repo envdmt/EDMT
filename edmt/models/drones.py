@@ -182,67 +182,44 @@ class Airdata:
 
         url = "/flights?" + "&".join([f"{k}={v}" for k, v in params.items()])
 
-        df = self.AccessAPI(self, url)
+        df = self.AccessAPI(endpoint=url)
         return df if df is not None else pd.DataFrame()
-        
-        # if not self.authenticated:
-        #     print("Cannot fetch flights: Not authenticated.")
-        #     return None
-                
-        # try:
-        #     conn = http.client.HTTPSConnection(self.base_url)
-        #     conn.request("GET", url, headers=self.auth_header)
-        #     res = conn.getresponse()
-
-        #     if res.status == 200:
-        #         data = json.loads(res.read().decode("utf-8"))
-        #         if "data" in data: # to-do : automatically identify the column to normalize
-        #             normalized_data = list(tqdm(data["data"], desc="Downloading"))
-        #             df = pd.json_normalize(normalized_data)
-        #             df = df.drop(
-        #                 columns=[
-        #                     "displayLink","kmlLink",
-        #                     "gpxLink","originalLink",
-        #                     "participants.object"
-        #                 ],
-        #                 errors='ignore'
-        #             )
-        #         else:
-        #            df = pd.DataFrame(data)
-        #         return df
-        #     else:
-        #         print(f"Failed to fetch flights. Status code: {res.status}")
-        #         print(f"Response: {res.read().decode('utf-8')[:500]}")
-        #         return None
-        # except Exception as e:
-        #     print(f"Error fetching flights: {e}")
-        #     return None
     
-    def get_flightgroup(self, sort_by: str = None, ascending: bool = True,id : str = None) -> pd.DataFrame:
-            """
-            Fetch Flight Groups data from the Airdata API based on the provided query parameters.
+    def get_flightgroup(self,sort_by: str = None, ascending: bool = True,id: str = None ) -> pd.DataFrame:
+        """
+        Fetch Flight Groups data from the Airdata API based on query parameters or a specific ID.
 
-            Parameters:
-                sort_by (str, optional): The field to sort by. If None, no sorting is applied.
-                ascending (bool): Whether to sort in ascending order. Defaults to True.
+        Parameters:
+            sort_by (str, optional): Field to sort by. If None, no sorting is applied.
+            ascending (bool): Whether to sort in ascending order. Defaults to True.
+            id (str, optional): Specific flightgroup ID to fetch. Overrides sorting.
 
-            Returns:
-                pd.DataFrame: A DataFrame containing the retrieved flight data.
-                            If the request fails or no data is found, returns an empty DataFrame.
-            """
-            params = {}
-
-            if sort_by is not None and id is None:
-                params["sort_by"] = sort_by
-                params["sort_dir"] = "asc" if ascending else "desc"
-                url = "/flightgroups"
-                url += "?" + "&".join([f"{k}={v}" for k, v in params.items()])
-                df = self.AccessAPI(endpoint=url)
-            elif id is not None:
-                url = f"/flightgroups/{id}"
-                df = self.AccessAPI(endpoint=url)
-
+        Returns:
+            pd.DataFrame: DataFrame containing retrieved flight data.
+                        Returns empty DataFrame if request fails or no data found.
+        """
+        # If ID is given, ignore sorting and fetch directly
+        if id is not None:
+            url = f"/flightgroups/{id}"
+            df = self.AccessAPI(endpoint=url)
             return df if df is not None else pd.DataFrame()
+
+        # Build query params for sorted list view
+        params = {}
+        if sort_by is not None:
+            params["sort_by"] = sort_by
+            params["sort_dir"] = "asc" if ascending else "desc"
+
+        # Construct URL with optional query string
+        base_url = "/flightgroups"
+        if params:
+            query_string = "&".join([f"{k}={v}" for k, v in params.items()])
+            url = f"{base_url}?{query_string}"
+        else:
+            url = base_url
+
+        df = self.AccessAPI(endpoint=url)
+        return df if df is not None else pd.DataFrame()
                
     def get_drones(self) -> pd.DataFrame:
         """
@@ -254,7 +231,7 @@ class Airdata:
                         If the request fails or no data is found, returns an empty DataFrame.
         """
 
-        df = self.AccessAPI(self, "drones")
+        df = self.AccessAPI(endpoint="drones")
         return df if df is not None else pd.DataFrame()
         
     def get_batteries(self) -> pd.DataFrame:
@@ -266,8 +243,7 @@ class Airdata:
             pd.DataFrame: A DataFrame containing the retrieved flight data. 
                         If the request fails or no data is found, returns an empty DataFrame.
         """
-
-        df = self.AccessAPI(self, "batteries")
+        df = self.AccessAPI(endpoint="batteries")
         return df if df is not None else pd.DataFrame()
     
     def get_pilots(self) -> pd.DataFrame:
@@ -280,9 +256,8 @@ class Airdata:
                         If the request fails or no data is found, returns an empty DataFrame.
         """
 
-        df = self.AccessAPI(self, "pilots")
+        df = self.AccessAPI(endpoint="pilots")
         return df if df is not None else pd.DataFrame()
-
 
 
 
