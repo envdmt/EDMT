@@ -201,9 +201,8 @@ def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None,log_errors: boo
         ValueError:
             If required columns ('id', 'csvLink') are missing from the input DataFrame.
     """
-    
-    df["checktime"] = pd.to_datetime(df["timeISO"], errors='coerce')
-    df.loc[df["checktime"].isna(), "checktime"] = pd.to_datetime(df.loc[df["checktime"].isna(), "time"], errors='coerce')
+    df['checktime'] = pd.to_datetime(df['time'],errors="coerce")
+    df['checktime'] = df['checktime'].dt.isoformat()
 
     required_cols = {'id', 'csvLink'}
     if not required_cols.issubset(df.columns):
@@ -251,8 +250,8 @@ def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None,log_errors: boo
                 print(f"Error expanding column '{col}': {e}")
     if dfs_to_join:
         expanded_df = pd.concat(dfs_to_join, axis=1)
-
-    return df_.join(expanded_df).drop(columns=cols)
+    gdf = df_.join(expanded_df).drop(columns=cols)
+    return append_cols(gdf,cols="checktime")
 
 
 def df_to_gdf( df: pd.DataFrame,lon_col: str = 'longitude',lat_col: str = 'latitude',crs: int = 4326) -> gpd.GeoDataFrame:
