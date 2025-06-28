@@ -167,10 +167,8 @@ class Airdata:
                         ],
                         errors='ignore'
                     )
-                    df["checktime"] = pd.Timestamp(df["timeISO"])
                 else:
                    df = pd.DataFrame(data)
-                   df["checktime"] = pd.Timestamp(df["timeISO"])
                 return df
             else:
                 print(f"Failed to fetch flights. Status code: {res.status}")
@@ -203,6 +201,9 @@ def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None,log_errors: boo
         ValueError:
             If required columns ('id', 'csvLink') are missing from the input DataFrame.
     """
+    
+    df["checktime"] = pd.Timestamp(df["timeISO"])
+
     required_cols = {'id', 'csvLink'}
     if not required_cols.issubset(df.columns):
         raise ValueError(f"Input DataFrame must contain columns: {required_cols}")
@@ -251,6 +252,7 @@ def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None,log_errors: boo
         expanded_df = pd.concat(dfs_to_join, axis=1)
 
     return df_.join(expanded_df).drop(columns=cols)
+
 
 def df_to_gdf( df: pd.DataFrame,lon_col: str = 'longitude',lat_col: str = 'latitude',crs: int = 4326) -> gpd.GeoDataFrame:
     """
