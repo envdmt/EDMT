@@ -61,11 +61,10 @@ class Airdata:
                 print("Authentication successful.")
                 return
 
-            # If /version not found, try /flights as fallback
             if res.status == 404:
-                print("/version endpoint not found. Trying /flights...")
+                print("/version endpoint not found. Trying /drones...")
                 conn = http.client.HTTPSConnection(self.base_url)
-                conn.request("GET", "/flights", payload, self.auth_header)
+                conn.request("GET", "/drones", payload, self.auth_header)
                 res = conn.getresponse()
 
             if res.status == 200:
@@ -246,7 +245,6 @@ class Airdata:
             return df if df is not None else pd.DataFrame()
                
     def get_drones(self) -> pd.DataFrame:
-
         """
         Fetch drone data from the Airdata API based on the provided query parameters.
 
@@ -256,11 +254,10 @@ class Airdata:
                         If the request fails or no data is found, returns an empty DataFrame.
         """
 
-        df = AccessAPI(self, "drones")
+        df = self.AccessAPI(self, "drones")
         return df if df is not None else pd.DataFrame()
         
     def get_batteries(self) -> pd.DataFrame:
-
         """
         Fetch batteries data from the Airdata API based on the provided query parameters.
 
@@ -270,11 +267,10 @@ class Airdata:
                         If the request fails or no data is found, returns an empty DataFrame.
         """
 
-        df = AccessAPI(self, "batteries")
+        df = self.AccessAPI(self, "batteries")
         return df if df is not None else pd.DataFrame()
     
     def get_pilots(self) -> pd.DataFrame:
-
         """
         Fetch pilots data from the Airdata API based on the provided query parameters.
 
@@ -284,8 +280,9 @@ class Airdata:
                         If the request fails or no data is found, returns an empty DataFrame.
         """
 
-        df = AccessAPI(self, "pilots")
+        df = self.AccessAPI(self, "pilots")
         return df if df is not None else pd.DataFrame()
+
 
 
 
@@ -519,86 +516,6 @@ def airSegment(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
     return append_cols(airSeg, cols=['checktime','segment_start_time','segment_end_time','segment_duration_ms','segment_distance_m','geometry'])
 
-
-# def points_to_line(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-#     """
-#     Converts a GeoDataFrame with point geometries into a GeoDataFrame with
-#     LineString geometries for each unique 'id', ordered by 'time(millisecond)'.
-
-#     Args:
-#         gdf: The input GeoDataFrame with 'id', 'time(millisecond)', and 'geometry'
-#             (Point) columns.
-
-#     Returns:
-#         A new GeoDataFrame where each row represents a unique 'id' and its
-#         corresponding LineString geometry.
-#     """
-#     gdf = gdf[gdf['geometry'] != Point(0, 0)]
-
-#     grouped = []
-#     for flight_id in tqdm(gdf['id'].unique(), desc="Processing flights"):
-#         flight_data = gdf[gdf['id'] == flight_id].sort_values(by='time(millisecond)')
-#         grouped.append(flight_data)
-
-#     gdf_sorted = pd.concat(grouped)
-
-#     line_geometries = (
-#         gdf_sorted.groupby('id')['geometry']
-#         .apply(lambda x: LineString(x.tolist()) if len(x) > 1 else None)
-#     )
-
-#     line_gdf = gpd.GeoDataFrame(
-#         line_geometries, 
-#         geometry='geometry', 
-#         crs="EPSG:4326"
-#         )
-#     other_cols = [col for col in gdf.columns if col not in ['geometry', 'time(millisecond)']]
-#     metadata = gdf[other_cols].drop_duplicates(subset=['id']).set_index('id')
-#     line_gdf = line_gdf.merge(metadata, left_index=True, right_index=True).reset_index()
-
-#     return append_cols(line_gdf, cols='geometry').to_crs(4326)
-
-# def points_to_segment(gdf: pd.DataFrame) -> gpd.GeoDataFrame:
-#     """
-#     Converts a GeoDataFrame with point geometries into a GeoDataFrame with
-#     LineString segment geometries for each pair of consecutive points,
-#     grouped by 'id' and ordered by 'time(millisecond)'.
-
-#     Args:
-#         gdf: The input GeoDataFrame with 'id', 'time(millisecond)', and 'geometry'
-#              (Point) columns.
-
-#     Returns:
-#         A new GeoDataFrame where each row represents a line segment between two
-#         consecutive points.
-#     """
-#     segments = []
-#     gdf = gdf[gdf['geometry'] != Point(0, 0)]
-#     for flight_id in tqdm(gdf['id'].unique(), desc="Creating segments"):
-#         flight_data = gdf[gdf['id'] == flight_id].sort_values(by='time(millisecond)')
-        
-#         flight_data = flight_data.reset_index(drop=True)
-#         for i in range(len(flight_data) - 1):
-#             pt1 = flight_data.loc[i, 'geometry']
-#             pt2 = flight_data.loc[i + 1, 'geometry']
-#             segment = LineString([pt1, pt2])
-#             # compute distance and time taken 
-#             # distance_comp = 
-
-#             other_cols_data = flight_data.loc[i].drop(['geometry', 'time(millisecond)'])
-#             seg_dict = {
-#                 'id': flight_id,
-#                 't1': flight_data.loc[i, 'time(millisecond)'],
-#                 't2': flight_data.loc[i + 1, 'time(millisecond)'],
-#                 'geometry': segment
-#             }
-#             seg_dict.update(other_cols_data.to_dict())
-#             segments.append(seg_dict)
-
-#     if not segments:
-#       return gpd.GeoDataFrame(columns=['id', 't1', 't2', 'geometry'])
-    
-#     return gpd.GeoDataFrame(segments, geometry='geometry')
 
 
 
