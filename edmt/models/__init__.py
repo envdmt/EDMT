@@ -1,15 +1,15 @@
 from .drones import (
     Airdata,
-    fetch_data,
+    airPoint,
     df_to_gdf,
-    points_to_segment,
-    points_to_line
+    airLine,
+    airSegment
 )
 
 __all__ = [
     "Airdata",
-    "fetch_data",
+    "airPoint",
     "df_to_gdf",
-    "points_to_segment",
-    "points_to_line"
+    "airLine",
+    "airSegment"
 ]
