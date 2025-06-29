@@ -100,3 +100,47 @@ def append_cols(df: pd.DataFrame, cols: Union[str, list]):
     return df[remaining_cols + cols]
 
 
+def norm_exp(df: pd.DataFrame,
+    cols: Union[str, list]
+) -> pd.DataFrame:
+    """
+    Normalizes specified columns containing list of dicts,
+    expands them into separate rows if needed,
+    and appends new columns to the original dataframe with prefixing.
+
+    Parameters:
+    - df: Original pandas DataFrame
+    - columns: str or list of str, names of columns to normalize
+
+    Returns:
+    - Modified DataFrame with normalized and expanded data
+    """
+    if isinstance(cols, str):
+        cols = [cols]
+
+    result_df = df.copy()
+    for col in cols:
+        if col not in df.columns:
+            raise ValueError(f"Column '{col}' not found in DataFrame.")
+
+        s = df[col]
+        normalized = s.apply(lambda x: pd.json_normalize(x) if isinstance(x, list) and x else pd.DataFrame())
+        def add_prefix(df_sub, prefix):
+            df_sub.columns = [f"{prefix}_{subcol}" for subcol in df_sub.columns]
+            return df_sub
+
+        normalized = normalized.map(lambda df_sub: add_prefix(df_sub, col))
+        normalized_stacked = (
+            pd.concat(normalized.tolist(), keys=df.index)
+            .reset_index(level=1, drop=True)
+            .rename_axis('original_index')
+            .reset_index()
+        )
+        result_df = result_df.drop(columns=[col], errors='ignore')
+
+    return result_df.merge(
+            normalized_stacked,
+            left_index=True,
+            right_on='original_index',
+            how='left'
+        ).drop(columns=['original_index'])

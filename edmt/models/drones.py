@@ -1,6 +1,7 @@
 from edmt.contrib.utils import (
     format_iso_time,
-    append_cols
+    append_cols,
+    norm_exp
 )
 import logging
 logger = logging.getLogger(__name__)
@@ -167,7 +168,8 @@ class Airdata:
               data = json.loads(res.read().decode("utf-8"))
               if "data" in data:
                   normalized_data = list(tqdm(data["data"], desc="Downloading"))
-                  df = pd.json_normalize(normalized_data)
+                  normalized = pd.json_normalize(normalized_data)
+                  df = norm_exp(normalized,"flights.data")
               else:
                   df = pd.DataFrame(data)
               return df
