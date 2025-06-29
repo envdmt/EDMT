@@ -195,12 +195,10 @@ class Airdata:
                         Returns empty DataFrame if request fails or no data found.
         """
 
-        params = {}
-        if sort_by is None:
-            raise ValueError("sort_by parameter cannot be None")
-        else:
-            params["sort_by"] = sort_by
-            params["sort_dir"] = "asc" if ascending else "desc"
+        params = {
+            "sort_by": sort_by or "title",
+            "sort_dir": "asc" if ascending else "desc"
+        }
 
         params = {k: v for k, v in params.items() if v is not None}
 
