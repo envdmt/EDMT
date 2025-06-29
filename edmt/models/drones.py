@@ -17,8 +17,6 @@ from shapely.geometry import LineString, Point
 from io import StringIO
 from tqdm import tqdm
 from typing import Union, Optional
-from urllib.parse import urlencode
-
 
 from pyproj import Geod
 geod = Geod(ellps="WGS84")
@@ -31,7 +29,6 @@ class Airdata:
         self.authenticated = False
         self.auth_header = self._get_auth_header()
 
-        # Automatically authenticate on instantiation
         self.authenticate(validate=True)
 
     def _get_auth_header(self):
@@ -47,8 +44,7 @@ class Airdata:
 
     def authenticate(self,validate=True):
         """
-        Authenticates with the Airdata API by calling /version or /flights.
-        Sets self.authenticated = True if successful.
+        Authenticates with the API by calling /version or /flights.
         """
         conn = http.client.HTTPSConnection(self.base_url)
         payload = ''
@@ -63,9 +59,9 @@ class Airdata:
                 return
 
             if res.status == 404:
-                print("/version endpoint not found. Trying /drones...")
+                print("/version endpoint not found. Trying /flights...")
                 conn = http.client.HTTPSConnection(self.base_url)
-                conn.request("GET", "/drones", payload, self.auth_header)
+                conn.request("GET", "/flights", payload, self.auth_header)
                 res = conn.getresponse()
 
             if res.status == 200:
@@ -82,7 +78,155 @@ class Airdata:
             if validate:
                 raise
 
-    def AccessAPI(self, endpoint: str) -> Optional[pd.DataFrame]:
+    def get_flights(
+              self,since: str = None,until: str = None,limit: Union[int, None] = None,
+              created_after: Optional[str] = None,battery_ids: Optional[Union[str, list]] = None,
+              pilot_ids: Optional[Union[str, list]] = None,location: Optional[list] = None,
+          ) -> pd.DataFrame:
+
+          """
+          Fetch flight data from the Airdata API based on the provided query parameters.
+
+          Returns:
+              pd.DataFrame: A DataFrame containing the retrieved flight data.
+                          If the request fails or no data is found, returns an empty DataFrame.
+
+          Raises:
+              ValueError:
+                  If `location` is not a list of exactly two numeric values (latitude and longitude).
+          """
+
+          if location is not None:
+              if not isinstance(location, list) or len(location) != 2 or not all(isinstance(x, (int, float)) for x in location):
+                  raise ValueError("Location must be a list of exactly two numbers: [latitude, longitude]")
+
+          formatted_since = format_iso_time(since).replace("T", "+") if since else None
+          formatted_until = format_iso_time(until).replace("T", "+") if until else None
+          formatted_created_after = format_iso_time(created_after).replace("T", "+") if created_after else None
+
+          params = {
+              "start": formatted_since,
+              "end": formatted_until,
+              "detail_level": "comprehensive",
+              "created_after": formatted_created_after,
+              "battery_ids": ",".join(battery_ids) if battery_ids else None,
+              "pilot_ids": ",".join(pilot_ids) if pilot_ids else None,
+              "latitude": location[0] if location else None,
+              "longitude": location[1] if location else None,
+              "limit": limit
+          }
+
+          params = {k: v for k, v in params.items() if v is not None}
+
+          endpoint = "/flights?" + "&".join([f"{k}={v}" for k, v in params.items()])
+          
+          if not self.authenticated:
+              print("Cannot fetch flights: Not authenticated.")
+              return None
+                  
+          try:
+              conn = http.client.HTTPSConnection(self.base_url)
+              conn.request("GET", endpoint, headers=self.auth_header)
+              res = conn.getresponse()
+
+              if res.status == 200:
+                  data = json.loads(res.read().decode("utf-8"))
+                  if "data" in data: 
+                      normalized_data = list(tqdm(data["data"], desc="Downloading"))
+                      df = pd.json_normalize(normalized_data)
+                      df = df.drop(
+                          columns=[
+                              "displayLink","kmlLink",
+                              "gpxLink","originalLink",
+                              "participants.object"
+                          ],
+                          errors='ignore'
+                      )
+                  else:
+                    df = pd.DataFrame(data)
+                  return df
+              else:
+                  print(f"Failed to fetch flights. Status code: {res.status}")
+                  print(f"Response: {res.read().decode('utf-8')[:500]}")
+                  return None
+          except Exception as e:
+              print(f"Error fetching flights: {e}")
+              return None
+
+    def AccessGroups(self, endpoint: str) -> Optional[pd.DataFrame]:
+      if not self.authenticated:
+            logger.warning(f"Cannot fetch {endpoint}: Not authenticated.")
+            return None
+
+      try:
+          conn = http.client.HTTPSConnection(self.base_url)
+          conn.request("GET", endpoint, headers=self._get_auth_header())
+          res = conn.getresponse()
+
+          if res.status == 200:
+              data = json.loads(res.read().decode("utf-8"))
+              if "data" in data:
+                  normalized_data = list(tqdm(data["data"], desc="Downloading"))
+                  df = pd.json_normalize(normalized_data)
+              else:
+                  df = pd.DataFrame(data)
+              return df
+          else:
+              logger.warning(f"Failed to fetch flights. Status code: {res.status}")
+              logger.warning(f"Response: {res.read().decode('utf-8')[:500]}")
+              return None
+      except Exception as e:
+          logger.warning(f"Error fetching flights: {e}")
+          return None
+      finally:
+          if 'conn' in locals() and conn:
+              conn.close()
+
+    def get_flightgroups(self,sort_by: str = None, ascending: bool = True) -> pd.DataFrame:
+        """
+        Fetch Flight Groups data from the Airdata API based on query parameters.
+
+        Parameters:
+            sort_by (str, optional): Field to sort by. If None, no sorting is applied.
+            ascending (bool): Whether to sort in ascending order. Defaults to True.
+
+        Returns:
+            pd.DataFrame: DataFrame containing retrieved flight data.
+                        Returns empty DataFrame if request fails or no data found.
+        """
+
+        params = {}
+        if sort_by is None:
+            raise ValueError("sort_by parameter cannot be None")
+        else:
+            params["sort_by"] = sort_by
+            params["sort_dir"] = "asc" if ascending else "desc"
+
+        params = {k: v for k, v in params.items() if v is not None}
+
+        endpoint = "/flightgroups"
+        df = self.AccessGroups(endpoint=endpoint)
+        return df if df is not None else pd.DataFrame()
+
+    def get_flightgroup(self,id: str = None ) -> pd.DataFrame:
+        """
+        Fetch Flight Group data from the Airdata API based on a specific ID.
+
+        Parameters:
+            id (str, optional): Specific flightgroup ID to fetch.
+
+        Returns:
+            pd.DataFrame: DataFrame containing retrieved flight data.
+                        Returns empty DataFrame if request fails or no data found.
+        """
+        if id is None:
+           raise ValueError("id parameter cannot be None")
+        else:
+            endpoint = f"/flightgroup/{id}"
+            df = self.AccessGroups(endpoint=endpoint)
+            return df if df is not None else pd.DataFrame()
+
+    def AccessItems(self, endpoint: str) -> Optional[pd.DataFrame]:
         """
         Sends a GET request to the specified API endpoint and returns normalized data as a DataFrame.
 
@@ -130,107 +274,10 @@ class Airdata:
         except Exception as e:
             logger.warning(f"Network error while fetching '{endpoint}': {e}")
             return None
-    
-    def get_flights(
-            self,since: str,until: str,limit: Union[int, None] = None,
-            created_after: Optional[str] = None,battery_ids: Optional[Union[str, list]] = None,
-            pilot_ids: Optional[Union[str, list]] = None,location: Optional[list] = None,
-        ) -> pd.DataFrame:
+        finally:
+            if 'conn' in locals() and conn:
+                conn.close()
 
-        """
-        Fetch flight data from the Airdata API based on the provided query parameters.
-
-        Parameters:
-            since (str or None): 
-                Filter flights that started after this date/time (ISO 8601 format). 
-                Example: '2025-01-01T00:00:00'.
-            until (str or None): 
-                Filter flights that started before this date/time (ISO 8601 format).
-                Example: '2025-03-31T23:59:59'.
-            detail_level (bool): 
-                If True, returns comprehensive flight details. If False, returns basic information.
-                Maps to 'detail_level=comprehensive' or 'basic' in API request.
-            limit (int or None): 
-                Maximum number of results to return. Default is None (no limit specified).
-            created_after (str or None): 
-                Filter flights created after the given date/time (ISO 8601 format).
-            battery_ids (list or None): 
-                List of battery IDs to filter flights by associated battery.
-            pilot_ids (list or None): 
-                List of pilot IDs to filter flights by pilot.
-            location (list or None): 
-                Optional geographic coordinates as a two-item list `[latitude, longitude]` 
-                to filter flights near that location.
-
-        Returns:
-            pd.DataFrame: A DataFrame containing the retrieved flight data. 
-                        If the request fails or no data is found, returns an empty DataFrame.
-
-        Raises:
-            ValueError: 
-                If `location` is not a list of exactly two numeric values (latitude and longitude).
-        """
-
-        if location is not None:
-            if not isinstance(location, list) or len(location) != 2 or not all(isinstance(x, (int, float)) for x in location):
-                raise ValueError("Location must be a list of exactly two numbers: [latitude, longitude]")
-
-        since = format_iso_time(since).replace("T", "+") if since else None
-        until = format_iso_time(until).replace("T", "+") if until else None
-        created_after = format_iso_time(created_after).replace("T", "+") if created_after else None
-        detail_level_str = "comprehensive"
-
-        params = {
-            "start": since,
-            "end": until,
-            "detail_level": detail_level_str,
-            "created_after": created_after,
-            "battery_ids": ",".join(battery_ids) if battery_ids else None,
-            "pilot_ids": ",".join(pilot_ids) if pilot_ids else None,
-            "latitude": location[0] if location else None,
-            "longitude": location[1] if location else None,
-            "limit": limit
-        }
-
-        params = {k: v for k, v in params.items() if v is not None}
-
-        endpoint = "/flights?" + urlencode(params)
-        df = self.AccessAPI(endpoint=endpoint)
-        return df if df is not None else pd.DataFrame()
-    
-    def get_flightgroup(self,sort_by: str = None, ascending: bool = True,id: str = None ) -> pd.DataFrame:
-        """
-        Fetch Flight Groups data from the Airdata API based on query parameters or a specific ID.
-
-        Parameters:
-            sort_by (str, optional): Field to sort by. If None, no sorting is applied.
-            ascending (bool): Whether to sort in ascending order. Defaults to True.
-            id (str, optional): Specific flightgroup ID to fetch. Overrides sorting.
-
-        Returns:
-            pd.DataFrame: DataFrame containing retrieved flight data.
-                        Returns empty DataFrame if request fails or no data found.
-        """
-        if id is not None:
-            endpoint = f"/flightgroup/{id}"
-            df = self.AccessAPI(endpoint=endpoint)
-            return df if df is not None else pd.DataFrame()
-        
-        params = {}
-        if sort_by is not None:
-            params["sort_by"] = sort_by
-            params["sort_dir"] = "asc" if ascending else "desc"
-
-        base_url = "/flightgroups"
-        if params:
-            query_string = urlencode({k: v for k, v in params.items() if v is not None})
-            endpoint = f"{base_url}?{query_string}"
-        else:
-            endpoint = base_url
-
-        df = self.AccessAPI(endpoint=endpoint)
-        return df if df is not None else pd.DataFrame()
-               
     def get_drones(self) -> pd.DataFrame:
         """
         Fetch drone data from the Airdata API based on the provided query parameters.
@@ -241,7 +288,7 @@ class Airdata:
                         If the request fails or no data is found, returns an empty DataFrame.
         """
 
-        df = self.AccessAPI(endpoint="drones")
+        df = self.AccessItems(endpoint="drones")
         return df if df is not None else pd.DataFrame()
         
     def get_batteries(self) -> pd.DataFrame:
@@ -253,7 +300,7 @@ class Airdata:
             pd.DataFrame: A DataFrame containing the retrieved flight data. 
                         If the request fails or no data is found, returns an empty DataFrame.
         """
-        df = self.AccessAPI(endpoint="batteries")
+        df = self.AccessItems(endpoint="batteries")
         return df if df is not None else pd.DataFrame()
     
     def get_pilots(self) -> pd.DataFrame:
@@ -266,9 +313,9 @@ class Airdata:
                         If the request fails or no data is found, returns an empty DataFrame.
         """
 
-        df = self.AccessAPI(endpoint="pilots")
+        df = self.AccessItems(endpoint="pilots")
         return df if df is not None else pd.DataFrame()
-
+    
 
 def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None,log_errors: bool = True) -> gpd.GeoDataFrame:
     """
@@ -292,8 +339,8 @@ def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None,log_errors: boo
         ValueError:
             If required columns ('id', 'csvLink') are missing from the input DataFrame.
     """
-    df['checktime'] = pd.to_datetime(df['time'],errors="coerce")
-    df['checktime'] = df['checktime'].dt.isoformat()
+    df = df.copy()
+    df.loc[:, 'checktime'] = pd.to_datetime(df['time'], errors="coerce")
 
     required_cols = {'id', 'csvLink'}
     if not required_cols.issubset(df.columns):
@@ -504,6 +551,3 @@ def airSegment(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
 
   
-
-
-
