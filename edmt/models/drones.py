@@ -5,6 +5,7 @@ from edmt.contrib.utils import (
 )
 import logging
 logger = logging.getLogger(__name__)
+
 from typing import Union
 import base64
 import http.client
@@ -170,6 +171,8 @@ class Airdata:
                   normalized_data = list(tqdm(data["data"], desc="Downloading"))
                   normalized = pd.json_normalize(normalized_data)
                   df = norm_exp(normalized,"flights.data")
+                  if self.id is not None:
+                    df = df[df["flights.data_id"] == self.id]
               else:
                   df = pd.DataFrame(data)
               return df
@@ -184,7 +187,7 @@ class Airdata:
           if 'conn' in locals() and conn:
               conn.close()
 
-    def get_flightgroups(self,sort_by: str = None, ascending: bool = True) -> pd.DataFrame:
+    def get_flightgroups(self,sort_by: str = None, ascending: bool = True, id : str =None) -> pd.DataFrame:
         """
         Fetch Flight Groups data from the Airdata API based on query parameters.
 
@@ -548,6 +551,3 @@ def airSegment(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     return append_cols(airSeg, cols=['checktime','segment_start_time','segment_end_time','segment_duration_ms','segment_distance_m','geometry'])
 
 
-
-
-  
