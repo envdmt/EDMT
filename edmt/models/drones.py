@@ -171,8 +171,6 @@ class Airdata:
                   normalized_data = list(tqdm(data["data"], desc="Downloading"))
                   normalized = pd.json_normalize(normalized_data)
                   df = norm_exp(normalized,"flights.data")
-                  if self.id is not None:
-                    df = df[df["flights.data_id"] == self.id]
               else:
                   df = pd.DataFrame(data)
               return df
@@ -187,47 +185,38 @@ class Airdata:
           if 'conn' in locals() and conn:
               conn.close()
 
-    def get_flightgroups(self,sort_by: str = None, ascending: bool = True, id : str =None) -> pd.DataFrame:
+    def get_flightgroups(self, sort_by: str = None, ascending: bool = True, id: str = None) -> pd.DataFrame:
         """
         Fetch Flight Groups data from the Airdata API based on query parameters.
 
         Parameters:
             sort_by (str, optional): Field to sort by. If None, no sorting is applied.
             ascending (bool): Whether to sort in ascending order. Defaults to True.
+            id (str, optional): Specific ID of a flight group to fetch.
 
         Returns:
             pd.DataFrame: DataFrame containing retrieved flight data.
                         Returns empty DataFrame if request fails or no data found.
         """
 
-        params = {
-            "sort_by": sort_by or "title",
-            "sort_dir": "asc" if ascending else "desc"
-        }
-
-        params = {k: v for k, v in params.items() if v is not None}
-
-        endpoint = "/flightgroups"
-        df = self.AccessGroups(endpoint=endpoint)
-        return df if df is not None else pd.DataFrame()
-
-    def get_flightgroup(self,id: str = None ) -> pd.DataFrame:
-        """
-        Fetch Flight Group data from the Airdata API based on a specific ID.
-
-        Parameters:
-            id (str, optional): Specific flightgroup ID to fetch.
-
-        Returns:
-            pd.DataFrame: DataFrame containing retrieved flight data.
-                        Returns empty DataFrame if request fails or no data found.
-        """
-        if id is None:
-           raise ValueError("id parameter cannot be None")
-        else:
+        if id is not None:
+            if not isinstance(id, str):
+                raise ValueError("id must be a string")
             endpoint = f"/flightgroup/{id}"
+
             df = self.AccessGroups(endpoint=endpoint)
             return df if df is not None else pd.DataFrame()
+        else:
+            params = {}
+            if sort_by:
+                params["sort_by"] = sort_by
+                params["sort_dir"] = "asc" if ascending else "desc"
+
+                params = {k: v for k, v in params.items() if v is not None}
+                endpoint = "/flightgroups?" + "&".join([f"{k}={v}" for k, v in params.items()])
+
+                df = self.AccessGroups(endpoint=endpoint)
+                return df if df is not None else pd.DataFrame()
 
     def AccessItems(self, endpoint: str) -> Optional[pd.DataFrame]:
         """
