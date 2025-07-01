@@ -1,12 +1,11 @@
-Metadata-Version: 2.2
+Metadata-Version: 2.4
 Name: edmt
 Version: 1.0.1.dev0
 Summary: Environmental Data Management Toolbox
-Home-page: https://github.com/envdmt/EDMT.git
-Author: Odero, Kuloba & musasia
-Author-email: francisodero10@gmail.com
+Author-email: "Odero, Kuloba & musasia" <franodex10@gmail.com>
+License-Expression: MIT
+Project-URL: Homepage, https://github.com/envqwewdmt/EDMT
 Classifier: Programming Language :: Python :: 3
-Classifier: License :: OSI Approved :: MIT License
 Classifier: Operating System :: OS Independent
 Requires-Python: >=3.9
 Description-Content-Type: text/markdown
@@ -20,15 +19,7 @@ Requires-Dist: mapclassify>=2.8.0
 Requires-Dist: plotly>=5.24.1
 Requires-Dist: seaborn>=0.13.2
 Requires-Dist: tqdm>=4
-Dynamic: author
-Dynamic: author-email
-Dynamic: classifier
-Dynamic: description
-Dynamic: description-content-type
-Dynamic: home-page
-Dynamic: requires-dist
-Dynamic: requires-python
-Dynamic: summary
+Dynamic: license-file
 
 # edmt
 

@@ -1,11 +1,6 @@
-import os
 import uuid
 import pandas as pd
-import pickle
-import numpy as np
 import geopandas as gpd
-# from osgeo import ogr
-import requests
 from shapely import make_valid
 from edmt.contrib.utils import (
     clean_vars
@@ -20,65 +15,41 @@ oscillations of the caesium atom.
 """
 
 time_chart: dict[str, float] = {
-    "seconds": 1.0,
-    "minutes": 60.0,  # 1 minute = 60 sec
-    "hours": 3600.0,  # 1 hour = 60 minutes = 3600 seconds
-    "days": 86400.0,  # 1 day = 24 hours = 1440 min = 86400 sec
-    "weeks": 604800.0,  # 1 week=7d=168hr=10080min = 604800 sec
-    "months": 2629800.0,  # Approximate value for a month in seconds
-    "years": 31557600.0,  # Approximate value for a year in seconds
+    "microseconds": 0.000001,   # 1 μs = 1e-6 seconds
+    "microsecond": 0.000001,
+    "µs": 0.000001,
+    "milliseconds": 0.001,      # 1 ms = 1e-3 seconds
+    "millisecond": 0.001,
+    "ms": 0.001,
+    "seconds": 1.0,              # Base unit
+    "second": 1.0,
+    "s": 1.0,
+    "minutes": 60.0,             # 1 min = 60 sec
+    "minute": 60.0,
+    "min": 60.0,
+    "m": 60.0,
+    "hours": 3600.0,             # 1 hr = 60 min = 3600 sec
+    "hour": 3600.0,
+    "hr": 3600.0,
+    "h": 3600.0,
+    "days": 86400.0,             # 1 day = 24 hr = 86400 sec
+    "day": 86400.0,
+    "d": 86400.0,
+    "weeks": 604800.0,           # 1 week = 7 days = 604800 sec
+    "week": 604800.0,
+    "wk": 604800.0,
+    "w": 604800.0,
+    "months": 2629800.0,         # Approx. 30.44 days = 1/12 year
+    "month": 2629800.0,
+    "years": 31557600.0,         # Julian year = 365.25 days
+    "year": 31557600.0,
+    "yr": 31557600.0,
+    "y": 31557600.0,
 }
 
 time_chart_inverse: dict[str, float] = {
-    key: 1 / value for key, value in time_chart.items()
+    key: 1.0 / value for key, value in time_chart.items()
 }
-
-
-
-"""
-Conversion of length units.
-Available Units:
-Metre, Kilometre, Megametre, Gigametre,
-Terametre, Petametre, Exametre, Zettametre, Yottametre
-
-USAGE :
--> Import this file into their respective project.
--> Use the function length_conversion() for conversion of length units.
--> Parameters :
-    -> value : The number of from units you want to convert
-    -> from_type : From which type you want to convert
-    -> to_type : To which type you want to convert
-"""
-
-UNIT_SYMBOL = {
-    "meter": "m",
-    "kilometer": "km",
-    "megametre": "Mm",
-    "gigametre": "Gm",
-    "terametre": "Tm",
-    "petametre": "Pm",
-    "exametre": "Em",
-    "zettametre": "Zm",
-    "yottametre": "Ym",
-}
-# Exponent of the factor(meter)
-METRIC_CONVERSION = {
-    "m": 0,
-    "km": 3,
-    "Mm": 6,
-    "Gm": 9,
-    "Tm": 12,
-    "Pm": 15,
-    "Em": 18,
-    "Zm": 21,
-    "Ym": 24,
-}
-
-
-
-"""
-Convert speed units
-"""
 
 speed_chart: dict[str, float] = {
     "km/h": 1.0,
@@ -94,7 +65,40 @@ speed_chart_inverse: dict[str, float] = {
     "knot": 0.539956803,
 }
 
+UNIT_SYMBOL = {
+    "meter": "m", "meters": "m",
+    "kilometer": "km", "kilometers": "km",
+    "centimeter": "cm", "centimeters": "cm",
+    "millimeter": "mm", "millimeters": "mm",
+    "mile": "mi", "miles": "mi",
+    "yard": "yd", "yards": "yd",
+    "foot": "ft", "feet": "ft",
+    "inch": "in", "inches": "in",
+}
 
+METRIC_CONVERSION = {
+    "mm": -3,
+    "cm": -2,
+    "dm": -1,
+    "m": 0,
+    "dam": 1,
+    "hm": 2,
+    "km": 3,
+}
+
+distance_chart = {
+    "mm": 0.001,
+    "cm": 0.01,
+    "dm": 0.1,
+    "m": 1.0,
+    "dam": 10.0,
+    "hm": 100.0,
+    "km": 1000.0,
+    "in": 0.0254,
+    "ft": 0.3048,
+    "yd": 0.9144,
+    "mi": 1609.344,
+}
 
 def sdf_to_gdf(sdf, crs=None):
     """
@@ -191,8 +195,6 @@ def generate_uuid(df, index=False):
 
     return df
        
-
-       
 def get_utm_epsg(longitude=None):
     if longitude is None:
        print("KeyError : Select column with longitude values")
@@ -209,58 +211,52 @@ def to_gdf(df):
         crs=4326,
     )
 
-
 def convert_time(time_value: float, unit_from: str, unit_to: str) -> float:
+    """
+    Converts a given time value between different units.
+
+    Args:
+        time_value (float): The numerical value of the time.
+        unit_from (str): The original unit of time.
+        unit_to (str): The target unit to convert to.
+
+    Returns:
+        float: The converted time value.
+
+    Raises:
+        ValueError: If the provided units are not supported or value is invalid.
+    """
     if not isinstance(time_value, (int, float)) or time_value < 0:
-        msg = "'time_value' must be a non-negative number."
-        raise ValueError(msg)
+        raise ValueError("'time_value' must be a non-negative number.")
 
-    unit_from = unit_from.lower()
-    unit_to = unit_to.lower()
-    if unit_from not in time_chart or unit_to not in time_chart:
-        invalid_unit = unit_from if unit_from not in time_chart else unit_to
-        msg = f"Invalid unit {invalid_unit} is not in {', '.join(time_chart)}."
-        raise ValueError(msg)
+    # Normalize input unit names
+    unit_from = unit_from.lower().strip()
+    unit_to = unit_to.lower().strip()
 
-    return round(
-        time_value * time_chart[unit_from] * time_chart_inverse[unit_to],
-        3,
-    )
+    unit_from = {
+        "us": "microseconds",
+        "μs": "microseconds",
+        "microsec": "microseconds",
+        "usec": "microseconds"
+    }.get(unit_from, unit_from)
 
+    unit_to = {
+        "us": "microseconds",
+        "μs": "microseconds",
+        "microsec": "microseconds",
+        "usec": "microseconds"
+    }.get(unit_to, unit_to)
 
+    if unit_from not in time_chart:
+        raise ValueError(f"Invalid 'unit_from': {unit_from}. Supported units: {', '.join(time_chart.keys())}")
+    if unit_to not in time_chart:
+        raise ValueError(f"Invalid 'unit_to': {unit_to}. Supported units: {', '.join(time_chart.keys())}")
 
-def length_conversion(value: float, from_type: str, to_type: str) -> float:
-    from_sanitized = from_type.lower().strip("s")
-    to_sanitized = to_type.lower().strip("s")
+    # Convert to seconds first, then to target unit
+    seconds = time_value * time_chart[unit_from]
+    converted = seconds / time_chart[unit_to]
 
-    from_sanitized = UNIT_SYMBOL.get(from_sanitized, from_sanitized)
-    to_sanitized = UNIT_SYMBOL.get(to_sanitized, to_sanitized)
-
-    if from_sanitized not in METRIC_CONVERSION:
-        msg = (
-            f"Invalid 'from_type' value: {from_type!r}.\n"
-            f"Conversion abbreviations are: {', '.join(METRIC_CONVERSION)}"
-        )
-        raise ValueError(msg)
-    if to_sanitized not in METRIC_CONVERSION:
-        msg = (
-            f"Invalid 'to_type' value: {to_type!r}.\n"
-            f"Conversion abbreviations are: {', '.join(METRIC_CONVERSION)}"
-        )
-        raise ValueError(msg)
-    from_exponent = METRIC_CONVERSION[from_sanitized]
-    to_exponent = METRIC_CONVERSION[to_sanitized]
-    exponent = 1
-
-    if from_exponent > to_exponent:
-        exponent = from_exponent - to_exponent
-    else:
-        exponent = -(to_exponent - from_exponent)
-
-    return value * pow(10, exponent)
-
-
-
+    return round(converted, 3)
 
 def convert_speed(speed: float, unit_from: str, unit_to: str) -> float:
     if unit_to not in speed_chart or unit_from not in speed_chart_inverse:
@@ -271,4 +267,36 @@ def convert_speed(speed: float, unit_from: str, unit_to: str) -> float:
         raise ValueError(msg)
     return round(speed * speed_chart[unit_from] * speed_chart_inverse[unit_to], 3)
 
+def convert_distance(value: float, from_type: str, to_type: str) -> float:
+    """
+    Converts distance values between different units including metric and imperial.
 
+    Supports:
+        Metric: mm, cm, dm, m, dam, hm, km
+        Imperial: in, ft, yd, mi
+
+    Handles plural forms, full names, and inconsistent casing.
+    """
+
+    from_sanitized = from_type.lower().strip("s")
+    to_sanitized = to_type.lower().strip("s")
+
+    from_sanitized = UNIT_SYMBOL.get(from_sanitized, from_sanitized)
+    to_sanitized = UNIT_SYMBOL.get(to_sanitized, to_sanitized)
+
+    valid_units = set(distance_chart.keys())
+    if from_sanitized not in valid_units:
+        raise ValueError(f"Invalid 'from_type': {from_type!r}. Valid units: {', '.join(valid_units)}")
+    if to_sanitized not in valid_units:
+        raise ValueError(f"Invalid 'to_type': {to_type!r}. Valid units: {', '.join(valid_units)}")
+
+    if from_sanitized in METRIC_CONVERSION and to_sanitized in METRIC_CONVERSION:
+        from_exp = METRIC_CONVERSION[from_sanitized]
+        to_exp = METRIC_CONVERSION[to_sanitized]
+        exponent_diff = from_exp - to_exp
+        return round(value * pow(10, exponent_diff), 3)
+
+    value_in_meters = value * distance_chart[from_sanitized]
+    converted = value_in_meters / distance_chart[to_sanitized]
+
+    return round(converted, 3)

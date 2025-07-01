@@ -3,7 +3,7 @@ from .conversion import (
     generate_uuid,
     get_utm_epsg,
     to_gdf,
-    length_conversion,
+    convert_distance,
     convert_time,
     convert_speed
 )
@@ -13,7 +13,7 @@ __all__ = [
     'generate_uuid', 
     'get_utm_epsg',
     'to_gdf',
-    'length_conversion',
+    'convert_distance',
     'convert_time',
     'convert_speed'
     ]
