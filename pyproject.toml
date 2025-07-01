@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "edmt"
+version = "1.0.1.dev0"
+description = "Environmental Data Management Toolbox"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+authors = [
+  {name = "Odero, Kuloba & musasia", email = "franodex10@gmail.com"},
+]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent"
+]
+
+dependencies = [
+  "contextily>=1.4.0",
+  "contourpy>=1.2.1",
+  "fiona==1.9.6",
+  "folium>=0.18.0",
+  "geopandas>=0.12.2",
+  "mapclassify>=2.8.0",
+  "plotly>=5.24.1",
+  "seaborn>=0.13.2",
+  "tqdm>=4",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/envqwewdmt/EDMT"
+
+[project.scripts]
+edmt-version = "edmt.__version__"
+
+[tool.setuptools.packages.find]
+include = ["edmt*"]

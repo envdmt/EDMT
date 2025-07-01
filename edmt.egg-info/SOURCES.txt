@@ -1,6 +1,6 @@
 LICENSE
 README.md
-setup.py
+pyproject.toml
 edmt/__init__.py
 edmt.egg-info/PKG-INFO
 edmt.egg-info/SOURCES.txt
@@ -23,5 +23,4 @@ edmt/mapping/maps.py
 edmt/models/__init__.py
 edmt/models/drones.py
 edmt/plotting/__init__.py
-tests/__init__.py
 tests/test_airdata.py
