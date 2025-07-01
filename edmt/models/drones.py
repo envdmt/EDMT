@@ -34,10 +34,6 @@ class Airdata:
         self.authenticate(validate=True)
 
     def _get_auth_header(self):
-        """
-        Manually constructs the Basic Auth header.
-        Returns a properly encoded Authorization header dict.
-        """
         key_with_colon = self.api_key + ":"
         encoded_key = base64.b64encode(key_with_colon.encode()).decode("utf-8")
         return {
@@ -57,20 +53,19 @@ class Airdata:
             
             if res.status == 200:
                 self.authenticated = True
-                print("Authentication successful.")
+                print("✅ Authentication successful.")
                 return
 
             if res.status == 404:
-                print("/version endpoint not found. Trying /flights...")
                 conn = http.client.HTTPSConnection(self.base_url)
                 conn.request("GET", "/flights", payload, self.auth_header)
                 res = conn.getresponse()
 
             if res.status == 200:
                 self.authenticated = True
-                print("Authentication successful using /flights.")
+                print("✅ Authentication successful.")
             else:
-                print(f"Authentication failed. Status code: {res.status}")
+                print(f"❌ Authentication failed. Status code: {res.status}")
                 print(f"Response: {res.read().decode('utf-8')[:200]}")
                 if validate:
                     raise ValueError("Authentication failed: Invalid API key or permissions.")
@@ -134,7 +129,7 @@ class Airdata:
               if res.status == 200:
                   data = json.loads(res.read().decode("utf-8"))
                   if "data" in data: 
-                      normalized_data = list(tqdm(data["data"], desc="Downloading"))
+                      normalized_data = list(tqdm(data["data"], desc="📥 Downloading"))
                       df = pd.json_normalize(normalized_data)
                       df = df.drop(
                           columns=[
@@ -168,7 +163,7 @@ class Airdata:
           if res.status == 200:
               data = json.loads(res.read().decode("utf-8"))
               if "data" in data:
-                  normalized_data = list(tqdm(data["data"], desc="Downloading"))
+                  normalized_data = list(tqdm(data["data"], desc="📥 Downloading"))
                   normalized = pd.json_normalize(normalized_data)
                   df = norm_exp(normalized,"flights.data")
               else:
@@ -219,7 +214,7 @@ class Airdata:
         Sends a GET request to the specified API endpoint and returns normalized data as a DataFrame.
 
         Parameters:
-            endpoint (str): The full API path including query parameters (e.g., 'flights?start=...').
+            endpoint (str): The full API path including query parameters.
 
         Returns:
             Optional[pd.DataFrame]: A DataFrame containing the retrieved data, or None if the request fails.
@@ -242,7 +237,7 @@ class Airdata:
                         return None
 
                     if isinstance(data, list):
-                        normalized_data = list(tqdm(data, desc="Downloading"))
+                        normalized_data = list(tqdm(data, desc="📥 Downloading"))
                     else:
                         logger.info("Response data is not a list; returning raw.")
                         normalized_data = data
@@ -339,7 +334,7 @@ def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None,log_errors: boo
 
     all_combined_rows = []
 
-    for _, row in tqdm(df.iterrows(), total=len(df), desc="Processing"):
+    for _, row in tqdm(df.iterrows(), total=len(df), desc="🔄 Processing"):
         csv_url = row['csvLink']
 
         try:
@@ -441,7 +436,7 @@ def airLine(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     gdf = gdf[gdf['geometry'] != Point(0, 0)]
 
     grouped = []
-    for flight_id in tqdm(gdf['id'].unique(), desc="Processing flights"):
+    for flight_id in tqdm(gdf['id'].unique(), desc="🔄 Processing flights"):
         flight_data = gdf[gdf['id'] == flight_id].sort_values(by='time(millisecond)')
         grouped.append(flight_data)
 
@@ -497,7 +492,7 @@ def airSegment(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
     gdf = gdf[gdf['geometry'] != Point(0, 0)]
 
-    for flight_id in tqdm(gdf['id'].unique(), desc="Generating segments"):
+    for flight_id in tqdm(gdf['id'].unique(), desc="🔄 Processing segments"):
         flight_data = gdf[gdf['id'] == flight_id].sort_values(by='time(millisecond)').reset_index(drop=True)
 
         for i in range(len(flight_data) - 1):
