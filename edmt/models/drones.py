@@ -185,38 +185,34 @@ class Airdata:
           if 'conn' in locals() and conn:
               conn.close()
 
-    def get_flightgroups(self, sort_by: str = None, ascending: bool = True, id: str = None) -> pd.DataFrame:
+    def get_flightgroups(
+        self,
+        sort_by: str = None,
+        ascending: bool = True
+    ) -> pd.DataFrame:
         """
         Fetch Flight Groups data from the Airdata API based on query parameters.
 
         Parameters:
-            sort_by (str, optional): Field to sort by. If None, no sorting is applied.
+            sort_by (str, optional): Field to sort by. Valid values are 'title' and 'created'.
+                                     If None, no sorting is applied.
             ascending (bool): Whether to sort in ascending order. Defaults to True.
             id (str, optional): Specific ID of a flight group to fetch.
 
         Returns:
             pd.DataFrame: DataFrame containing retrieved flight data.
-                        Returns empty DataFrame if request fails or no data found.
+                          Returns empty DataFrame if request fails or no data found.
         """
+        params = {}
+        if sort_by:
+            if sort_by not in ["title", "created"]:
+                raise ValueError("Invalid sort_by value. Must be 'title' or 'created'.")
+            params["sort_by"] = sort_by
+            params["sort_dir"] = "asc" if ascending else "desc"
+        endpoint = "/flightgroups?" + "&".join([f"{k}={v}" for k, v in params.items()])
 
-        if id is not None:
-            if not isinstance(id, str):
-                raise ValueError("id must be a string")
-            endpoint = f"/flightgroup/{id}"
-
-            df = self.AccessGroups(endpoint=endpoint)
-            return df if df is not None else pd.DataFrame()
-        else:
-            params = {}
-            if sort_by:
-                params["sort_by"] = sort_by
-                params["sort_dir"] = "asc" if ascending else "desc"
-
-                params = {k: v for k, v in params.items() if v is not None}
-                endpoint = "/flightgroups?" + "&".join([f"{k}={v}" for k, v in params.items()])
-
-                df = self.AccessGroups(endpoint=endpoint)
-                return df if df is not None else pd.DataFrame()
+        df = self.AccessGroups(endpoint=endpoint)
+        return df if df is not None else pd.DataFrame()
 
     def AccessItems(self, endpoint: str) -> Optional[pd.DataFrame]:
         """
