@@ -1,18 +1,10 @@
-edmt.conversion package
+edmt.conversion
 =======================
 
 Submodules
 ----------
 
-edmt.conversion.computational module
-------------------------------------
-
-.. automodule:: edmt.conversion.computational
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-edmt.conversion.conversion module
+edmt.conversion.conversion
 ---------------------------------
 
 .. automodule:: edmt.conversion.conversion
