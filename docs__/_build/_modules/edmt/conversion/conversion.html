@@ -1,0 +1,435 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>edmt.conversion.conversion &mdash; EDMT 1.0.1.dev0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/togglebutton.css?v=13237357" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=ffc9209b"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script>let toggleHintShow = 'Click to expand';</script>
+      <script>let toggleHintHide = 'Click to collapse';</script>
+      <script>let toggleOpenOnPrint = 'true';</script>
+      <script src="../../../_static/togglebutton.js?v=4a39c7ea"></script>
+      <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            EDMT
+              <img src="../../../_static/edmt.jpeg" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/modules.html">edmt</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">EDMT</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+          <li class="breadcrumb-item"><a href="../../edmt.html">edmt</a></li>
+      <li class="breadcrumb-item active">edmt.conversion.conversion</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for edmt.conversion.conversion</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">geopandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gpd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">shapely</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_valid</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">edmt.contrib.utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">clean_vars</span>
+<span class="p">)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">A unit of time is any particular time interval, used as a standard way of measuring or</span>
+<span class="sd">expressing duration.  The base unit of time in the International System of Units (SI),</span>
+<span class="sd">and by extension most of the Western world, is the second, defined as about 9 billion</span>
+<span class="sd">oscillations of the caesium atom.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">time_chart</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;microseconds&quot;</span><span class="p">:</span> <span class="mf">0.000001</span><span class="p">,</span>   <span class="c1"># 1 μs = 1e-6 seconds</span>
+    <span class="s2">&quot;microsecond&quot;</span><span class="p">:</span> <span class="mf">0.000001</span><span class="p">,</span>
+    <span class="s2">&quot;µs&quot;</span><span class="p">:</span> <span class="mf">0.000001</span><span class="p">,</span>
+    <span class="s2">&quot;milliseconds&quot;</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">,</span>      <span class="c1"># 1 ms = 1e-3 seconds</span>
+    <span class="s2">&quot;millisecond&quot;</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">,</span>
+    <span class="s2">&quot;ms&quot;</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">,</span>
+    <span class="s2">&quot;seconds&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>              <span class="c1"># Base unit</span>
+    <span class="s2">&quot;second&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="s2">&quot;s&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="s2">&quot;minutes&quot;</span><span class="p">:</span> <span class="mf">60.0</span><span class="p">,</span>             <span class="c1"># 1 min = 60 sec</span>
+    <span class="s2">&quot;minute&quot;</span><span class="p">:</span> <span class="mf">60.0</span><span class="p">,</span>
+    <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mf">60.0</span><span class="p">,</span>
+    <span class="s2">&quot;m&quot;</span><span class="p">:</span> <span class="mf">60.0</span><span class="p">,</span>
+    <span class="s2">&quot;hours&quot;</span><span class="p">:</span> <span class="mf">3600.0</span><span class="p">,</span>             <span class="c1"># 1 hr = 60 min = 3600 sec</span>
+    <span class="s2">&quot;hour&quot;</span><span class="p">:</span> <span class="mf">3600.0</span><span class="p">,</span>
+    <span class="s2">&quot;hr&quot;</span><span class="p">:</span> <span class="mf">3600.0</span><span class="p">,</span>
+    <span class="s2">&quot;h&quot;</span><span class="p">:</span> <span class="mf">3600.0</span><span class="p">,</span>
+    <span class="s2">&quot;days&quot;</span><span class="p">:</span> <span class="mf">86400.0</span><span class="p">,</span>             <span class="c1"># 1 day = 24 hr = 86400 sec</span>
+    <span class="s2">&quot;day&quot;</span><span class="p">:</span> <span class="mf">86400.0</span><span class="p">,</span>
+    <span class="s2">&quot;d&quot;</span><span class="p">:</span> <span class="mf">86400.0</span><span class="p">,</span>
+    <span class="s2">&quot;weeks&quot;</span><span class="p">:</span> <span class="mf">604800.0</span><span class="p">,</span>           <span class="c1"># 1 week = 7 days = 604800 sec</span>
+    <span class="s2">&quot;week&quot;</span><span class="p">:</span> <span class="mf">604800.0</span><span class="p">,</span>
+    <span class="s2">&quot;wk&quot;</span><span class="p">:</span> <span class="mf">604800.0</span><span class="p">,</span>
+    <span class="s2">&quot;w&quot;</span><span class="p">:</span> <span class="mf">604800.0</span><span class="p">,</span>
+    <span class="s2">&quot;months&quot;</span><span class="p">:</span> <span class="mf">2629800.0</span><span class="p">,</span>         <span class="c1"># Approx. 30.44 days = 1/12 year</span>
+    <span class="s2">&quot;month&quot;</span><span class="p">:</span> <span class="mf">2629800.0</span><span class="p">,</span>
+    <span class="s2">&quot;years&quot;</span><span class="p">:</span> <span class="mf">31557600.0</span><span class="p">,</span>         <span class="c1"># Julian year = 365.25 days</span>
+    <span class="s2">&quot;year&quot;</span><span class="p">:</span> <span class="mf">31557600.0</span><span class="p">,</span>
+    <span class="s2">&quot;yr&quot;</span><span class="p">:</span> <span class="mf">31557600.0</span><span class="p">,</span>
+    <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="mf">31557600.0</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">time_chart_inverse</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">key</span><span class="p">:</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">value</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">time_chart</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+<span class="p">}</span>
+
+<span class="n">speed_chart</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;km/h&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="s2">&quot;m/s&quot;</span><span class="p">:</span> <span class="mf">3.6</span><span class="p">,</span>
+    <span class="s2">&quot;mph&quot;</span><span class="p">:</span> <span class="mf">1.609344</span><span class="p">,</span>
+    <span class="s2">&quot;knot&quot;</span><span class="p">:</span> <span class="mf">1.852</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">speed_chart_inverse</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;km/h&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="s2">&quot;m/s&quot;</span><span class="p">:</span> <span class="mf">0.277777778</span><span class="p">,</span>
+    <span class="s2">&quot;mph&quot;</span><span class="p">:</span> <span class="mf">0.621371192</span><span class="p">,</span>
+    <span class="s2">&quot;knot&quot;</span><span class="p">:</span> <span class="mf">0.539956803</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">UNIT_SYMBOL</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;meter&quot;</span><span class="p">:</span> <span class="s2">&quot;m&quot;</span><span class="p">,</span> <span class="s2">&quot;meters&quot;</span><span class="p">:</span> <span class="s2">&quot;m&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;kilometer&quot;</span><span class="p">:</span> <span class="s2">&quot;km&quot;</span><span class="p">,</span> <span class="s2">&quot;kilometers&quot;</span><span class="p">:</span> <span class="s2">&quot;km&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;centimeter&quot;</span><span class="p">:</span> <span class="s2">&quot;cm&quot;</span><span class="p">,</span> <span class="s2">&quot;centimeters&quot;</span><span class="p">:</span> <span class="s2">&quot;cm&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;millimeter&quot;</span><span class="p">:</span> <span class="s2">&quot;mm&quot;</span><span class="p">,</span> <span class="s2">&quot;millimeters&quot;</span><span class="p">:</span> <span class="s2">&quot;mm&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;mile&quot;</span><span class="p">:</span> <span class="s2">&quot;mi&quot;</span><span class="p">,</span> <span class="s2">&quot;miles&quot;</span><span class="p">:</span> <span class="s2">&quot;mi&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;yard&quot;</span><span class="p">:</span> <span class="s2">&quot;yd&quot;</span><span class="p">,</span> <span class="s2">&quot;yards&quot;</span><span class="p">:</span> <span class="s2">&quot;yd&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;foot&quot;</span><span class="p">:</span> <span class="s2">&quot;ft&quot;</span><span class="p">,</span> <span class="s2">&quot;feet&quot;</span><span class="p">:</span> <span class="s2">&quot;ft&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;inch&quot;</span><span class="p">:</span> <span class="s2">&quot;in&quot;</span><span class="p">,</span> <span class="s2">&quot;inches&quot;</span><span class="p">:</span> <span class="s2">&quot;in&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">METRIC_CONVERSION</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;mm&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">3</span><span class="p">,</span>
+    <span class="s2">&quot;cm&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span>
+    <span class="s2">&quot;dm&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;m&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="s2">&quot;dam&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;hm&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="s2">&quot;km&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">distance_chart</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;mm&quot;</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">,</span>
+    <span class="s2">&quot;cm&quot;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">,</span>
+    <span class="s2">&quot;dm&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+    <span class="s2">&quot;m&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="s2">&quot;dam&quot;</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span>
+    <span class="s2">&quot;hm&quot;</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span>
+    <span class="s2">&quot;km&quot;</span><span class="p">:</span> <span class="mf">1000.0</span><span class="p">,</span>
+    <span class="s2">&quot;in&quot;</span><span class="p">:</span> <span class="mf">0.0254</span><span class="p">,</span>
+    <span class="s2">&quot;ft&quot;</span><span class="p">:</span> <span class="mf">0.3048</span><span class="p">,</span>
+    <span class="s2">&quot;yd&quot;</span><span class="p">:</span> <span class="mf">0.9144</span><span class="p">,</span>
+    <span class="s2">&quot;mi&quot;</span><span class="p">:</span> <span class="mf">1609.344</span><span class="p">,</span>
+<span class="p">}</span>
+
+<div class="viewcode-block" id="sdf_to_gdf">
+<a class="viewcode-back" href="../../../api/edmt.conversion.html#edmt.conversion.conversion.sdf_to_gdf">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sdf_to_gdf</span><span class="p">(</span><span class="n">sdf</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts a spatial dataframe (sdf) to a geodataframe (gdf) with a user-defined CRS.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    - sdf: Spatial DataFrame to convert.</span>
+<span class="sd">    - crs: Coordinate Reference System (default is EPSG:4326).</span>
+
+<span class="sd">    Steps:</span>
+<span class="sd">    1. Creates a copy of the input spatial dataframe to avoid modifying the original.</span>
+<span class="sd">    2. Filters out rows where the &#39;SHAPE&#39; column is NaN (invalid geometries).</span>
+<span class="sd">    3. Converts the filtered dataframe to a GeoDataFrame using the &#39;SHAPE&#39; column for geometry and sets the CRS.</span>
+<span class="sd">    4. Applies the `make_valid` function to the geometry column to correct any invalid geometries.</span>
+<span class="sd">    5. Drops the columns &#39;Shape__Area&#39;, &#39;Shape__Length&#39;, and &#39;SHAPE&#39;, if they exist, to clean up the GeoDataFrame.</span>
+<span class="sd">    6. Returns the resulting GeoDataFrame.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Validate input DataFrame</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sdf</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input must be a pandas DataFrame.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">sdf</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;DataFrame is empty. Cannot generate UUIDs for an empty DataFrame.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># clean vars</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="n">clean_vars</span><span class="p">(</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="s2">&quot;SHAPE&quot;</span><span class="p">,</span>
+        <span class="n">geometry</span> <span class="o">=</span> <span class="s2">&quot;geometry&quot;</span><span class="p">,</span>
+        <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Shape__Area&quot;</span><span class="p">,</span> <span class="s2">&quot;Shape__Length&quot;</span><span class="p">,</span> <span class="s2">&quot;SHAPE&quot;</span><span class="p">],</span>
+        <span class="n">crs</span><span class="o">=</span><span class="n">crs</span>
+    <span class="p">)</span>
+    <span class="k">assert</span> <span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;geometry&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Geometry column is present and valid&quot;</span><span class="p">)</span>
+
+    <span class="n">tmp</span> <span class="o">=</span> <span class="n">sdf</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">tmp</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="o">~</span><span class="n">tmp</span><span class="p">[</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;shape&quot;</span><span class="p">)]</span><span class="o">.</span><span class="n">isna</span><span class="p">()]</span>
+
+    <span class="k">if</span> <span class="n">crs</span><span class="p">:</span>
+        <span class="n">crs</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;crs&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">crs</span><span class="o">=</span><span class="mi">4326</span>
+
+    <span class="n">gdf</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">(</span>
+        <span class="n">tmp</span><span class="p">,</span> 
+        <span class="n">geometry</span><span class="o">=</span><span class="n">tmp</span><span class="p">[</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;shape&quot;</span><span class="p">)],</span> 
+        <span class="n">crs</span><span class="o">=</span><span class="n">crs</span>
+        <span class="p">)</span>
+    <span class="n">gdf</span><span class="p">[</span><span class="s1">&#39;geometry&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gdf</span><span class="p">[</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;geometry&quot;</span><span class="p">)]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">make_valid</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="c1"># Validate geometries</span>
+    <span class="n">gdf</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;columns&quot;</span><span class="p">),</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;COnverted Spatial DataFrame to GeoDataFrame&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">gdf</span></div>
+
+
+<div class="viewcode-block" id="generate_uuid">
+<a class="viewcode-back" href="../../../api/edmt.conversion.html#edmt.conversion.conversion.generate_uuid">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">generate_uuid</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Adds a unique &#39;uuid&#39; column with UUIDs to the DataFrame if no existing UUID-like column is found.</span>
+<span class="sd">    Does not generate new UUIDs if UUIDs are already assigned in a &#39;uuid&#39; column.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df (pd.DataFrame): The DataFrame to which UUIDs will be added.</span>
+<span class="sd">        index (bool): If True, sets &#39;uuid&#39; as the index. Otherwise, &#39;uuid&#39; remains a column.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.DataFrame: DataFrame with a &#39;uuid&#39; column added if no UUID-like column exists.</span>
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If &#39;df&#39; is not a DataFrame or if it&#39;s empty.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Validate input DataFrame</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input must be a pandas DataFrame.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;DataFrame is empty. Cannot generate UUIDs for an empty DataFrame.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Define UUID pattern</span>
+    <span class="n">uuid_pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;^[a-f0-9]</span><span class="si">{8}</span><span class="s1">-[a-f0-9]</span><span class="si">{4}</span><span class="s1">-[a-f0-9]</span><span class="si">{4}</span><span class="s1">-[a-f0-9]</span><span class="si">{4}</span><span class="s1">-[a-f0-9]</span><span class="si">{12}</span><span class="s1">$&#39;</span>
+
+    <span class="c1"># Check for existing UUID-like columns</span>
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">api</span><span class="o">.</span><span class="n">types</span><span class="o">.</span><span class="n">is_string_dtype</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">])</span> <span class="ow">and</span> <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">uuid_pattern</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Column &#39;</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2">&#39; contains UUID-like values.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">index</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">col</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">df</span>  <span class="c1">#</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No UUID-like column found. Generating &#39;uuid&#39; column in the DataFrame.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s1">&#39;uuid&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;uuid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;uuid&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;uuid&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">notnull</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span><span class="o">.</span><span class="n">lower</span><span class="p">())</span>
+
+    <span class="k">if</span> <span class="n">index</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;uuid&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">df</span></div>
+
+       
+<div class="viewcode-block" id="get_utm_epsg">
+<a class="viewcode-back" href="../../../api/edmt.conversion.html#edmt.conversion.conversion.get_utm_epsg">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_utm_epsg</span><span class="p">(</span><span class="n">longitude</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">longitude</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+       <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;KeyError : Select column with longitude values&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">zone_number</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">longitude</span> <span class="o">+</span> <span class="mi">180</span><span class="p">)</span> <span class="o">/</span> <span class="mi">6</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">hemisphere</span> <span class="o">=</span> <span class="s1">&#39;6&#39;</span> <span class="k">if</span> <span class="n">longitude</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="k">else</span> <span class="s1">&#39;7&#39;</span>  <span class="c1"># 6 for Northern, 7 for Southern Hemisphere</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;32</span><span class="si">{</span><span class="n">hemisphere</span><span class="si">}{</span><span class="n">zone_number</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+    
+<div class="viewcode-block" id="to_gdf">
+<a class="viewcode-back" href="../../../api/edmt.conversion.html#edmt.conversion.conversion.to_gdf">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">to_gdf</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="n">longitude</span><span class="p">,</span> <span class="n">latitude</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;location&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">iat</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="p">(</span><span class="s2">&quot;longitude&quot;</span><span class="p">,</span> <span class="s2">&quot;latitude&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">(</span>
+        <span class="n">df</span><span class="p">,</span>
+        <span class="n">geometry</span><span class="o">=</span><span class="n">gpd</span><span class="o">.</span><span class="n">points_from_xy</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;location&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="p">[</span><span class="n">longitude</span><span class="p">],</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;location&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="p">[</span><span class="n">latitude</span><span class="p">]),</span>
+        <span class="n">crs</span><span class="o">=</span><span class="mi">4326</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="convert_time">
+<a class="viewcode-back" href="../../../api/edmt.conversion.html#edmt.conversion.conversion.convert_time">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">convert_time</span><span class="p">(</span><span class="n">time_value</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">unit_from</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">unit_to</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts a given time value between different units.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        time_value (float): The numerical value of the time.</span>
+<span class="sd">        unit_from (str): The original unit of time.</span>
+<span class="sd">        unit_to (str): The target unit to convert to.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float: The converted time value.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If the provided units are not supported or value is invalid.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">time_value</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span> <span class="ow">or</span> <span class="n">time_value</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;time_value&#39; must be a non-negative number.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Normalize input unit names</span>
+    <span class="n">unit_from</span> <span class="o">=</span> <span class="n">unit_from</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="n">unit_to</span> <span class="o">=</span> <span class="n">unit_to</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="n">unit_from</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;us&quot;</span><span class="p">:</span> <span class="s2">&quot;microseconds&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;μs&quot;</span><span class="p">:</span> <span class="s2">&quot;microseconds&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;microsec&quot;</span><span class="p">:</span> <span class="s2">&quot;microseconds&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;usec&quot;</span><span class="p">:</span> <span class="s2">&quot;microseconds&quot;</span>
+    <span class="p">}</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">unit_from</span><span class="p">,</span> <span class="n">unit_from</span><span class="p">)</span>
+
+    <span class="n">unit_to</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;us&quot;</span><span class="p">:</span> <span class="s2">&quot;microseconds&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;μs&quot;</span><span class="p">:</span> <span class="s2">&quot;microseconds&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;microsec&quot;</span><span class="p">:</span> <span class="s2">&quot;microseconds&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;usec&quot;</span><span class="p">:</span> <span class="s2">&quot;microseconds&quot;</span>
+    <span class="p">}</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">unit_to</span><span class="p">,</span> <span class="n">unit_to</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">unit_from</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">time_chart</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid &#39;unit_from&#39;: </span><span class="si">{</span><span class="n">unit_from</span><span class="si">}</span><span class="s2">. Supported units: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">time_chart</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">unit_to</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">time_chart</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid &#39;unit_to&#39;: </span><span class="si">{</span><span class="n">unit_to</span><span class="si">}</span><span class="s2">. Supported units: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">time_chart</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Convert to seconds first, then to target unit</span>
+    <span class="n">seconds</span> <span class="o">=</span> <span class="n">time_value</span> <span class="o">*</span> <span class="n">time_chart</span><span class="p">[</span><span class="n">unit_from</span><span class="p">]</span>
+    <span class="n">converted</span> <span class="o">=</span> <span class="n">seconds</span> <span class="o">/</span> <span class="n">time_chart</span><span class="p">[</span><span class="n">unit_to</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="nb">round</span><span class="p">(</span><span class="n">converted</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="convert_speed">
+<a class="viewcode-back" href="../../../api/edmt.conversion.html#edmt.conversion.conversion.convert_speed">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">convert_speed</span><span class="p">(</span><span class="n">speed</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">unit_from</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">unit_to</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">unit_to</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">speed_chart</span> <span class="ow">or</span> <span class="n">unit_from</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">speed_chart_inverse</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Incorrect &#39;from_type&#39; or &#39;to_type&#39; value: </span><span class="si">{</span><span class="n">unit_from</span><span class="si">!r}</span><span class="s2">, </span><span class="si">{</span><span class="n">unit_to</span><span class="si">!r}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Valid values are: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">speed_chart_inverse</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">round</span><span class="p">(</span><span class="n">speed</span> <span class="o">*</span> <span class="n">speed_chart</span><span class="p">[</span><span class="n">unit_from</span><span class="p">]</span> <span class="o">*</span> <span class="n">speed_chart_inverse</span><span class="p">[</span><span class="n">unit_to</span><span class="p">],</span> <span class="mi">3</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="convert_distance">
+<a class="viewcode-back" href="../../../api/edmt.conversion.html#edmt.conversion.conversion.convert_distance">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">convert_distance</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">from_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">to_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts distance values between different units including metric and imperial.</span>
+
+<span class="sd">    Supports:</span>
+<span class="sd">        Metric: mm, cm, dm, m, dam, hm, km</span>
+<span class="sd">        Imperial: in, ft, yd, mi</span>
+
+<span class="sd">    Handles plural forms, full names, and inconsistent casing.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">from_sanitized</span> <span class="o">=</span> <span class="n">from_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">)</span>
+    <span class="n">to_sanitized</span> <span class="o">=</span> <span class="n">to_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">)</span>
+
+    <span class="n">from_sanitized</span> <span class="o">=</span> <span class="n">UNIT_SYMBOL</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">from_sanitized</span><span class="p">,</span> <span class="n">from_sanitized</span><span class="p">)</span>
+    <span class="n">to_sanitized</span> <span class="o">=</span> <span class="n">UNIT_SYMBOL</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">to_sanitized</span><span class="p">,</span> <span class="n">to_sanitized</span><span class="p">)</span>
+
+    <span class="n">valid_units</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">distance_chart</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">from_sanitized</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_units</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid &#39;from_type&#39;: </span><span class="si">{</span><span class="n">from_type</span><span class="si">!r}</span><span class="s2">. Valid units: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">valid_units</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">to_sanitized</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_units</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid &#39;to_type&#39;: </span><span class="si">{</span><span class="n">to_type</span><span class="si">!r}</span><span class="s2">. Valid units: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">valid_units</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">from_sanitized</span> <span class="ow">in</span> <span class="n">METRIC_CONVERSION</span> <span class="ow">and</span> <span class="n">to_sanitized</span> <span class="ow">in</span> <span class="n">METRIC_CONVERSION</span><span class="p">:</span>
+        <span class="n">from_exp</span> <span class="o">=</span> <span class="n">METRIC_CONVERSION</span><span class="p">[</span><span class="n">from_sanitized</span><span class="p">]</span>
+        <span class="n">to_exp</span> <span class="o">=</span> <span class="n">METRIC_CONVERSION</span><span class="p">[</span><span class="n">to_sanitized</span><span class="p">]</span>
+        <span class="n">exponent_diff</span> <span class="o">=</span> <span class="n">from_exp</span> <span class="o">-</span> <span class="n">to_exp</span>
+        <span class="k">return</span> <span class="nb">round</span><span class="p">(</span><span class="n">value</span> <span class="o">*</span> <span class="nb">pow</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">exponent_diff</span><span class="p">),</span> <span class="mi">3</span><span class="p">)</span>
+
+    <span class="n">value_in_meters</span> <span class="o">=</span> <span class="n">value</span> <span class="o">*</span> <span class="n">distance_chart</span><span class="p">[</span><span class="n">from_sanitized</span><span class="p">]</span>
+    <span class="n">converted</span> <span class="o">=</span> <span class="n">value_in_meters</span> <span class="o">/</span> <span class="n">distance_chart</span><span class="p">[</span><span class="n">to_sanitized</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="nb">round</span><span class="p">(</span><span class="n">converted</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Odero, Kuloba, Musasia.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
