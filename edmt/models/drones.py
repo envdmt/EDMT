@@ -300,6 +300,7 @@ class Airdata:
         return df if df is not None else pd.DataFrame()
     
 
+
 def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None,log_errors: bool = True) -> gpd.GeoDataFrame:
     """
     Parameters:
@@ -340,7 +341,7 @@ def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None,log_errors: boo
         try:
             response = requests.get(csv_url)
             response.raise_for_status()
-            csv_data = pd.read_csv(StringIO(response.text))
+            csv_data = pd.read_csv(StringIO(response.text), delimiter='\t')
             metadata_repeated = pd.DataFrame([row] * len(csv_data), index=csv_data.index)
             combined = pd.concat([metadata_repeated, csv_data], axis=1)
             all_combined_rows.append(combined)
@@ -371,8 +372,8 @@ def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None,log_errors: boo
                 print(f"Error expanding column '{col}': {e}")
     if dfs_to_join:
         expanded_df = pd.concat(dfs_to_join, axis=1)
-    gdf = df_.join(expanded_df).drop(columns=cols)
-    return append_cols(gdf,cols="checktime")
+    df = df_.join(expanded_df).drop(columns=cols)
+    return append_cols(df,cols="checktime")
 
 
 def df_to_gdf( df: pd.DataFrame,lon_col: str = 'longitude',lat_col: str = 'latitude',crs: int = 4326) -> gpd.GeoDataFrame:
