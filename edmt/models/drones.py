@@ -11,6 +11,7 @@ import base64
 import http.client
 import json
 import requests
+
 import csv
 import pandas as pd
 import geopandas as gpd
@@ -299,7 +300,6 @@ class Airdata:
         df = self.AccessItems(endpoint="pilots")
         return df if df is not None else pd.DataFrame()
     
-
 
 def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None,log_errors: bool = True) -> pd.DataFrame:
     """
