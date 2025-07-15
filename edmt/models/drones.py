@@ -301,7 +301,7 @@ class Airdata:
     
 
 
-def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None,log_errors: bool = True) -> gpd.GeoDataFrame:
+def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None,log_errors: bool = True) -> pd.DataFrame:
     """
     Parameters:
         df (pd.DataFrame):
@@ -341,7 +341,12 @@ def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None,log_errors: boo
         try:
             response = requests.get(csv_url)
             response.raise_for_status()
-            csv_data = pd.read_csv(StringIO(response.text), delimiter='\t')
+            csv_data = pd.read_csv(
+                StringIO(response.text),
+                delimiter=',',
+                engine='python',
+                on_bad_lines='skip'
+            )
             metadata_repeated = pd.DataFrame([row] * len(csv_data), index=csv_data.index)
             combined = pd.concat([metadata_repeated, csv_data], axis=1)
             all_combined_rows.append(combined)
