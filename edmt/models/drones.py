@@ -11,7 +11,7 @@ import base64
 import http.client
 import json
 import requests
-
+import csv
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import LineString, Point
@@ -341,12 +341,9 @@ def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None,log_errors: boo
         try:
             response = requests.get(csv_url)
             response.raise_for_status()
-            csv_data = pd.read_csv(
-                StringIO(response.text),
-                delimiter=',',
-                engine='python',
-                on_bad_lines='skip'
-            )
+            sniffer = csv.Sniffer()
+            dialect = sniffer.sniff(response.text[:1024])
+            csv_data = pd.read_csv(StringIO(response.text), dialect=dialect)
             metadata_repeated = pd.DataFrame([row] * len(csv_data), index=csv_data.index)
             combined = pd.concat([metadata_repeated, csv_data], axis=1)
             all_combined_rows.append(combined)
