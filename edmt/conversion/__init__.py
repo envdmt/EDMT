@@ -8,6 +8,10 @@ from .conversion import (
     convert_speed
 )
 
+from .computational import (
+    create_dataframe
+)
+
 __all__ = [
     'sdf_to_gdf', 
     'generate_uuid', 
@@ -15,5 +19,6 @@ __all__ = [
     'to_gdf',
     'convert_distance',
     'convert_time',
-    'convert_speed'
+    'convert_speed',
+    'create_dataframe'
     ]
