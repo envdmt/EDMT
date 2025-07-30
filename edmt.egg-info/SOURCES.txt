@@ -25,3 +25,4 @@ edmt/models/__init__.py
 edmt/models/drones.py
 edmt/plotting/__init__.py
 tests/test_airdata.py
+tests/test_sdf_to_gdf.py
