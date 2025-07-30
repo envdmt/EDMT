@@ -11,17 +11,15 @@ from shapely.geometry import Point, LineString, Polygon, MultiPolygon, MultiLine
 from typing import Union, Optional
 
 class Map:
-    def __init__(self, data: Union[gpd.GeoDataFrame, rasterio.DatasetReader]):
+    def __init__(self, data, mode='static', width=800, height=600):
         """
         Initialize map with pre-loaded spatial data
         """
         self.data = data
-        self.layers = []
-        self.crs = self.data.crs if isinstance(data, gpd.GeoDataFrame) else None
+        self.mode = mode
+        self.width = width
         self.title = None
-        self.components = {}
-        self.basemap = None
-
+        self.heigth = height
     
     def set_projection(self, crs: str) -> 'Map':
         """
