@@ -33,7 +33,7 @@ dependencies = [
 "Homepage" = "https://github.com/envqwewdmt/EDMT"
 
 [project.scripts]
-edmt-version = "edmt.__version__"
+edmt-version = "edmt:print_version"
 
 [tool.setuptools.packages.find]
 include = ["edmt*"]

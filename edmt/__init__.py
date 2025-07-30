@@ -22,6 +22,12 @@ __initialized = False
 # Package version
 __version__ = importlib.metadata.version("edmt")
 
+def print_version():
+    """
+    Prints the version of the EDMT package.
+    """
+    print(f"EDMT version: {__version__}")
+
 def init(silent=False, force=False):
     """
     Initializes the environment with EDMT-specific customizations.
