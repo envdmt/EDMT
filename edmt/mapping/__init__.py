@@ -2,7 +2,7 @@ from .maps import (
     Mapping
 )
 
-from .edmt_mapping import (
+from .edmtmapping import (
     Map
 )
 
