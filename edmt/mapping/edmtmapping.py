@@ -131,15 +131,17 @@ class Map:
         if custom_tiles:
             self.basemap = {'tiles': custom_tiles, 'attr': attr or "Custom"}
         elif basemap in valid_basemaps:
-            # Map basemap names to contextily providers
-            basemap_providers = {
-                'CartoDB.Positron': ctx.providers.CartoDB.Positron,
-                'OpenStreetMap': ctx.providers.OpenStreetMap.Mapnik,
-                'Stamen.Terrain': ctx.providers.Stamen.Terrain,
-                'Stamen.Toner': ctx.providers.Stamen.Toner,
-                'Stamen.Watercolor': ctx.providers.Stamen.Watercolor
-            }
-            self.basemap = basemap_providers[basemap]
+            try:
+                basemap_providers = {
+                    'CartoDB.Positron': ctx.providers.CartoDB.Positron,
+                    'OpenStreetMap': ctx.providers.OpenStreetMap.Mapnik,
+                    'Stamen.Terrain': ctx.providers.Stamen.Terrain,
+                    'Stamen.Toner': ctx.providers.Stamen.Toner,
+                    'Stamen.Watercolor': ctx.providers.Stamen.Watercolor
+                }
+                self.basemap = basemap_providers[basemap]
+            except AttributeError as e:
+                raise ValueError(f"Basemap '{basemap}' is not available in this version of contextily. Available basemaps: {valid_basemaps}")
         else:
             raise ValueError(f"Basemap must be one of {valid_basemaps} or provide custom_tiles and attr")
         return self
@@ -286,7 +288,7 @@ class Map:
             data = self.data
             if layer['column'] and isinstance(data, gpd.GeoDataFrame):
                 data = data.dropna(subset=[layer['column']])
-                if data[layer['column']].dtype in ['int64', 'float gasps64']:
+                if data[layer['column']].dtype in ['int64', 'float64']:
                     style_function = lambda x: {
                         'fillColor': plt.cm.get_cmap(layer['style']['color'])(
                             (x['properties'][layer['column']] - data[layer['column']].min()) /
