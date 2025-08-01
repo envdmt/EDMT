@@ -17,6 +17,8 @@ from pathlib import Path
 from base64 import b64encode
 import logging
 import requests
+import re
+from matplotlib.colors import ListedColormap, to_hex
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -32,7 +34,7 @@ class Map:
     '''
 
     # Default compass SVG path as a Dropbox URL (replace with your actual public link ending with ?dl=1)
-    DEFAULT_COMPASS_SVG_PATH = "https://www.dropbox.com/scl/fi/89gojqdhfbd59keuambfl/north-arrow.svg?rlkey=f4sj84830ow4uurz9z6duyu7m&st=1320hl8y&dl=1"
+    DEFAULT_COMPASS_SVG_PATH = "https://www.dropbox.com/s/your-shareable-link/north_arrow.svg?dl=1"
 
     def __init__(self, data: Union[gpd.GeoDataFrame, str], mode: str = 'static', width: int = 800, height: int = 600):
         if isinstance(data, str):
@@ -106,10 +108,13 @@ class Map:
         if column and column not in self.data.columns:
             raise ValueError(f"Column '{column}' not found in data")
         
+        # Generate unique colors for each county
+        n_counties = len(self.data)
+        colors = plt.cm.get_cmap(color, n_counties)(np.linspace(0, 1, n_counties))
         layer = {
             'type': 'polygon',
             'column': column,
-            'style': {'color': color, 'alpha': alpha}
+            'style': {'color': colors, 'alpha': alpha}
         }
         self.layers.append(layer)
         return self
@@ -200,7 +205,18 @@ class Map:
         
         if svg_content is None:
             logger.error("No valid SVG content available for compass")
-            svg_content = self.FALLBACK_COMPASS_SVG  # Ensure fallback as a last resort
+            svg_content = self.FALLBACK_COMPASS_SVG
+        else:
+            # Validate SVG path data
+            path_match = re.search(r'd="([^"]*)"', svg_content)
+            if path_match:
+                path_data = path_match.group(1)
+                if not re.search(r'[0-9\.\-]', path_data):
+                    logger.error(f"Invalid SVG path data in {self.DEFAULT_COMPASS_SVG_PATH or svg_url}: no numeric coordinates found")
+                    svg_content = self.FALLBACK_COMPASS_SVG
+            else:
+                logger.warning(f"No path data found in SVG from {self.DEFAULT_COMPASS_SVG_PATH or svg_url}, using fallback")
+                svg_content = self.FALLBACK_COMPASS_SVG
         
         self.components['compass'] = {
             'position': position,
@@ -242,9 +258,9 @@ class Map:
                     norm = plt.Normalize(data[layer['column']].min(), data[layer['column']].max())
                     colors = cmap(norm(data[layer['column']]))
                 else:
-                    colors = layer['style']['color']
+                    colors = layer['style']['color'] if isinstance(layer['style']['color'], np.ndarray) else plt.cm.get_cmap(layer['style']['color'], len(data))(np.linspace(0, 1, len(data)))
             else:
-                colors = layer['style']['color']
+                colors = layer['style']['color'] if isinstance(layer['style']['color'], np.ndarray) else plt.cm.get_cmap(layer['style']['color'], len(data))(np.linspace(0, 1, len(data)))
             
             if layer['type'] == 'point':
                 if layer['style'].get('marker_svg'):
@@ -265,7 +281,7 @@ class Map:
             elif layer['type'] == 'line':
                 data.plot(ax=ax, color=colors, alpha=layer['style']['alpha'], linewidth=layer['style']['linewidth'])
             elif layer['type'] == 'polygon':
-                data.plot(ax=ax, color=colors, alpha=layer['style']['alpha'])
+                data.plot(ax=ax, color=[to_hex(c) for c in colors], alpha=layer['style']['alpha'])
             elif layer['type'] == 'raster':
                 with rasterio.open(self.data) as src:
                     plt.imshow(src.read(1), cmap=layer['style']['cmap'], alpha=layer['style']['alpha'], 
@@ -347,15 +363,17 @@ class Map:
                         'fillOpacity': layer['style']['alpha']
                     }
                 else:
-                    style_function = lambda x: {
-                        'fillColor': layer['style']['color'],
+                    colors = layer['style']['color'] if isinstance(layer['style']['color'], np.ndarray) else plt.cm.get_cmap(layer['style']['color'], len(data))(np.linspace(0, 1, len(data)))
+                    style_function = lambda x, idx=data.index.get_loc(x['properties'][layer['column']]): {
+                        'fillColor': to_hex(colors[idx]),
                         'color': 'black',
                         'weight': 1,
                         'fillOpacity': layer['style']['alpha']
                     }
             else:
-                style_function = lambda x: {
-                    'fillColor': layer['style']['color'],
+                colors = layer['style']['color'] if isinstance(layer['style']['color'], np.ndarray) else plt.cm.get_cmap(layer['style']['color'], len(data))(np.linspace(0, 1, len(data)))
+                style_function = lambda x, idx=data.index.get_loc(x): {
+                    'fillColor': to_hex(colors[idx]),
                     'color': 'black',
                     'weight': 1,
                     'fillOpacity': layer['style']['alpha']
@@ -394,11 +412,12 @@ class Map:
                     popup=folium.GeoJsonPopup(fields=[layer['column']] if layer['column'] else [])
                 ).add_to(m)
             elif layer['type'] == 'polygon':
-                folium.GeoJson(
-                    data,
-                    style_function=style_function,
-                    popup=folium.GeoJsonPopup(fields=[layer['column']] if layer['column'] else [])
-                ).add_to(m)
+                for idx, row in data.iterrows():
+                    folium.GeoJson(
+                        row.geometry.__geo_interface__,
+                        style_function=lambda x, i=idx: style_function(x, i),
+                        popup=folium.Popup(str(row[layer['column']]) if layer['column'] else str(idx))
+                    ).add_to(m)
             elif layer['type'] == 'raster':
                 with rasterio.open(self.data) as src:
                     folium.raster_layers.ImageOverlay(
