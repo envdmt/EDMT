@@ -15,6 +15,11 @@ import io
 import os
 from pathlib import Path
 from base64 import b64encode
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 class Map:
     # Fallback SVG if north_arrow.svg is missing
@@ -141,7 +146,8 @@ class Map:
                 }
                 self.basemap = basemap_providers[basemap]
             except AttributeError as e:
-                raise ValueError(f"Basemap '{basemap}' is not available in this version of contextily. Available basemaps: {valid_basemaps}")
+                logger.warning(f"Basemap '{basemap}' not available, disabling basemap. Error: {e}")
+                self.basemap = None
         else:
             raise ValueError(f"Basemap must be one of {valid_basemaps} or provide custom_tiles and attr")
         return self
@@ -163,14 +169,18 @@ class Map:
             if os.path.isfile(custom_svg):
                 with open(custom_svg, 'r') as f:
                     svg_content = f.read()
+                logger.debug(f"Using custom SVG from {custom_svg}")
             else:
                 svg_content = custom_svg
+                logger.warning(f"Custom SVG path {custom_svg} not found, using raw content")
         else:
             if os.path.isfile(self.DEFAULT_COMPASS_SVG_PATH):
                 with open(self.DEFAULT_COMPASS_SVG_PATH, 'r') as f:
                     svg_content = f.read()
+                logger.debug(f"Using default SVG from {self.DEFAULT_COMPASS_SVG_PATH}")
             else:
                 svg_content = self.FALLBACK_COMPASS_SVG
+                logger.warning(f"Default SVG not found at {self.DEFAULT_COMPASS_SVG_PATH}, using fallback SVG")
         
         self.components['compass'] = {
             'position': position,
@@ -241,10 +251,11 @@ class Map:
                               extent=(src.bounds.left, src.bounds.right, src.bounds.bottom, src.bounds.top))
         
         if self.basemap:
-            if isinstance(self.basemap, dict):
-                ctx.add_basemap(ax, source=self.basemap['tiles'], attribution=self.basemap['attr'], crs=self.crs)
-            else:
+            try:
                 ctx.add_basemap(ax, source=self.basemap, crs=self.crs)
+            except Exception as e:
+                logger.warning(f"Failed to add basemap. Error: {e}. Proceeding without basemap.")
+                self.basemap = None
         
         if self.title:
             ax.set_title(self.title)
@@ -256,18 +267,24 @@ class Map:
         
         if self.components['compass']:
             svg_content = self.components['compass']['svg']
-            path = parse_path(svg_content)
-            path = path.transformed(plt.matplotlib.transforms.Affine2D().scale(0.01 * self.components['compass']['size']))
-            patch = PathPatch(path, facecolor='black', alpha=1.0)
-            pos = {
-                'top-right': (0.95, 0.95),
-                'top-left': (0.05, 0.95),
-                'bottom-right': (0.95, 0.05),
-                'bottom-left': (0.05, 0.05)
-            }[self.components['compass']['position']]
-            ab = AnnotationBbox(OffsetImage(patch), pos, xycoords='axes fraction', frameon=False)
-            ax.add_artist(ab)
-        
+            try:
+                path = parse_path(svg_content)
+                path = path.transformed(plt.matplotlib.transforms.Affine2D().scale(0.01 * self.components['compass']['size']))
+                patch = PathPatch(path, facecolor='black', alpha=1.0)
+                pos = {
+                    'top-right': (0.95, 0.95),
+                    'top-left': (0.05, 0.95),
+                    'bottom-right': (0.95, 0.05),
+                    'bottom-left': (0.05, 0.05)
+                }[self.components['compass']['position']]
+                ab = AnnotationBbox(OffsetImage(patch), pos, xycoords='axes fraction', frameon=False)
+                ax.add_artist(ab)
+                logger.debug(f"North arrow added at position {self.components['compass']['position']}")
+            except Exception as e:
+                logger.error(f"Failed to render north arrow. Error: {e}. Using fallback rendering.")
+                # Fallback: Draw a simple triangle as a debug aid
+                ax.plot([0.95, 0.95, 0.9], [0.95, 0.9, 0.95], 'k-', transform=ax.transAxes)
+
         if self.components['legend'] and layer['column']:
             sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
             plt.colorbar(sm, ax=ax, label=self.components['legend']['title'])
