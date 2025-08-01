@@ -33,8 +33,8 @@ class Map:
     </svg>
     '''
 
-    # Default compass SVG path as a Dropbox URL (replace with your actual public link ending with ?dl=1)
-    DEFAULT_COMPASS_SVG_PATH = "https://www.dropbox.com/s/your-shareable-link/north_arrow.svg?dl=1"
+    # Default compass SVG path as a Dropbox URL (replace with your new public link ending with ?dl=1)
+    DEFAULT_COMPASS_SVG_PATH = "https://www.dropbox.com/scl/fi/new-link/north-arrow.svg?rlkey=new-key&dl=1"
 
     def __init__(self, data: Union[gpd.GeoDataFrame, str], mode: str = 'static', width: int = 800, height: int = 600):
         if isinstance(data, str):
