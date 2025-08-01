@@ -30,8 +30,8 @@ class Map:
     </svg>
     '''
 
-    # Default compass SVG path
-    DEFAULT_COMPASS_SVG_PATH = str(Path(__file__).parent.parent.parent / 'assets' / 'north_arrow.svg')
+    # Default compass SVG path (absolute from project root)
+    DEFAULT_COMPASS_SVG_PATH = str(Path.home() / 'Dropbox' / 'Eugene-Personal' / 'Projects' / 'EDMT' / 'assets' / 'north-arrow.svg')
 
     def __init__(self, data: Union[gpd.GeoDataFrame, str], mode: str = 'static', width: int = 800, height: int = 600):
         if isinstance(data, str):
@@ -137,6 +137,9 @@ class Map:
             self.basemap = {'tiles': custom_tiles, 'attr': attr or "Custom"}
         elif basemap in valid_basemaps:
             try:
+                # Verify contextily providers
+                if not hasattr(ctx.providers, 'OpenStreetMap') or not hasattr(ctx.providers, 'CartoDB'):
+                    raise AttributeError("Contextily providers not available")
                 basemap_providers = {
                     'CartoDB.Positron': ctx.providers.CartoDB.Positron,
                     'OpenStreetMap': ctx.providers.OpenStreetMap.Mapnik,
@@ -145,6 +148,7 @@ class Map:
                     'Stamen.Watercolor': ctx.providers.Stamen.Watercolor
                 }
                 self.basemap = basemap_providers[basemap]
+                logger.debug(f"Basemap provider '{basemap}' loaded successfully")
             except AttributeError as e:
                 logger.warning(f"Basemap '{basemap}' not available, disabling basemap. Error: {e}")
                 self.basemap = None
@@ -165,6 +169,7 @@ class Map:
         return self
     
     def add_compass(self, position: str = 'top-right', size: int = 50, custom_svg: Optional[str] = None) -> 'Map':
+        svg_content = None
         if custom_svg:
             if os.path.isfile(custom_svg):
                 with open(custom_svg, 'r') as f:
@@ -181,6 +186,10 @@ class Map:
             else:
                 svg_content = self.FALLBACK_COMPASS_SVG
                 logger.warning(f"Default SVG not found at {self.DEFAULT_COMPASS_SVG_PATH}, using fallback SVG")
+        
+        if svg_content is None:
+            logger.error("No valid SVG content available for compass")
+            svg_content = self.FALLBACK_COMPASS_SVG  # Ensure fallback as a last resort
         
         self.components['compass'] = {
             'position': position,
@@ -276,7 +285,7 @@ class Map:
                                   units=self.components['scale_bar']['units'],
                                   location=self.components['scale_bar']['position']))
         
-        if self.components['compass']:
+        if self.components['compass'] and self.components['compass'].get('svg'):
             svg_content = self.components['compass']['svg']
             try:
                 path = parse_path(svg_content)
