@@ -207,6 +207,7 @@ class Map:
     
     def _plot_static(self) -> None:
         fig = plt.figure(figsize=(self.width / 100, self.height / 100))
+        original_crs = self.crs
         if self.crs == 'EPSG:4326':
             ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
         else:
@@ -252,9 +253,19 @@ class Map:
         
         if self.basemap:
             try:
-                ctx.add_basemap(ax, source=self.basemap, crs=self.crs)
+                # Temporarily reproject to EPSG:4326 for basemap compatibility
+                if self.crs != 'EPSG:4326' and isinstance(self.data, gpd.GeoDataFrame):
+                    temp_data = self.data.to_crs('EPSG:4326')
+                    temp_ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
+                    ctx.add_basemap(temp_ax, source=self.basemap, crs=ccrs.PlateCarree())
+                    # Copy basemap to original axes
+                    temp_ax.get_images()[0].set_axes(ax)
+                    plt.delaxes(temp_ax)
+                else:
+                    ctx.add_basemap(ax, source=self.basemap, crs=ccrs.PlateCarree())
+                logger.debug(f"Basemap '{self.basemap}' added successfully with CRS {self.crs}")
             except Exception as e:
-                logger.warning(f"Failed to add basemap. Error: {e}. Proceeding without basemap.")
+                logger.error(f"Failed to add basemap '{self.basemap}'. Error: {e}. Proceeding without basemap.")
                 self.basemap = None
         
         if self.title:
