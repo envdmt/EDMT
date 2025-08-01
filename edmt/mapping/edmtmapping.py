@@ -25,24 +25,10 @@ class Map:
     </svg>
     '''
 
-    # Default compass SVG path (navigate from edmt/mapping to EDMT/assets)
+    # Default compass SVG path
     DEFAULT_COMPASS_SVG_PATH = str(Path(__file__).parent.parent.parent / 'assets' / 'north_arrow.svg')
 
     def __init__(self, data: Union[gpd.GeoDataFrame, str], mode: str = 'static', width: int = 800, height: int = 600):
-        """
-        Initialize map with pre-loaded spatial data, mode, and size.
-
-        Parameters
-        ----------
-        data : GeoDataFrame or str
-            Input GeoDataFrame or path to a raster file.
-        mode : str, optional
-            Map mode ('static' or 'interactive'). Default is 'static'.
-        width : int, optional
-            Map width in pixels. Default is 800.
-        height : int, optional
-            Map height in pixels. Default is 600.
-        """
         if isinstance(data, str):
             if data.endswith('.geojson'):
                 self.data = gpd.read_file(data)
@@ -69,31 +55,12 @@ class Map:
         self.title = None
     
     def set_projection(self, crs: str) -> 'Map':
-        """
-        Set the coordinate reference system for the map.
-        """
         if isinstance(self.data, gpd.GeoDataFrame):
             self.data = self.data.to_crs(crs)
             self.crs = crs
         return self
     
     def add_points(self, column: Optional[str] = None, color: str = 'red', alpha: float = 0.7, size: int = 10, marker_svg: Optional[str] = None) -> 'Map':
-        """
-        Add a point layer to the map with optional custom SVG marker.
-
-        Parameters
-        ----------
-        column : str, optional
-            Column name for point attributes. Default is None.
-        color : str, optional
-            Color or colormap name. Default is 'red'.
-        alpha : float, optional
-            Transparency (0 to 1). Default is 0.7.
-        size : int, optional
-            Point size (pixels for static, radius for interactive). Default is 10.
-        marker_svg : str, optional
-            Path to a custom SVG file or SVG string for point markers. Default is None (uses circle).
-        """
         if not isinstance(self.data, gpd.GeoDataFrame):
             raise ValueError("Data must be a GeoDataFrame to add points")
         if not any(self.data.geometry.type.isin(['Point', 'MultiPoint'])):
@@ -110,9 +77,6 @@ class Map:
         return self
     
     def add_polylines(self, column: Optional[str] = None, color: str = 'blue', alpha: float = 0.7, linewidth: float = 2) -> 'Map':
-        """
-        Add a polyline layer to the map.
-        """
         if not isinstance(self.data, gpd.GeoDataFrame):
             raise ValueError("Data must be a GeoDataFrame to add polylines")
         if not any(self.data.geometry.type.isin(['LineString', 'MultiLineString'])):
@@ -129,9 +93,6 @@ class Map:
         return self
     
     def add_polygons(self, column: Optional[str] = None, color: str = 'viridis', alpha: float = 0.7) -> 'Map':
-        """
-        Add a polygon layer to the map.
-        """
         if not isinstance(self.data, gpd.GeoDataFrame):
             raise ValueError("Data must be a GeoDataFrame to add polygons")
         if not any(self.data.geometry.type.isin(['Polygon', 'MultiPolygon'])):
@@ -148,9 +109,6 @@ class Map:
         return self
     
     def add_raster(self, cmap: str = 'viridis', alpha: float = 1.0) -> 'Map':
-        """
-        Add a raster layer to the map.
-        """
         if not isinstance(self.data, rasterio.io.DatasetReader):
             raise ValueError("Data must be a raster file to add raster layer")
         
@@ -163,9 +121,6 @@ class Map:
         return self
     
     def add_basemap(self, basemap: str = 'CartoDB.Positron', custom_tiles: Optional[str] = None, attr: Optional[str] = None) -> 'Map':
-        """
-        Add a basemap for static & interactive maps.
-        """
         valid_basemaps = [
             'CartoDB.Positron',
             'OpenStreetMap',
@@ -182,16 +137,10 @@ class Map:
         return self
     
     def add_title(self, title: str) -> 'Map':
-        """
-        Add a title to the map.
-        """
         self.title = title
         return self
     
     def add_scale_bar(self, position: str = 'bottom-left', units: str = 'metric', scale: float = 1.0) -> 'Map':
-        """
-        Add a scale bar to the map.
-        """
         self.components['scale_bar'] = {
             'position': position,
             'units': units,
@@ -200,18 +149,6 @@ class Map:
         return self
     
     def add_compass(self, position: str = 'top-right', size: int = 50, custom_svg: Optional[str] = None) -> 'Map':
-        """
-        Add a compass to the map, using default EDMT SVG or custom SVG.
-
-        Parameters
-        ----------
-        position : str, optional
-            Position of the compass ('top-right', 'top-left', 'bottom-right', 'bottom-left'). Default is 'top-right'.
-        size : int, optional
-            Size of the compass in pixels. Default is 50.
-        custom_svg : str, optional
-            Path to a custom SVG file or SVG string. If None, uses default EDMT compass SVG.
-        """
         if custom_svg:
             if os.path.isfile(custom_svg):
                 with open(custom_svg, 'r') as f:
@@ -233,9 +170,6 @@ class Map:
         return self
     
     def add_legend(self, title: Optional[str] = None, position: str = 'bottom-right', labels: Optional[list] = None) -> 'Map':
-        """
-        Add a legend to the map.
-        """
         self.components['legend'] = {
             'title': title,
             'position': position,
@@ -244,9 +178,6 @@ class Map:
         return self
     
     def plot(self) -> Union[None, folium.Map]:
-        """
-        Plot the map based on the initialized mode.
-        """
         if self.mode == 'static':
             self._plot_static()
         elif self.mode == 'interactive':
@@ -255,11 +186,12 @@ class Map:
             raise ValueError("Mode must be 'static' or 'interactive'")
     
     def _plot_static(self) -> None:
-        """
-        Render a static map using matplotlib and cartopy.
-        """
         fig = plt.figure(figsize=(self.width / 100, self.height / 100))
-        ax = fig.add_subplot(1, 1, 1, projection=ccrs.epsg(self.crs.split(':')[1]) if self.crs else ccrs.PlateCarree())
+        # Use PlateCarree for EPSG:4326, otherwise use ccrs.epsg
+        if self.crs == 'EPSG:4326':
+            ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
+        else:
+            ax = fig.add_subplot(1, 1, 1, projection=ccrs.epsg(self.crs.split(':')[1]))
         
         for layer in self.layers:
             data = self.data
@@ -334,9 +266,6 @@ class Map:
         plt.show()
     
     def _plot_interactive(self) -> folium.Map:
-        """
-        Render an interactive map using folium.
-        """
         if isinstance(self.data, gpd.GeoDataFrame):
             center = self.data.geometry.centroid.iloc[0].coords[0][::-1]
         else:
