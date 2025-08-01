@@ -16,13 +16,14 @@ import os
 from pathlib import Path
 from base64 import b64encode
 import logging
+import requests
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 class Map:
-    # Fallback SVG if north_arrow.svg is missing
+    # Fallback SVG if north_arrow.svg is missing or link fails
     FALLBACK_COMPASS_SVG = '''
     <svg width="50" height="50" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
       <path d="M50 10 L70 50 L50 90 L30 50 Z" fill="black"/>
@@ -30,8 +31,8 @@ class Map:
     </svg>
     '''
 
-    # Default compass SVG path (absolute from project root)
-    DEFAULT_COMPASS_SVG_PATH = str(Path.home() / 'Dropbox' / 'Eugene-Personal' / 'Projects' / 'EDMT' / 'assets' / 'north-arrow.svg')
+    # Default compass SVG path as a Dropbox URL (replace with your actual public link ending with ?dl=1)
+    DEFAULT_COMPASS_SVG_PATH = "https://www.dropbox.com/scl/fi/89gojqdhfbd59keuambfl/north-arrow.svg?rlkey=f4sj84830ow4uurz9z6duyu7m&st=1320hl8y&dl=1"
 
     def __init__(self, data: Union[gpd.GeoDataFrame, str], mode: str = 'static', width: int = 800, height: int = 600):
         if isinstance(data, str):
@@ -150,8 +151,8 @@ class Map:
                 self.basemap = basemap_providers[basemap]
                 logger.debug(f"Basemap provider '{basemap}' loaded successfully")
             except AttributeError as e:
-                logger.warning(f"Basemap '{basemap}' not available, disabling basemap. Error: {e}")
-                self.basemap = None
+                logger.warning(f"Basemap '{basemap}' not available, disabling basemap. Using custom OpenStreetMap fallback. Error: {e}")
+                self.basemap = {'tiles': 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', 'attr': '© OpenStreetMap contributors'}
         else:
             raise ValueError(f"Basemap must be one of {valid_basemaps} or provide custom_tiles and attr")
         return self
@@ -168,9 +169,18 @@ class Map:
         }
         return self
     
-    def add_compass(self, position: str = 'top-right', size: int = 50, custom_svg: Optional[str] = None) -> 'Map':
+    def add_compass(self, position: str = 'top-right', size: int = 50, custom_svg: Optional[str] = None, svg_url: Optional[str] = None) -> 'Map':
         svg_content = None
-        if custom_svg:
+        if svg_url:
+            try:
+                response = requests.get(svg_url, timeout=10)
+                response.raise_for_status()
+                svg_content = response.text
+                logger.debug(f"Successfully fetched SVG from URL: {svg_url}")
+            except requests.RequestException as e:
+                logger.error(f"Failed to fetch SVG from URL {svg_url}. Error: {e}")
+                svg_content = self.FALLBACK_COMPASS_SVG
+        elif custom_svg:
             if os.path.isfile(custom_svg):
                 with open(custom_svg, 'r') as f:
                     svg_content = f.read()
@@ -179,13 +189,14 @@ class Map:
                 svg_content = custom_svg
                 logger.warning(f"Custom SVG path {custom_svg} not found, using raw content")
         else:
-            if os.path.isfile(self.DEFAULT_COMPASS_SVG_PATH):
-                with open(self.DEFAULT_COMPASS_SVG_PATH, 'r') as f:
-                    svg_content = f.read()
-                logger.debug(f"Using default SVG from {self.DEFAULT_COMPASS_SVG_PATH}")
-            else:
+            try:
+                response = requests.get(self.DEFAULT_COMPASS_SVG_PATH, timeout=10)
+                response.raise_for_status()
+                svg_content = response.text
+                logger.debug(f"Successfully fetched default SVG from {self.DEFAULT_COMPASS_SVG_PATH}")
+            except requests.RequestException as e:
+                logger.error(f"Failed to fetch default SVG from {self.DEFAULT_COMPASS_SVG_PATH}. Error: {e}")
                 svg_content = self.FALLBACK_COMPASS_SVG
-                logger.warning(f"Default SVG not found at {self.DEFAULT_COMPASS_SVG_PATH}, using fallback SVG")
         
         if svg_content is None:
             logger.error("No valid SVG content available for compass")
@@ -266,12 +277,12 @@ class Map:
                 if self.crs != 'EPSG:4326' and isinstance(self.data, gpd.GeoDataFrame):
                     temp_data = self.data.to_crs('EPSG:4326')
                     temp_ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-                    ctx.add_basemap(temp_ax, source=self.basemap, crs=ccrs.PlateCarree())
+                    ctx.add_basemap(temp_ax, source=self.basemap['tiles'] if isinstance(self.basemap, dict) else self.basemap, crs=ccrs.PlateCarree(), attribution=self.basemap.get('attr'))
                     # Copy basemap to original axes
                     temp_ax.get_images()[0].set_axes(ax)
                     plt.delaxes(temp_ax)
                 else:
-                    ctx.add_basemap(ax, source=self.basemap, crs=ccrs.PlateCarree())
+                    ctx.add_basemap(ax, source=self.basemap['tiles'] if isinstance(self.basemap, dict) else self.basemap, crs=ccrs.PlateCarree(), attribution=self.basemap.get('attr'))
                 logger.debug(f"Basemap '{self.basemap}' added successfully with CRS {self.crs}")
             except Exception as e:
                 logger.error(f"Failed to add basemap '{self.basemap}'. Error: {e}. Proceeding without basemap.")

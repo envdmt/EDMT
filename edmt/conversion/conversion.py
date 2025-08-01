@@ -1,435 +1,311 @@
+import uuid
+import pandas as pd
 import geopandas as gpd
-import rasterio
-import matplotlib.pyplot as plt
-import folium
-import contextily as ctx
-import cartopy.crs as ccrs
-from matplotlib_scalebar.scalebar import ScaleBar
-import numpy as np
-from shapely.geometry import Point, LineString, Polygon, MultiPolygon, MultiLineString, MultiPoint
-from typing import Union, Optional
-from matplotlib.patches import PathPatch
-from matplotlib.offsetbox import AnnotationBbox, OffsetImage
-from svgpath2mpl import parse_path
-import io
-import os
-from pathlib import Path
-from base64 import b64encode
-import logging
-import requests
+from shapely import make_valid
+from edmt.contrib.utils import (
+    clean_vars
+)
 
-# Set up logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+"""
+A unit of time is any particular time interval, used as a standard way of measuring or
+expressing duration.  The base unit of time in the International System of Units (SI),
+and by extension most of the Western world, is the second, defined as about 9 billion
+oscillations of the caesium atom.
 
-class Map:
-    # Fallback SVG if north_arrow.svg is missing or link fails
-    FALLBACK_COMPASS_SVG = '''
-    <svg width="50" height="50" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-      <path d="M50 10 L70 50 L50 90 L30 50 Z" fill="black"/>
-      <text x="50" y="20" font-size="20" text-anchor="middle" fill="white">N</text>
-    </svg>
-    '''
+"""
 
-    # Default compass SVG path as a Dropbox URL (replace with your actual public link ending with ?dl=1)
-    DEFAULT_COMPASS_SVG_PATH = "https://www.dropbox.com/scl/fi/89gojqdhfbd59keuambfl/north-arrow.svg?rlkey=f4sj84830ow4uurz9z6duyu7m&st=1320hl8y&dl=1"
+time_chart: dict[str, float] = {
+    "microseconds": 0.000001,   # 1 μs = 1e-6 seconds
+    "microsecond": 0.000001,
+    "µs": 0.000001,
+    "milliseconds": 0.001,      # 1 ms = 1e-3 seconds
+    "millisecond": 0.001,
+    "ms": 0.001,
+    "seconds": 1.0,              # Base unit
+    "second": 1.0,
+    "s": 1.0,
+    "minutes": 60.0,             # 1 min = 60 sec
+    "minute": 60.0,
+    "min": 60.0,
+    "m": 60.0,
+    "hours": 3600.0,             # 1 hr = 60 min = 3600 sec
+    "hour": 3600.0,
+    "hr": 3600.0,
+    "h": 3600.0,
+    "days": 86400.0,             # 1 day = 24 hr = 86400 sec
+    "day": 86400.0,
+    "d": 86400.0,
+    "weeks": 604800.0,           # 1 week = 7 days = 604800 sec
+    "week": 604800.0,
+    "wk": 604800.0,
+    "w": 604800.0,
+    "months": 2629800.0,         # Approx. 30.44 days = 1/12 year
+    "month": 2629800.0,
+    "years": 31557600.0,         # Julian year = 365.25 days
+    "year": 31557600.0,
+    "yr": 31557600.0,
+    "y": 31557600.0,
+}
 
-    def __init__(self, data: Union[gpd.GeoDataFrame, str], mode: str = 'static', width: int = 800, height: int = 600):
-        if isinstance(data, str):
-            if data.endswith('.geojson'):
-                self.data = gpd.read_file(data)
-                self.crs = self.data.crs
+time_chart_inverse: dict[str, float] = {
+    key: 1.0 / value for key, value in time_chart.items()
+}
+
+speed_chart: dict[str, float] = {
+    "km/h": 1.0,
+    "m/s": 3.6,
+    "mph": 1.609344,
+    "knot": 1.852,
+}
+
+speed_chart_inverse: dict[str, float] = {
+    "km/h": 1.0,
+    "m/s": 0.277777778,
+    "mph": 0.621371192,
+    "knot": 0.539956803,
+}
+
+UNIT_SYMBOL = {
+    "meter": "m", "meters": "m",
+    "kilometer": "km", "kilometers": "km",
+    "centimeter": "cm", "centimeters": "cm",
+    "millimeter": "mm", "millimeters": "mm",
+    "mile": "mi", "miles": "mi",
+    "yard": "yd", "yards": "yd",
+    "foot": "ft", "feet": "ft",
+    "inch": "in", "inches": "in",
+}
+
+METRIC_CONVERSION = {
+    "mm": -3,
+    "cm": -2,
+    "dm": -1,
+    "m": 0,
+    "dam": 1,
+    "hm": 2,
+    "km": 3,
+}
+
+distance_chart = {
+    "mm": 0.001,
+    "cm": 0.01,
+    "dm": 0.1,
+    "m": 1.0,
+    "dam": 10.0,
+    "hm": 100.0,
+    "km": 1000.0,
+    "in": 0.0254,
+    "ft": 0.3048,
+    "yd": 0.9144,
+    "mi": 1609.344,
+}
+
+def sdf_to_gdf(sdf, crs=None):
+    """
+    Converts a spatial dataframe (sdf) to a geodataframe (gdf) with a user-defined CRS.
+
+    Parameters:
+    - sdf: Spatial DataFrame to convert.
+    - crs: Coordinate Reference System (default is EPSG:4326).
+    Converts a spatial dataframe (sdf) to a geodataframe (gdf) with a user-defined CRS.
+
+    Parameters:
+    - sdf: Spatial DataFrame to convert.
+    - crs: Coordinate Reference System (default is EPSG:4326).
+
+    Steps:
+    1. Creates a copy of the input spatial dataframe to avoid modifying the original.
+    2. Filters out rows where the 'SHAPE' column is NaN (invalid geometries).
+    3. Converts the filtered dataframe to a GeoDataFrame using the 'SHAPE' column for geometry and sets the CRS.
+    4. Applies the `make_valid` function to the geometry column to correct any invalid geometries.
+    5. Drops the columns 'Shape__Area', 'Shape__Length', and 'SHAPE', if they exist, to clean up the GeoDataFrame.
+    6. Returns the resulting GeoDataFrame.
+    3. Converts the filtered dataframe to a GeoDataFrame using the 'SHAPE' column for geometry and sets the CRS.
+    4. Applies the `make_valid` function to the geometry column to correct any invalid geometries.
+    5. Drops the columns 'Shape__Area', 'Shape__Length', and 'SHAPE', if they exist, to clean up the GeoDataFrame.
+    6. Returns the resulting GeoDataFrame.
+    """
+    # Validate input DataFrame
+    if not isinstance(sdf, pd.DataFrame):
+        raise ValueError("Input must be a pandas DataFrame.")
+    if sdf.empty:
+        raise ValueError("DataFrame is empty. Cannot generate UUIDs for an empty DataFrame.")
+
+    # clean vars
+    params = clean_vars(
+        shape = "SHAPE",
+        geometry = "geometry",
+        columns = ["Shape__Area", "Shape__Length", "SHAPE"],
+        crs=crs
+    )
+    assert params.get("geometry") is None
+    print("Geometry column is present and valid")
+
+    tmp = sdf.copy()
+    tmp = tmp[~tmp[params.get("shape")].isna()]
+
+    if crs:
+        crs=params.get("crs")
+    else:
+        crs=4326
+
+    gdf = gpd.GeoDataFrame(
+        tmp, 
+        geometry=tmp[params.get("shape")], 
+        crs=crs
+        )
+    gdf['geometry'] = gdf[params.get("geometry")].apply(lambda x: make_valid(x)) # Validate geometries
+    gdf.drop(columns=params.get("columns"), errors='ignore', inplace=True)
+    print("COnverted Spatial DataFrame to GeoDataFrame")
+    return gdf
+
+def generate_uuid(df, index=False):
+    """
+    Adds a unique 'uuid' column with UUIDs to the DataFrame if no existing UUID-like column is found.
+    Does not generate new UUIDs if UUIDs are already assigned in a 'uuid' column.
+
+    Args:
+        df (pd.DataFrame): The DataFrame to which UUIDs will be added.
+        index (bool): If True, sets 'uuid' as the index. Otherwise, 'uuid' remains a column.
+
+    Returns:
+        pd.DataFrame: DataFrame with a 'uuid' column added if no UUID-like column exists.
+    Raises:
+        ValueError: If 'df' is not a DataFrame or if it's empty.
+    """
+
+    # Validate input DataFrame
+    if not isinstance(df, pd.DataFrame):
+        raise ValueError("Input must be a pandas DataFrame.")
+    if df.empty:
+        raise ValueError("DataFrame is empty. Cannot generate UUIDs for an empty DataFrame.")
+
+    # Define UUID pattern
+    uuid_pattern = r'^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$'
+
+    # Check for existing UUID-like columns
+    for col in df.columns:
+        if pd.api.types.is_string_dtype(df[col]) and df[col].str.match(uuid_pattern).all():
+            print(f"Column '{col}' contains UUID-like values.")
+            if index:
+                return df.set_index(col).reset_index()
             else:
-                with rasterio.open(data) as src:
-                    self.data = src
-                    self.crs = src.crs.to_string()
-        elif isinstance(data, gpd.GeoDataFrame):
-            self.data = data
-            self.crs = data.crs
-        else:
-            raise ValueError("Data must be a GeoDataFrame or a path to a raster file or GeoJSON")
-        
-        if mode not in ['static', 'interactive']:
-            raise ValueError("Mode must be 'static' or 'interactive'")
-        
-        self.mode = mode
-        self.width = width
-        self.height = height
-        self.layers = []
-        self.components = {'scale_bar': None, 'compass': None, 'legend': None}
-        self.basemap = None
-        self.title = None
-    
-    def set_projection(self, crs: str) -> 'Map':
-        if isinstance(self.data, gpd.GeoDataFrame):
-            self.data = self.data.to_crs(crs)
-            self.crs = crs
-        return self
-    
-    def add_points(self, column: Optional[str] = None, color: str = 'red', alpha: float = 0.7, size: int = 10, marker_svg: Optional[str] = None) -> 'Map':
-        if not isinstance(self.data, gpd.GeoDataFrame):
-            raise ValueError("Data must be a GeoDataFrame to add points")
-        if not any(self.data.geometry.type.isin(['Point', 'MultiPoint'])):
-            raise ValueError("Data must contain Point or MultiPoint geometries")
-        if column and column not in self.data.columns:
-            raise ValueError(f"Column '{column}' not found in data")
-        
-        layer = {
-            'type': 'point',
-            'column': column,
-            'style': {'color': color, 'alpha': alpha, 'size': size, 'marker_svg': marker_svg}
-        }
-        self.layers.append(layer)
-        return self
-    
-    def add_polylines(self, column: Optional[str] = None, color: str = 'blue', alpha: float = 0.7, linewidth: float = 2) -> 'Map':
-        if not isinstance(self.data, gpd.GeoDataFrame):
-            raise ValueError("Data must be a GeoDataFrame to add polylines")
-        if not any(self.data.geometry.type.isin(['LineString', 'MultiLineString'])):
-            raise ValueError("Data must contain LineString or MultiLineString geometries")
-        if column and column not in self.data.columns:
-            raise ValueError(f"Column '{column}' not found in data")
-        
-        layer = {
-            'type': 'line',
-            'column': column,
-            'style': {'color': color, 'alpha': alpha, 'linewidth': linewidth}
-        }
-        self.layers.append(layer)
-        return self
-    
-    def add_polygons(self, column: Optional[str] = None, color: str = 'viridis', alpha: float = 0.7) -> 'Map':
-        if not isinstance(self.data, gpd.GeoDataFrame):
-            raise ValueError("Data must be a GeoDataFrame to add polygons")
-        if not any(self.data.geometry.type.isin(['Polygon', 'MultiPolygon'])):
-            raise ValueError("Data must contain Polygon or MultiPolygon geometries")
-        if column and column not in self.data.columns:
-            raise ValueError(f"Column '{column}' not found in data")
-        
-        layer = {
-            'type': 'polygon',
-            'column': column,
-            'style': {'color': color, 'alpha': alpha}
-        }
-        self.layers.append(layer)
-        return self
-    
-    def add_raster(self, cmap: str = 'viridis', alpha: float = 1.0) -> 'Map':
-        if not isinstance(self.data, rasterio.io.DatasetReader):
-            raise ValueError("Data must be a raster file to add raster layer")
-        
-        layer = {
-            'type': 'raster',
-            'column': None,
-            'style': {'cmap': cmap, 'alpha': alpha}
-        }
-        self.layers.append(layer)
-        return self
-    
-    def add_basemap(self, basemap: str = 'CartoDB.Positron', custom_tiles: Optional[str] = None, attr: Optional[str] = None) -> 'Map':
-        valid_basemaps = [
-            'CartoDB.Positron',
-            'OpenStreetMap',
-            'Stamen.Terrain',
-            'Stamen.Toner',
-            'Stamen.Watercolor'
-        ]
-        if custom_tiles:
-            self.basemap = {'tiles': custom_tiles, 'attr': attr or "Custom"}
-        elif basemap in valid_basemaps:
-            try:
-                # Verify contextily providers
-                if not hasattr(ctx.providers, 'OpenStreetMap') or not hasattr(ctx.providers, 'CartoDB'):
-                    raise AttributeError("Contextily providers not available")
-                basemap_providers = {
-                    'CartoDB.Positron': ctx.providers.CartoDB.Positron,
-                    'OpenStreetMap': ctx.providers.OpenStreetMap.Mapnik,
-                    'Stamen.Terrain': ctx.providers.Stamen.Terrain,
-                    'Stamen.Toner': ctx.providers.Stamen.Toner,
-                    'Stamen.Watercolor': ctx.providers.Stamen.Watercolor
-                }
-                self.basemap = basemap_providers[basemap]
-                logger.debug(f"Basemap provider '{basemap}' loaded successfully")
-            except AttributeError as e:
-                logger.warning(f"Basemap '{basemap}' not available, disabling basemap. Using custom OpenStreetMap fallback. Error: {e}")
-                self.basemap = {'tiles': 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', 'attr': '© OpenStreetMap contributors'}
-        else:
-            raise ValueError(f"Basemap must be one of {valid_basemaps} or provide custom_tiles and attr")
-        return self
-    
-    def add_title(self, title: str) -> 'Map':
-        self.title = title
-        return self
-    
-    def add_scale_bar(self, position: str = 'bottom-left', units: str = 'metric', scale: float = 1.0) -> 'Map':
-        self.components['scale_bar'] = {
-            'position': position,
-            'units': units,
-            'scale': scale
-        }
-        return self
-    
-    def add_compass(self, position: str = 'top-right', size: int = 50, custom_svg: Optional[str] = None, svg_url: Optional[str] = None) -> 'Map':
-        svg_content = None
-        if svg_url:
-            try:
-                response = requests.get(svg_url, timeout=10)
-                response.raise_for_status()
-                svg_content = response.text
-                logger.debug(f"Successfully fetched SVG from URL: {svg_url}")
-            except requests.RequestException as e:
-                logger.error(f"Failed to fetch SVG from URL {svg_url}. Error: {e}")
-                svg_content = self.FALLBACK_COMPASS_SVG
-        elif custom_svg:
-            if os.path.isfile(custom_svg):
-                with open(custom_svg, 'r') as f:
-                    svg_content = f.read()
-                logger.debug(f"Using custom SVG from {custom_svg}")
-            else:
-                svg_content = custom_svg
-                logger.warning(f"Custom SVG path {custom_svg} not found, using raw content")
-        else:
-            try:
-                response = requests.get(self.DEFAULT_COMPASS_SVG_PATH, timeout=10)
-                response.raise_for_status()
-                svg_content = response.text
-                logger.debug(f"Successfully fetched default SVG from {self.DEFAULT_COMPASS_SVG_PATH}")
-            except requests.RequestException as e:
-                logger.error(f"Failed to fetch default SVG from {self.DEFAULT_COMPASS_SVG_PATH}. Error: {e}")
-                svg_content = self.FALLBACK_COMPASS_SVG
-        
-        if svg_content is None:
-            logger.error("No valid SVG content available for compass")
-            svg_content = self.FALLBACK_COMPASS_SVG  # Ensure fallback as a last resort
-        
-        self.components['compass'] = {
-            'position': position,
-            'size': size,
-            'svg': svg_content
-        }
-        return self
-    
-    def add_legend(self, title: Optional[str] = None, position: str = 'bottom-right', labels: Optional[list] = None) -> 'Map':
-        self.components['legend'] = {
-            'title': title,
-            'position': position,
-            'labels': labels or []
-        }
-        return self
-    
-    def plot(self) -> Union[None, folium.Map]:
-        if self.mode == 'static':
-            self._plot_static()
-        elif self.mode == 'interactive':
-            return self._plot_interactive()
-        else:
-            raise ValueError("Mode must be 'static' or 'interactive'")
-    
-    def _plot_static(self) -> None:
-        fig = plt.figure(figsize=(self.width / 100, self.height / 100))
-        original_crs = self.crs
-        if self.crs == 'EPSG:4326':
-            ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-        else:
-            ax = fig.add_subplot(1, 1, 1, projection=ccrs.epsg(self.crs.split(':')[1]))
-        
-        for layer in self.layers:
-            data = self.data
-            if layer['column'] and isinstance(data, gpd.GeoDataFrame):
-                data = data.dropna(subset=[layer['column']])
-                if data[layer['column']].dtype in ['int64', 'float64']:
-                    cmap = plt.cm.get_cmap(layer['style']['color'])
-                    norm = plt.Normalize(data[layer['column']].min(), data[layer['column']].max())
-                    colors = cmap(norm(data[layer['column']]))
-                else:
-                    colors = layer['style']['color']
-            else:
-                colors = layer['style']['color']
-            
-            if layer['type'] == 'point':
-                if layer['style'].get('marker_svg'):
-                    svg_content = layer['style']['marker_svg']
-                    if os.path.isfile(svg_content):
-                        with open(svg_content, 'r') as f:
-                            svg_content = f.read()
-                    path = parse_path(svg_content)
-                    path = path.transformed(plt.matplotlib.transforms.Affine2D().scale(0.01 * layer['style']['size']))
-                    for idx, row in data.iterrows():
-                        x, y = row.geometry.x, row.geometry.y
-                        color = colors[idx] if isinstance(colors, np.ndarray) else colors
-                        patch = PathPatch(path, facecolor=color, alpha=layer['style']['alpha'])
-                        ab = AnnotationBbox(OffsetImage(patch), (x, y), frameon=False)
-                        ax.add_artist(ab)
-                else:
-                    data.plot(ax=ax, color=colors, alpha=layer['style']['alpha'], markersize=layer['style']['size'])
-            elif layer['type'] == 'line':
-                data.plot(ax=ax, color=colors, alpha=layer['style']['alpha'], linewidth=layer['style']['linewidth'])
-            elif layer['type'] == 'polygon':
-                data.plot(ax=ax, color=colors, alpha=layer['style']['alpha'])
-            elif layer['type'] == 'raster':
-                with rasterio.open(self.data) as src:
-                    plt.imshow(src.read(1), cmap=layer['style']['cmap'], alpha=layer['style']['alpha'], 
-                              extent=(src.bounds.left, src.bounds.right, src.bounds.bottom, src.bounds.top))
-        
-        if self.basemap:
-            try:
-                # Temporarily reproject to EPSG:4326 for basemap compatibility
-                if self.crs != 'EPSG:4326' and isinstance(self.data, gpd.GeoDataFrame):
-                    temp_data = self.data.to_crs('EPSG:4326')
-                    temp_ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-                    ctx.add_basemap(temp_ax, source=self.basemap['tiles'] if isinstance(self.basemap, dict) else self.basemap, crs=ccrs.PlateCarree(), attribution=self.basemap.get('attr'))
-                    # Copy basemap to original axes
-                    temp_ax.get_images()[0].set_axes(ax)
-                    plt.delaxes(temp_ax)
-                else:
-                    ctx.add_basemap(ax, source=self.basemap['tiles'] if isinstance(self.basemap, dict) else self.basemap, crs=ccrs.PlateCarree(), attribution=self.basemap.get('attr'))
-                logger.debug(f"Basemap '{self.basemap}' added successfully with CRS {self.crs}")
-            except Exception as e:
-                logger.error(f"Failed to add basemap '{self.basemap}'. Error: {e}. Proceeding without basemap.")
-                self.basemap = None
-        
-        if self.title:
-            ax.set_title(self.title)
-        
-        if self.components['scale_bar']:
-            ax.add_artist(ScaleBar(self.components['scale_bar']['scale'], 
-                                  units=self.components['scale_bar']['units'],
-                                  location=self.components['scale_bar']['position']))
-        
-        if self.components['compass'] and self.components['compass'].get('svg'):
-            svg_content = self.components['compass']['svg']
-            try:
-                path = parse_path(svg_content)
-                path = path.transformed(plt.matplotlib.transforms.Affine2D().scale(0.01 * self.components['compass']['size']))
-                patch = PathPatch(path, facecolor='black', alpha=1.0)
-                pos = {
-                    'top-right': (0.95, 0.95),
-                    'top-left': (0.05, 0.95),
-                    'bottom-right': (0.95, 0.05),
-                    'bottom-left': (0.05, 0.05)
-                }[self.components['compass']['position']]
-                ab = AnnotationBbox(OffsetImage(patch), pos, xycoords='axes fraction', frameon=False)
-                ax.add_artist(ab)
-                logger.debug(f"North arrow added at position {self.components['compass']['position']}")
-            except Exception as e:
-                logger.error(f"Failed to render north arrow. Error: {e}. Using fallback rendering.")
-                # Fallback: Draw a simple triangle as a debug aid
-                ax.plot([0.95, 0.95, 0.9], [0.95, 0.9, 0.95], 'k-', transform=ax.transAxes)
+                return df  #
 
-        if self.components['legend'] and layer['column']:
-            sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
-            plt.colorbar(sm, ax=ax, label=self.components['legend']['title'])
-        
-        plt.show()
+    print("No UUID-like column found. Generating 'uuid' column in the DataFrame.")
+
+    if 'uuid' not in df.columns:
+        df['uuid'] = [str(uuid.uuid4()).lower() for _ in range(len(df))]
+    else:
+        df['uuid'] = df['uuid'].apply(lambda x: x if pd.notnull(x) else str(uuid.uuid4()).lower())
+
+    if index:
+        df = df.set_index('uuid').reset_index()
+
+    return df
+       
+def get_utm_epsg(longitude=None):
+    if longitude is None:
+       print("KeyError : Select column with longitude values")
+    else:
+        zone_number = int((longitude + 180) / 6) + 1
+        hemisphere = '6' if longitude >= 0 else '7'  # 6 for Northern, 7 for Southern Hemisphere
+        return f"32{hemisphere}{zone_number:02d}"
     
-    def _plot_interactive(self) -> folium.Map:
-        if isinstance(self.data, gpd.GeoDataFrame):
-            center = self.data.geometry.centroid.iloc[0].coords[0][::-1]
-        else:
-            with rasterio.open(self.data) as src:
-                center = [(src.bounds.top + src.bounds.bottom) / 2, (src.bounds.left + src.bounds.right) / 2]
-        
-        m = folium.Map(location=center, zoom_start=6, tiles=self.basemap['tiles'] if isinstance(self.basemap, dict) else self.basemap,
-                       attr=self.basemap['attr'] if isinstance(self.basemap, dict) else None, width=self.width, height=self.height)
-        
-        for layer in self.layers:
-            data = self.data
-            if layer['column'] and isinstance(data, gpd.GeoDataFrame):
-                data = data.dropna(subset=[layer['column']])
-                if data[layer['column']].dtype in ['int64', 'float64']:
-                    style_function = lambda x: {
-                        'fillColor': plt.cm.get_cmap(layer['style']['color'])(
-                            (x['properties'][layer['column']] - data[layer['column']].min()) /
-                            (data[layer['column']].max() - data[layer['column']].min())
-                        ),
-                        'color': 'black',
-                        'weight': 1,
-                        'fillOpacity': layer['style']['alpha']
-                    }
-                else:
-                    style_function = lambda x: {
-                        'fillColor': layer['style']['color'],
-                        'color': 'black',
-                        'weight': 1,
-                        'fillOpacity': layer['style']['alpha']
-                    }
-            else:
-                style_function = lambda x: {
-                    'fillColor': layer['style']['color'],
-                    'color': 'black',
-                    'weight': 1,
-                    'fillOpacity': layer['style']['alpha']
-                }
-            
-            if layer['type'] == 'point':
-                for _, row in data.iterrows():
-                    if layer['style'].get('marker_svg'):
-                        svg_content = layer['style']['marker_svg']
-                        if os.path.isfile(svg_content):
-                            with open(svg_content, 'r') as f:
-                                svg_content = f.read()
-                        icon_size = (layer['style']['size'], layer['style']['size'])
-                        icon = folium.features.CustomIcon(
-                            icon_image=f"data:image/svg+xml;base64,{b64encode(svg_content.encode()).decode()}",
-                            icon_size=icon_size
-                        )
-                        folium.Marker(
-                            location=[row.geometry.y, row.geometry.x],
-                            icon=icon,
-                            popup=folium.Popup(str(row[layer['column']]) if layer['column'] else None)
-                        ).add_to(m)
-                    else:
-                        folium.CircleMarker(
-                            location=[row.geometry.y, row.geometry.x],
-                            radius=layer['style']['size'] / 2,
-                            color=style_function({'properties': row})['fillColor'],
-                            fill=True,
-                            fill_opacity=layer['style']['alpha'],
-                            popup=folium.Popup(str(row[layer['column']]) if layer['column'] else None)
-                        ).add_to(m)
-            elif layer['type'] == 'line':
-                folium.GeoJson(
-                    data,
-                    style_function=style_function,
-                    popup=folium.GeoJsonPopup(fields=[layer['column']] if layer['column'] else [])
-                ).add_to(m)
-            elif layer['type'] == 'polygon':
-                folium.GeoJson(
-                    data,
-                    style_function=style_function,
-                    popup=folium.GeoJsonPopup(fields=[layer['column']] if layer['column'] else [])
-                ).add_to(m)
-            elif layer['type'] == 'raster':
-                with rasterio.open(self.data) as src:
-                    folium.raster_layers.ImageOverlay(
-                        image=src.read(1),
-                        bounds=[[src.bounds.bottom, src.bounds.left], [src.bounds.top, src.bounds.right]],
-                        colormap=plt.cm.get_cmap(layer['style']['cmap']),
-                        opacity=layer['style']['alpha']
-                    ).add_to(m)
-        
-        if self.title:
-            title_html = f'<h3 align="center" style="font-size:16px"><b>{self.title}</b></h3>'
-            m.get_root().html.add_child(folium.Element(title_html))
-        
-        if self.components['compass']:
-            svg_content = self.components['compass']['svg']
-            div_style = {
-                'top-right': 'position: absolute; top: 10px; right: 10px;',
-                'top-left': 'position: absolute; top: 10px; left: 10px;',
-                'bottom-right': 'position: absolute; bottom: 10px; right: 10px;',
-                'bottom-left': 'position: absolute; bottom: 10px; left: 10px;'
-            }[self.components['compass']['position']]
-            compass_html = f'''
-            <div style="{div_style}">
-                <img src="data:image/svg+xml;base64,{b64encode(svg_content.encode()).decode()}" 
-                     width="{self.components['compass']['size']}" 
-                     height="{self.components['compass']['size']}">
-            </div>
-            '''
-            m.get_root().html.add_child(folium.Element(compass_html))
-        
-        if self.components['legend'] and layer['column']:
-            folium.map.LayerControl().add_to(m)
-        
-        return m
+def to_gdf(df):
+    longitude, latitude = (0, 1) if isinstance(df["location"].iat[0], list) else ("longitude", "latitude")
+    return gpd.GeoDataFrame(
+        df,
+        geometry=gpd.points_from_xy(df["location"].str[longitude], df["location"].str[latitude]),
+        crs=4326,
+    )
+
+def convert_time(time_value: float, unit_from: str, unit_to: str) -> float:
+    """
+    Converts a given time value between different units.
+
+    Args:
+        time_value (float): The numerical value of the time.
+        unit_from (str): The original unit of time.
+        unit_to (str): The target unit to convert to.
+
+    Returns:
+        float: The converted time value.
+
+    Raises:
+        ValueError: If the provided units are not supported or value is invalid.
+    """
+    if not isinstance(time_value, (int, float)) or time_value < 0:
+        raise ValueError("'time_value' must be a non-negative number.")
+
+    # Normalize input unit names
+    unit_from = unit_from.lower().strip()
+    unit_to = unit_to.lower().strip()
+
+    unit_from = {
+        "us": "microseconds",
+        "μs": "microseconds",
+        "microsec": "microseconds",
+        "usec": "microseconds"
+    }.get(unit_from, unit_from)
+
+    unit_to = {
+        "us": "microseconds",
+        "μs": "microseconds",
+        "microsec": "microseconds",
+        "usec": "microseconds"
+    }.get(unit_to, unit_to)
+
+    if unit_from not in time_chart:
+        raise ValueError(f"Invalid 'unit_from': {unit_from}. Supported units: {', '.join(time_chart.keys())}")
+    if unit_to not in time_chart:
+        raise ValueError(f"Invalid 'unit_to': {unit_to}. Supported units: {', '.join(time_chart.keys())}")
+
+    # Convert to seconds first, then to target unit
+    seconds = time_value * time_chart[unit_from]
+    converted = seconds / time_chart[unit_to]
+
+    return round(converted, 3)
+
+def convert_speed(speed: float, unit_from: str, unit_to: str) -> float:
+    if unit_to not in speed_chart or unit_from not in speed_chart_inverse:
+        msg = (
+            f"Incorrect 'from_type' or 'to_type' value: {unit_from!r}, {unit_to!r}\n"
+            f"Valid values are: {', '.join(speed_chart_inverse)}"
+        )
+        raise ValueError(msg)
+    return round(speed * speed_chart[unit_from] * speed_chart_inverse[unit_to], 3)
+
+def convert_distance(value: float, from_type: str, to_type: str) -> float:
+    """
+    Converts distance values between different units including metric and imperial.
+
+    Supports:
+        Metric: mm, cm, dm, m, dam, hm, km
+        Imperial: in, ft, yd, mi
+
+    Handles plural forms, full names, and inconsistent casing.
+    """
+
+    from_sanitized = from_type.lower().strip("s")
+    to_sanitized = to_type.lower().strip("s")
+
+    from_sanitized = UNIT_SYMBOL.get(from_sanitized, from_sanitized)
+    to_sanitized = UNIT_SYMBOL.get(to_sanitized, to_sanitized)
+
+    valid_units = set(distance_chart.keys())
+    if from_sanitized not in valid_units:
+        raise ValueError(f"Invalid 'from_type': {from_type!r}. Valid units: {', '.join(valid_units)}")
+    if to_sanitized not in valid_units:
+        raise ValueError(f"Invalid 'to_type': {to_type!r}. Valid units: {', '.join(valid_units)}")
+
+    if from_sanitized in METRIC_CONVERSION and to_sanitized in METRIC_CONVERSION:
+        from_exp = METRIC_CONVERSION[from_sanitized]
+        to_exp = METRIC_CONVERSION[to_sanitized]
+        exponent_diff = from_exp - to_exp
+        return round(value * pow(10, exponent_diff), 3)
+
+    value_in_meters = value * distance_chart[from_sanitized]
+    converted = value_in_meters / distance_chart[to_sanitized]
+
+    return round(converted, 3)
