@@ -131,7 +131,15 @@ class Map:
         if custom_tiles:
             self.basemap = {'tiles': custom_tiles, 'attr': attr or "Custom"}
         elif basemap in valid_basemaps:
-            self.basemap = basemap
+            # Map basemap names to contextily providers
+            basemap_providers = {
+                'CartoDB.Positron': ctx.providers.CartoDB.Positron,
+                'OpenStreetMap': ctx.providers.OpenStreetMap.Mapnik,
+                'Stamen.Terrain': ctx.providers.Stamen.Terrain,
+                'Stamen.Toner': ctx.providers.Stamen.Toner,
+                'Stamen.Watercolor': ctx.providers.Stamen.Watercolor
+            }
+            self.basemap = basemap_providers[basemap]
         else:
             raise ValueError(f"Basemap must be one of {valid_basemaps} or provide custom_tiles and attr")
         return self
@@ -187,7 +195,6 @@ class Map:
     
     def _plot_static(self) -> None:
         fig = plt.figure(figsize=(self.width / 100, self.height / 100))
-        # Use PlateCarree for EPSG:4326, otherwise use ccrs.epsg
         if self.crs == 'EPSG:4326':
             ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
         else:
@@ -235,7 +242,7 @@ class Map:
             if isinstance(self.basemap, dict):
                 ctx.add_basemap(ax, source=self.basemap['tiles'], attribution=self.basemap['attr'], crs=self.crs)
             else:
-                ctx.add_basemap(ax, source=ctx.providers.__dict__[self.basemap.replace('.', '_')], crs=self.crs)
+                ctx.add_basemap(ax, source=self.basemap, crs=self.crs)
         
         if self.title:
             ax.set_title(self.title)
@@ -279,7 +286,7 @@ class Map:
             data = self.data
             if layer['column'] and isinstance(data, gpd.GeoDataFrame):
                 data = data.dropna(subset=[layer['column']])
-                if data[layer['column']].dtype in ['int64', 'float64']:
+                if data[layer['column']].dtype in ['int64', 'float gasps64']:
                     style_function = lambda x: {
                         'fillColor': plt.cm.get_cmap(layer['style']['color'])(
                             (x['properties'][layer['column']] - data[layer['column']].min()) /
