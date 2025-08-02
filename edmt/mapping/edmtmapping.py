@@ -35,7 +35,7 @@ class Map:
     '''
 
     # Default compass SVG path as a local file path or URL
-    DEFAULT_COMPASS_SVG_PATH = "../mapping/edmt/assets/north_arrow.svg"
+    DEFAULT_COMPASS_SVG_PATH = "north-arrow.svg"
 
     # Predefined basemaps
     PREDEFINED_BASEMAPS = {
