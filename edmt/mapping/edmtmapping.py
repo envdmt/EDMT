@@ -36,6 +36,26 @@ class Map:
     # Default compass SVG path as a Dropbox URL (replace with your new public link ending with ?dl=1)
     DEFAULT_COMPASS_SVG_PATH = "https://www.dropbox.com/scl/fi/new-link/north-arrow.svg?rlkey=new-key&dl=1"
 
+    # Predefined basemaps
+    PREDEFINED_BASEMAPS = {
+        'World_Imagery': {
+            'tiles': 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.png',
+            'attr': 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+        },
+        'OpenStreetMap': {
+            'tiles': 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            'attr': '&copy; OpenStreetMap contributors'
+        },
+        'CartoDB_Positron': {
+            'tiles': 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+            'attr': '&copy; <a href="https://carto.com/attributions">CartoDB</a>'
+        },
+        'Stamen_Terrain': {
+            'tiles': 'https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}{r}.png',
+            'attr': '&copy; <a href="http://stamen.com">Stamen Design</a>, &copy; <a href="https://openmaptiles.org/">OpenMapTiles</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }
+    }
+
     def __init__(self, data: Union[gpd.GeoDataFrame, str], mode: str = 'static', width: int = 800, height: int = 600):
         if isinstance(data, str):
             if data.endswith('.geojson'):
@@ -131,35 +151,15 @@ class Map:
         self.layers.append(layer)
         return self
     
-    def add_basemap(self, basemap: str = 'CartoDB.Positron', custom_tiles: Optional[str] = None, attr: Optional[str] = None) -> 'Map':
-        valid_basemaps = [
-            'CartoDB.Positron',
-            'OpenStreetMap',
-            'Stamen.Terrain',
-            'Stamen.Toner',
-            'Stamen.Watercolor'
-        ]
+    def add_basemap(self, basemap: str = 'OpenStreetMap', custom_tiles: Optional[str] = None, attr: Optional[str] = None) -> 'Map':
         if custom_tiles:
             self.basemap = {'tiles': custom_tiles, 'attr': attr or "Custom"}
-        elif basemap in valid_basemaps:
-            try:
-                # Verify contextily providers
-                if not hasattr(ctx.providers, 'OpenStreetMap') or not hasattr(ctx.providers, 'CartoDB'):
-                    raise AttributeError("Contextily providers not available")
-                basemap_providers = {
-                    'CartoDB.Positron': ctx.providers.CartoDB.Positron,
-                    'OpenStreetMap': ctx.providers.OpenStreetMap.Mapnik,
-                    'Stamen.Terrain': ctx.providers.Stamen.Terrain,
-                    'Stamen.Toner': ctx.providers.Stamen.Toner,
-                    'Stamen.Watercolor': ctx.providers.Stamen.Watercolor
-                }
-                self.basemap = basemap_providers[basemap]
-                logger.debug(f"Basemap provider '{basemap}' loaded successfully")
-            except AttributeError as e:
-                logger.warning(f"Basemap '{basemap}' not available, disabling basemap. Using custom OpenStreetMap fallback. Error: {e}")
-                self.basemap = {'tiles': 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', 'attr': '© OpenStreetMap contributors'}
+            logger.debug(f"Custom basemap added with tiles: {custom_tiles}")
+        elif basemap in self.PREDEFINED_BASEMAPS:
+            self.basemap = self.PREDEFINED_BASEMAPS[basemap]
+            logger.debug(f"Predefined basemap '{basemap}' loaded successfully")
         else:
-            raise ValueError(f"Basemap must be one of {valid_basemaps} or provide custom_tiles and attr")
+            raise ValueError(f"Basemap must be one of {list(self.PREDEFINED_BASEMAPS.keys())} or provide custom_tiles and attr")
         return self
     
     def add_title(self, title: str) -> 'Map':
@@ -293,15 +293,15 @@ class Map:
                 if self.crs != 'EPSG:4326' and isinstance(self.data, gpd.GeoDataFrame):
                     temp_data = self.data.to_crs('EPSG:4326')
                     temp_ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-                    ctx.add_basemap(temp_ax, source=self.basemap['tiles'] if isinstance(self.basemap, dict) else self.basemap, crs=ccrs.PlateCarree(), attribution=self.basemap.get('attr'))
+                    ctx.add_basemap(temp_ax, source=self.basemap['tiles'], crs=ccrs.PlateCarree(), attribution=self.basemap['attr'])
                     # Copy basemap to original axes
                     temp_ax.get_images()[0].set_axes(ax)
                     plt.delaxes(temp_ax)
                 else:
-                    ctx.add_basemap(ax, source=self.basemap['tiles'] if isinstance(self.basemap, dict) else self.basemap, crs=ccrs.PlateCarree(), attribution=self.basemap.get('attr'))
-                logger.debug(f"Basemap '{self.basemap}' added successfully with CRS {self.crs}")
+                    ctx.add_basemap(ax, source=self.basemap['tiles'], crs=ccrs.PlateCarree(), attribution=self.basemap['attr'])
+                logger.debug(f"Basemap '{self.basemap['tiles']}' added successfully with CRS {self.crs}")
             except Exception as e:
-                logger.error(f"Failed to add basemap '{self.basemap}'. Error: {e}. Proceeding without basemap.")
+                logger.error(f"Failed to add basemap '{self.basemap['tiles']}'. Error: {e}. Proceeding without basemap.")
                 self.basemap = None
         
         if self.title:
@@ -345,8 +345,7 @@ class Map:
             with rasterio.open(self.data) as src:
                 center = [(src.bounds.top + src.bounds.bottom) / 2, (src.bounds.left + src.bounds.right) / 2]
         
-        m = folium.Map(location=center, zoom_start=6, tiles=self.basemap['tiles'] if isinstance(self.basemap, dict) else self.basemap,
-                       attr=self.basemap['attr'] if isinstance(self.basemap, dict) else None, width=self.width, height=self.height)
+        m = folium.Map(location=center, zoom_start=6, tiles=self.basemap['tiles'], attr=self.basemap['attr'], width=self.width, height=self.height)
         
         for layer in self.layers:
             data = self.data
