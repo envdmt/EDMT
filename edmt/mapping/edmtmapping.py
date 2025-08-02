@@ -102,8 +102,12 @@ class Map:
             return self
         if isinstance(self.data, gpd.GeoDataFrame):
             try:
-                self.data = self.data.to_crs(crs)
-                self.crs = crs
+                if self.crs != crs:
+                    self.data = self.data.to_crs(crs)
+                    self.crs = crs
+                    logger.debug(f"Reprojected to {crs}")
+                else:
+                    logger.debug(f"CRS already set to {crs}")
             except Exception as e:
                 logger.error(f"Failed to reproject to {crs}: {e}")
                 warnings.warn(f"Failed to reproject to {crs}. Keeping original CRS.")
@@ -261,12 +265,14 @@ class Map:
                 return colors, cmap, norm
             else:
                 n_items = len(data)
-                colors = layer['style']['color'] if isinstance(layer['style']['color'], np.ndarray) else plt.colormaps.get_cmap(layer['style']['color'], n_items)(np.linspace(0, 1, n_items))
+                cmap = plt.colormaps.get_cmap(layer['style']['color'])
+                colors = cmap(np.linspace(0, 1, n_items))
                 self._colormap_cache[cache_key] = (colors, None, None)
                 return colors, None, None
         else:
             n_items = len(data)
-            colors = layer['style']['color'] if isinstance(layer['style']['color'], np.ndarray) else plt.colormaps.get_cmap(layer['style']['color'], n_items)(np.linspace(0, 1, n_items))
+            cmap = plt.colormaps.get_cmap(layer['style']['color'])
+            colors = cmap(np.linspace(0, 1, n_items)) if not isinstance(layer['style']['color'], np.ndarray) else layer['style']['color']
             self._colormap_cache[cache_key] = (colors, None, None)
             return colors, None, None
 
