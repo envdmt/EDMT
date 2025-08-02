@@ -19,6 +19,7 @@ import logging
 import requests
 import re
 from matplotlib.colors import ListedColormap, to_hex
+from urllib.parse import urlparse
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -33,7 +34,7 @@ class Map:
     </svg>
     '''
 
-    # Default compass SVG path as your provided Dropbox URL (update with your new link)
+    # Default compass SVG path as a local file path or URL
     DEFAULT_COMPASS_SVG_PATH = "../mapping/edmt/assets/north_arrow.svg"
 
     # Predefined basemaps
@@ -181,7 +182,7 @@ class Map:
                 response = requests.get(svg_url, timeout=10)
                 response.raise_for_status()
                 svg_content = response.text
-                logger.debug(f"Fetched SVG content: {svg_content[:100]}...")  # Log first 100 chars
+                logger.debug(f"Fetched SVG content: {svg_content[:100]}...")
             except requests.RequestException as e:
                 logger.error(f"Failed to fetch SVG from URL {svg_url}. Error: {e}")
                 svg_content = self.FALLBACK_COMPASS_SVG
@@ -194,14 +195,25 @@ class Map:
                 svg_content = custom_svg
                 logger.warning(f"Custom SVG path {custom_svg} not found, using raw content")
         else:
-            try:
-                response = requests.get(self.DEFAULT_COMPASS_SVG_PATH, timeout=10)
-                response.raise_for_status()
-                svg_content = response.text
-                logger.debug(f"Fetched default SVG content: {svg_content[:100]}...")
-            except requests.RequestException as e:
-                logger.error(f"Failed to fetch default SVG from {self.DEFAULT_COMPASS_SVG_PATH}. Error: {e}")
-                svg_content = self.FALLBACK_COMPASS_SVG
+            # Check if DEFAULT_COMPASS_SVG_PATH is a local file or URL
+            if urlparse(self.DEFAULT_COMPASS_SVG_PATH).scheme in ['http', 'https']:
+                try:
+                    response = requests.get(self.DEFAULT_COMPASS_SVG_PATH, timeout=10)
+                    response.raise_for_status()
+                    svg_content = response.text
+                    logger.debug(f"Fetched default SVG content: {svg_content[:100]}...")
+                except requests.RequestException as e:
+                    logger.error(f"Failed to fetch default SVG from {self.DEFAULT_COMPASS_SVG_PATH}. Error: {e}")
+                    svg_content = self.FALLBACK_COMPASS_SVG
+            else:
+                default_path = os.path.join(os.path.dirname(__file__), self.DEFAULT_COMPASS_SVG_PATH)
+                if os.path.isfile(default_path):
+                    with open(default_path, 'r') as f:
+                        svg_content = f.read()
+                    logger.debug(f"Loaded default SVG from {default_path}")
+                else:
+                    logger.error(f"Default SVG file not found at {default_path}")
+                    svg_content = self.FALLBACK_COMPASS_SVG
         
         if svg_content is None:
             logger.error("No valid SVG content available for compass")
