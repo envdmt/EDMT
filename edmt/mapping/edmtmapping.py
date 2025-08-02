@@ -35,7 +35,6 @@ class Map:
     '''
 
     # Default compass SVG path as a local file path or URL
-    # Use fallback SVG by default since file inclusion in package is not set up
     DEFAULT_COMPASS_SVG_PATH = None  # Will use FALLBACK_COMPASS_SVG instead
 
     # Predefined basemaps
@@ -193,13 +192,13 @@ class Map:
                 logger.error(f"Failed to fetch SVG from URL {svg_url}. Error: {e}")
                 svg_content = self.FALLBACK_COMPASS_SVG
         elif custom_svg:
-            if os.path.isfile(custom_svg):
+            if isinstance(custom_svg, str) and os.path.isfile(custom_svg):
                 with open(custom_svg, 'r') as f:
                     svg_content = f.read()
                 logger.debug(f"Using custom SVG from {custom_svg}")
             else:
                 svg_content = custom_svg
-                logger.warning(f"Custom SVG path {custom_svg} not found, using raw content")
+                logger.debug(f"Using custom SVG content directly")
         else:
             # Use fallback SVG since DEFAULT_COMPASS_SVG_PATH is None
             svg_content = self.FALLBACK_COMPASS_SVG
@@ -214,10 +213,10 @@ class Map:
             if path_match:
                 path_data = path_match.group(1)
                 if not re.search(r'[0-9\.\-]', path_data):
-                    logger.error(f"Invalid SVG path data in {self.DEFAULT_COMPASS_SVG_PATH or svg_url}: no numeric coordinates found")
+                    logger.error(f"Invalid SVG path data in {svg_url or custom_svg}: no numeric coordinates found")
                     svg_content = self.FALLBACK_COMPASS_SVG
             else:
-                logger.warning(f"No path data found in SVG from {self.DEFAULT_COMPASS_SVG_PATH or svg_url}, using fallback")
+                logger.warning(f"No path data found in SVG from {svg_url or custom_svg}, using fallback")
                 svg_content = self.FALLBACK_COMPASS_SVG
         
         self.components['compass'] = {
