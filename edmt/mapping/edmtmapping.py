@@ -33,8 +33,8 @@ class Map:
     </svg>
     '''
 
-    # Default compass SVG path as a Dropbox URL (replace with your new public link ending with ?dl=1)
-    DEFAULT_COMPASS_SVG_PATH = "https://www.dropbox.com/scl/fi/new-link/north-arrow.svg?rlkey=new-key&dl=1"
+    # Default compass SVG path as your provided Dropbox URL (update with your new link)
+    DEFAULT_COMPASS_SVG_PATH = "../mapping/edmt/assets/north_arrow.svg"
 
     # Predefined basemaps
     PREDEFINED_BASEMAPS = {
@@ -181,7 +181,7 @@ class Map:
                 response = requests.get(svg_url, timeout=10)
                 response.raise_for_status()
                 svg_content = response.text
-                logger.debug(f"Successfully fetched SVG from URL: {svg_url}")
+                logger.debug(f"Fetched SVG content: {svg_content[:100]}...")  # Log first 100 chars
             except requests.RequestException as e:
                 logger.error(f"Failed to fetch SVG from URL {svg_url}. Error: {e}")
                 svg_content = self.FALLBACK_COMPASS_SVG
@@ -198,7 +198,7 @@ class Map:
                 response = requests.get(self.DEFAULT_COMPASS_SVG_PATH, timeout=10)
                 response.raise_for_status()
                 svg_content = response.text
-                logger.debug(f"Successfully fetched default SVG from {self.DEFAULT_COMPASS_SVG_PATH}")
+                logger.debug(f"Fetched default SVG content: {svg_content[:100]}...")
             except requests.RequestException as e:
                 logger.error(f"Failed to fetch default SVG from {self.DEFAULT_COMPASS_SVG_PATH}. Error: {e}")
                 svg_content = self.FALLBACK_COMPASS_SVG
