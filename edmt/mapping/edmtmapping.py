@@ -17,7 +17,7 @@ from pathlib import Path
 from base64 import b64encode
 import logging
 import requests
-import re
+from xml.etree.ElementTree import ElementTree, fromstring
 from matplotlib.colors import ListedColormap, to_hex
 from urllib.parse import urlparse
 
@@ -35,7 +35,7 @@ class Map:
     '''
 
     # Default compass SVG path as a local file path or URL
-    DEFAULT_COMPASS_SVG_PATH = None  # Will use FALLBACK_COMPASS_SVG instead
+    DEFAULT_COMPASS_SVG_PATH = None  # Will use FALLBACK_COMPASS_SVG
 
     # Predefined basemaps
     PREDEFINED_BASEMAPS = {
@@ -58,17 +58,32 @@ class Map:
     }
 
     def __init__(self, data: Union[gpd.GeoDataFrame, str], mode: str = 'static', width: int = 800, height: int = 600):
+        """
+        Initialize a Map object with geospatial data.
+
+        Args:
+            data: GeoDataFrame or path to a GeoJSON/raster file.
+            mode: 'static' for Matplotlib or 'interactive' for Folium.
+            width: Width of the map in pixels.
+            height: Height of the map in pixels.
+        """
         if isinstance(data, str):
             if data.endswith('.geojson'):
                 self.data = gpd.read_file(data)
-                self.crs = self.data.crs
+                if self.data.empty:
+                    raise ValueError("GeoJSON file is empty")
+                self.crs = self.data.crs or "EPSG:4326"
             else:
                 with rasterio.open(data) as src:
                     self.data = src
-                    self.crs = src.crs.to_string()
+                    self.crs = src.crs.to_string() or "EPSG:4326"
         elif isinstance(data, gpd.GeoDataFrame):
+            if data.empty:
+                raise ValueError("GeoDataFrame is empty")
+            if not data.geometry.is_valid.all():
+                raise ValueError("GeoDataFrame contains invalid geometries")
             self.data = data
-            self.crs = data.crs
+            self.crs = data.crs or "EPSG:4326"
         else:
             raise ValueError("Data must be a GeoDataFrame or a path to a raster file or GeoJSON")
         
@@ -84,12 +99,43 @@ class Map:
         self.title = None
     
     def set_projection(self, crs: str) -> 'Map':
+        """
+        Reproject the data to the specified CRS.
+
+        Args:
+            crs: Target CRS (e.g., 'EPSG:4326').
+
+        Returns:
+            Self for method chaining.
+        """
         if isinstance(self.data, gpd.GeoDataFrame):
-            self.data = self.data.to_crs(crs)
-            self.crs = crs
+            if self.data.crs is None:
+                logger.warning("No CRS defined in data. Assuming EPSG:4326.")
+                self.data.crs = "EPSG:4326"
+            try:
+                self.data = self.data.to_crs(crs)
+                self.crs = crs
+            except Exception as e:
+                logger.error(f"Failed to reproject to {crs}: {e}")
+                raise ValueError(f"Invalid CRS: {crs}")
         return self
     
-    def add_points(self, column: Optional[str] = None, color: str = 'red', alpha: float = 0.7, size: int = 10, marker_svg: Optional[str] = None, popup: bool = False) -> 'Map':
+    def add_points(self, column: Optional[str] = None, color: Union[str, list, dict] = 'red', alpha: float = 0.7, 
+                   size: int = 10, marker_svg: Optional[str] = None, popup: bool = False) -> 'Map':
+        """
+        Add point geometries to the map.
+
+        Args:
+            column: Data column for coloring (optional).
+            color: Color for points (string, list, or dict for categorical).
+            alpha: Transparency (0 to 1).
+            size: Marker size.
+            marker_svg: Path or content of custom SVG marker.
+            popup: Enable popups for interactive mode.
+
+        Returns:
+            Self for method chaining.
+        """
         if not isinstance(self.data, gpd.GeoDataFrame):
             raise ValueError("Data must be a GeoDataFrame to add points")
         if not any(self.data.geometry.type.isin(['Point', 'MultiPoint'])):
@@ -97,16 +143,40 @@ class Map:
         if column and column not in self.data.columns:
             raise ValueError(f"Column '{column}' not found in data")
         
+        if column and self.data[column].dtype not in ['int64', 'float64']:
+            unique_values = self.data[column].unique()
+            if isinstance(color, dict):
+                colors = [color.get(val, 'red') for val in unique_values]
+            else:
+                colors = plt.cm.get_cmap('tab20', len(unique_values))(np.linspace(0, 1, len(unique_values)))
+            color_map = dict(zip(unique_values, colors))
+        else:
+            colors = color
+        
         layer = {
             'type': 'point',
             'column': column,
-            'style': {'color': color, 'alpha': alpha, 'size': size, 'marker_svg': marker_svg},
+            'style': {'color': colors, 'alpha': alpha, 'size': size, 'marker_svg': marker_svg, 'color_map': color_map if column else None},
             'popup': popup
         }
         self.layers.append(layer)
         return self
     
-    def add_polylines(self, column: Optional[str] = None, color: str = 'blue', alpha: float = 0.7, linewidth: float = 2, popup: bool = False) -> 'Map':
+    def add_polylines(self, column: Optional[str] = None, color: Union[str, list, dict] = 'blue', alpha: float = 0.7, 
+                      linewidth: float = 2, popup: bool = False) -> 'Map':
+        """
+        Add polyline geometries to the map.
+
+        Args:
+            column: Data column for coloring (optional).
+            color: Color for polylines (string, list, or dict for categorical).
+            alpha: Transparency (0 to 1).
+            linewidth: Line width.
+            popup: Enable popups for interactive mode.
+
+        Returns:
+            Self for method chaining.
+        """
         if not isinstance(self.data, gpd.GeoDataFrame):
             raise ValueError("Data must be a GeoDataFrame to add polylines")
         if not any(self.data.geometry.type.isin(['LineString', 'MultiLineString'])):
@@ -114,16 +184,39 @@ class Map:
         if column and column not in self.data.columns:
             raise ValueError(f"Column '{column}' not found in data")
         
+        if column and self.data[column].dtype not in ['int64', 'float64']:
+            unique_values = self.data[column].unique()
+            if isinstance(color, dict):
+                colors = [color.get(val, 'blue') for val in unique_values]
+            else:
+                colors = plt.cm.get_cmap('tab20', len(unique_values))(np.linspace(0, 1, len(unique_values)))
+            color_map = dict(zip(unique_values, colors))
+        else:
+            colors = color
+        
         layer = {
             'type': 'line',
             'column': column,
-            'style': {'color': color, 'alpha': alpha, 'linewidth': linewidth},
+            'style': {'color': colors, 'alpha': alpha, 'linewidth': linewidth, 'color_map': color_map if column else None},
             'popup': popup
         }
         self.layers.append(layer)
         return self
     
-    def add_polygons(self, column: Optional[str] = None, color: str = 'viridis', alpha: float = 0.7, popup: bool = False) -> 'Map':
+    def add_polygons(self, column: Optional[str] = None, color: Union[str, list, dict] = 'blue', alpha: float = 0.7, 
+                     popup: bool = False) -> 'Map':
+        """
+        Add polygon geometries to the map.
+
+        Args:
+            column: Data column for coloring (optional).
+            color: Color for polygons (string, list, or dict for categorical).
+            alpha: Transparency (0 to 1).
+            popup: Enable popups for interactive mode.
+
+        Returns:
+            Self for method chaining.
+        """
         if not isinstance(self.data, gpd.GeoDataFrame):
             raise ValueError("Data must be a GeoDataFrame to add polygons")
         if not any(self.data.geometry.type.isin(['Polygon', 'MultiPolygon'])):
@@ -131,31 +224,63 @@ class Map:
         if column and column not in self.data.columns:
             raise ValueError(f"Column '{column}' not found in data")
         
-        # Generate unique colors for each county
-        n_counties = len(self.data)
-        colors = plt.cm.get_cmap(color, n_counties)(np.linspace(0, 1, n_counties))
+        if column and self.data[column].dtype not in ['int64', 'float64']:
+            unique_values = self.data[column].unique()
+            if isinstance(color, dict):
+                colors = [color.get(val, 'blue') for val in unique_values]
+            else:
+                colors = plt.cm.get_cmap('tab20', len(unique_values))(np.linspace(0, 1, len(unique_values)))
+            color_map = dict(zip(unique_values, colors))
+        else:
+            n_counties = len(self.data)
+            colors = plt.cm.get_cmap(color, n_counties)(np.linspace(0, 1, n_counties)) if isinstance(color, str) else color
+            color_map = None
+        
         layer = {
             'type': 'polygon',
             'column': column,
-            'style': {'color': colors, 'alpha': alpha},
+            'style': {'color': colors, 'alpha': alpha, 'color_map': color_map},
             'popup': popup
         }
         self.layers.append(layer)
         return self
     
-    def add_raster(self, cmap: str = 'viridis', alpha: float = 1.0) -> 'Map':
+    def add_raster(self, cmap: str = 'viridis', alpha: float = 1.0, bands: Optional[list] = None) -> 'Map':
+        """
+        Add a raster layer to the map.
+
+        Args:
+            cmap: Colormap for single-band rasters.
+            alpha: Transparency (0 to 1).
+            bands: List of band indices (1-based) to display.
+
+        Returns:
+            Self for method chaining.
+        """
         if not isinstance(self.data, rasterio.io.DatasetReader):
             raise ValueError("Data must be a raster file to add raster layer")
         
         layer = {
             'type': 'raster',
             'column': None,
-            'style': {'cmap': cmap, 'alpha': alpha}
+            'style': {'cmap': cmap, 'alpha': alpha, 'bands': bands or [1]}
         }
         self.layers.append(layer)
         return self
     
-    def add_basemap(self, basemap: str = 'OpenStreetMap', custom_tiles: Optional[str] = None, attr: Optional[str] = None) -> 'Map':
+    def add_basemap(self, basemap: str = 'OpenStreetMap', custom_tiles: Optional[str] = None, 
+                    attr: Optional[str] = None) -> 'Map':
+        """
+        Add a basemap to the map.
+
+        Args:
+            basemap: Predefined basemap name or 'custom' for custom tiles.
+            custom_tiles: URL for custom tiles (if basemap='custom').
+            attr: Attribution for custom tiles.
+
+        Returns:
+            Self for method chaining.
+        """
         if custom_tiles:
             self.basemap = {'tiles': custom_tiles, 'attr': attr or "Custom"}
             logger.debug(f"Custom basemap added with tiles: {custom_tiles}")
@@ -167,10 +292,30 @@ class Map:
         return self
     
     def add_title(self, title: str) -> 'Map':
+        """
+        Add a title to the map.
+
+        Args:
+            title: Title text.
+
+        Returns:
+            Self for method chaining.
+        """
         self.title = title
         return self
     
     def add_scale_bar(self, position: str = 'bottom-left', units: str = 'km', scale: float = 1.0) -> 'Map':
+        """
+        Add a scale bar to the map (static mode only).
+
+        Args:
+            position: Position ('bottom-left', 'top-right', etc.).
+            units: Units for the scale bar ('km', 'm', etc.).
+            scale: Scale factor for the scale bar.
+
+        Returns:
+            Self for method chaining.
+        """
         self.components['scale_bar'] = {
             'position': position,
             'units': units,
@@ -178,10 +323,23 @@ class Map:
         }
         return self
     
-    def add_compass(self, position: str = 'top-right', size: int = 50, custom_svg: Optional[str] = None, svg_url: Optional[str] = None) -> 'Map':
+    def add_compass(self, position: str = 'top-right', size: int = 50, 
+                    custom_svg: Optional[str] = None, svg_url: Optional[str] = None) -> 'Map':
+        """
+        Add a compass/north arrow to the map.
+
+        Args:
+            position: Position ('top-right', 'top-left', etc.).
+            size: Size of the compass in pixels.
+            custom_svg: Path or content of custom SVG.
+            svg_url: URL to fetch SVG from.
+
+        Returns:
+            Self for method chaining.
+        """
         VALID_POSITIONS = ['top-right', 'top-left', 'bottom-right', 'bottom-left', 'top-center', 'bottom-center']
         if position not in VALID_POSITIONS:
-            logger.warning(f"Invalid position '{position}'. Using 'top-right'. Valid positions are {VALID_POSITIONS}")
+            logger.warning(f"Invalid position '{position}'. Using 'top-right'.")
             position = 'top-right'
         
         svg_content = None
@@ -203,24 +361,15 @@ class Map:
                 svg_content = custom_svg
                 logger.debug(f"Using custom SVG content directly")
         else:
-            # Use fallback SVG since DEFAULT_COMPASS_SVG_PATH is None
             svg_content = self.FALLBACK_COMPASS_SVG
             logger.debug("Using fallback SVG for compass")
         
-        if svg_content is None:
-            logger.error("No valid SVG content available for compass")
+        # Validate SVG
+        try:
+            ElementTree(fromstring(svg_content))
+        except Exception as e:
+            logger.error(f"Invalid SVG content: {e}. Using fallback SVG.")
             svg_content = self.FALLBACK_COMPASS_SVG
-        else:
-            # Validate SVG path data
-            path_match = re.search(r'd="([^"]*)"', svg_content)
-            if path_match:
-                path_data = path_match.group(1)
-                if not re.search(r'[0-9\.\-]', path_data):
-                    logger.error(f"Invalid SVG path data in {svg_url or custom_svg}: no numeric coordinates found")
-                    svg_content = self.FALLBACK_COMPASS_SVG
-            else:
-                logger.warning(f"No path data found in SVG from {svg_url or custom_svg}, using fallback")
-                svg_content = self.FALLBACK_COMPASS_SVG
         
         self.components['compass'] = {
             'position': position,
@@ -229,15 +378,37 @@ class Map:
         }
         return self
     
-    def add_legend(self, title: Optional[str] = None, position: str = 'bottom-right', labels: Optional[list] = None) -> 'Map':
+    def add_legend(self, title: Optional[str] = None, position: str = 'bottom-right', 
+                   labels: Optional[dict] = None) -> 'Map':
+        """
+        Add a legend to the map.
+
+        Args:
+            title: Legend title.
+            position: Position ('bottom-right', 'top-left', etc.).
+            labels: Dictionary of label-color pairs.
+
+        Returns:
+            Self for method chaining.
+        """
+        VALID_POSITIONS = ['top-right', 'top-left', 'bottom-right', 'bottom-left']
+        if position not in VALID_POSITIONS:
+            logger.warning(f"Invalid legend position '{position}'. Using 'bottom-right'.")
+            position = 'bottom-right'
         self.components['legend'] = {
             'title': title,
             'position': position,
-            'labels': labels or []
+            'labels': labels or {}
         }
         return self
     
     def plot(self) -> Union[None, folium.Map]:
+        """
+        Plot the map in static or interactive mode.
+
+        Returns:
+            None for static mode, folium.Map for interactive mode.
+        """
         if self.mode == 'static':
             self._plot_static()
         elif self.mode == 'interactive':
@@ -245,7 +416,29 @@ class Map:
         else:
             raise ValueError("Mode must be 'static' or 'interactive'")
     
+    def save(self, filename: str) -> None:
+        """
+        Save the map as an image (static) or HTML (interactive).
+
+        Args:
+            filename: Output file path (e.g., 'map.png' or 'map.html').
+        """
+        if self.mode == 'static':
+            self._plot_static()
+            plt.savefig(filename, dpi=300, bbox_inches='tight')
+            plt.close()
+            logger.info(f"Static map saved as {filename}")
+        elif self.mode == 'interactive':
+            m = self._plot_interactive()
+            m.save(filename)
+            logger.info(f"Interactive map saved as {filename}")
+        else:
+            raise ValueError("Mode must be 'static' or 'interactive'")
+    
     def _plot_static(self) -> None:
+        """
+        Plot a static map using Matplotlib and Cartopy.
+        """
         fig = plt.figure(figsize=(self.width / 100, self.height / 100))
         original_crs = self.crs
         if self.crs == 'EPSG:4326':
@@ -255,16 +448,18 @@ class Map:
         
         for layer in self.layers:
             data = self.data
+            cmap = None
+            norm = None
             if layer['column'] and isinstance(data, gpd.GeoDataFrame):
                 data = data.dropna(subset=[layer['column']])
                 if data[layer['column']].dtype in ['int64', 'float64']:
-                    cmap = plt.cm.get_cmap(layer['style']['color'])
+                    cmap = plt.cm.get_cmap(layer['style']['color'] if isinstance(layer['style']['color'], str) else 'viridis')
                     norm = plt.Normalize(data[layer['column']].min(), data[layer['column']].max())
                     colors = cmap(norm(data[layer['column']]))
                 else:
-                    colors = layer['style']['color'] if isinstance(layer['style']['color'], np.ndarray) else plt.cm.get_cmap(layer['style']['color'], len(data))(np.linspace(0, 1, len(data)))
+                    colors = layer['style']['color_map'] or layer['style']['color']
             else:
-                colors = layer['style']['color'] if isinstance(layer['style']['color'], np.ndarray) else plt.cm.get_cmap(layer['style']['color'], len(data))(np.linspace(0, 1, len(data)))
+                colors = layer['style']['color']
             
             if layer['type'] == 'point':
                 if layer['style'].get('marker_svg'):
@@ -285,24 +480,31 @@ class Map:
             elif layer['type'] == 'line':
                 data.plot(ax=ax, color=colors, alpha=layer['style']['alpha'], linewidth=layer['style']['linewidth'])
             elif layer['type'] == 'polygon':
-                data.plot(ax=ax, color=[to_hex(c) for c in colors], alpha=layer['style']['alpha'])
+                data.plot(ax=ax, color=[to_hex(c) for c in colors] if isinstance(colors, np.ndarray) else colors, 
+                          alpha=layer['style']['alpha'])
             elif layer['type'] == 'raster':
                 with rasterio.open(self.data) as src:
-                    plt.imshow(src.read(1), cmap=layer['style']['cmap'], alpha=layer['style']['alpha'], 
-                              extent=(src.bounds.left, src.bounds.right, src.bounds.bottom, src.bounds.top))
+                    if len(layer['style']['bands']) == 1:
+                        plt.imshow(src.read(layer['style']['bands'][0]), cmap=layer['style']['cmap'], 
+                                  alpha=layer['style']['alpha'], 
+                                  extent=(src.bounds.left, src.bounds.right, src.bounds.bottom, src.bounds.top))
+                    else:
+                        img = np.stack([src.read(b) for b in layer['style']['bands']], axis=-1)
+                        plt.imshow(img, alpha=layer['style']['alpha'], 
+                                  extent=(src.bounds.left, src.bounds.right, src.bounds.bottom, src.bounds.top))
         
         if self.basemap:
             try:
-                # Temporarily reproject to EPSG:4326 for basemap compatibility
                 if self.crs != 'EPSG:4326' and isinstance(self.data, gpd.GeoDataFrame):
                     temp_data = self.data.to_crs('EPSG:4326')
                     temp_ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-                    ctx.add_basemap(temp_ax, source=self.basemap['tiles'], crs=ccrs.PlateCarree(), attribution=self.basemap['attr'])
-                    # Copy basemap to original axes
+                    ctx.add_basemap(temp_ax, source=self.basemap['tiles'], crs=ccrs.PlateCarree(), 
+                                    attribution=self.basemap['attr'])
                     temp_ax.get_images()[0].set_axes(ax)
                     plt.delaxes(temp_ax)
                 else:
-                    ctx.add_basemap(ax, source=self.basemap['tiles'], crs=ccrs.PlateCarree(), attribution=self.basemap['attr'])
+                    ctx.add_basemap(ax, source=self.basemap['tiles'], crs=ccrs.PlateCarree(), 
+                                    attribution=self.basemap['attr'])
                 logger.debug(f"Basemap '{self.basemap['tiles']}' added successfully with CRS {self.crs}")
             except Exception as e:
                 logger.error(f"Failed to add basemap '{self.basemap['tiles']}'. Error: {e}. Proceeding without basemap.")
@@ -335,106 +537,131 @@ class Map:
                 logger.debug(f"North arrow added at position {self.components['compass']['position']}")
             except Exception as e:
                 logger.error(f"Failed to render north arrow. Error: {e}. Using fallback rendering.")
-                # Fallback: Draw a simple triangle as a debug aid
                 ax.plot([0.95, 0.95, 0.9], [0.95, 0.9, 0.95], 'k-', transform=ax.transAxes)
-
-        if self.components['legend'] and layer['column']:
-            sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
-            plt.colorbar(sm, ax=ax, label=self.components['legend']['title'])
+        
+        if self.components['legend']:
+            if self.components['legend']['labels']:
+                from matplotlib.lines import Line2D
+                legend_elements = [Line2D([0], [0], color=color, label=label) 
+                                  for label, color in self.components['legend']['labels'].items()]
+                ax.legend(handles=legend_elements, title=self.components['legend']['title'], 
+                         loc=self.components['legend']['position'])
+            elif layer['column'] and cmap and norm:
+                sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+                plt.colorbar(sm, ax=ax, label=self.components['legend']['title'])
         
         plt.show()
     
     def _plot_interactive(self) -> folium.Map:
+        """
+        Plot an interactive map using Folium.
+
+        Returns:
+            folium.Map object.
+        """
         if isinstance(self.data, gpd.GeoDataFrame):
-            # Reproject to a projected CRS for accurate centroid if geographic
             if self.crs == 'EPSG:4326':
-                temp_data = self.data.to_crs('EPSG:32633')  # UTM Zone 33N as an example
-                center = temp_data.geometry.centroid.iloc[0].coords[0][::-1]
-                logger.warning("Reprojected to EPSG:32633 for centroid calculation due to geographic CRS")
-            else:
                 center = self.data.geometry.centroid.iloc[0].coords[0][::-1]
+            else:
+                try:
+                    temp_data = self.data.to_crs('EPSG:4326')
+                    center = temp_data.geometry.centroid.iloc[0].coords[0][::-1]
+                except Exception as e:
+                    logger.error(f"Failed to calculate centroid: {e}")
+                    center = [0, 0]
         else:
             with rasterio.open(self.data) as src:
                 center = [(src.bounds.top + src.bounds.bottom) / 2, (src.bounds.left + src.bounds.right) / 2]
         
-        m = folium.Map(location=center, zoom_start=6, tiles=self.basemap['tiles'], attr=self.basemap['attr'], width=self.width, height=self.height)
+        m = folium.Map(location=center, zoom_start=6, tiles=self.basemap['tiles'], attr=self.basemap['attr'], 
+                       width=self.width, height=self.height)
         
         for layer in self.layers:
             data = self.data
             if layer['column'] and isinstance(data, gpd.GeoDataFrame):
                 data = data.dropna(subset=[layer['column']])
                 if data[layer['column']].dtype in ['int64', 'float64']:
+                    norm = plt.Normalize(data[layer['column']].min(), data[layer['column']].max())
+                    cmap = plt.cm.get_cmap(layer['style']['color'] if isinstance(layer['style']['color'], str) else 'viridis')
                     style_function = lambda feature: {
-                        'color': plt.cm.get_cmap(layer['style']['color'])(
-                            (feature['properties'][layer['column']] - data[layer['column']].min()) /
-                            (data[layer['column']].max() - data[layer['column']].min())
-                        ) if layer['column'] else layer['style']['color'],
+                        'color': to_hex(cmap(norm(feature['properties'][layer['column']]))),
                         'weight': layer['style'].get('linewidth', 2),
-                        'opacity': layer['style']['alpha']
+                        'opacity': layer['style']['alpha'],
+                        'fillColor': to_hex(cmap(norm(feature['properties'][layer['column']]))),
+                        'fillOpacity': layer['style']['alpha']
                     }
                 else:
-                    colors = layer['style']['color'] if isinstance(layer['style']['color'], np.ndarray) else plt.cm.get_cmap(layer['style']['color'], len(data))(np.linspace(0, 1, len(data)))
+                    color_map = layer['style'].get('color_map', {})
                     style_function = lambda feature: {
-                        'color': to_hex(colors[data.index.get_loc(feature['properties'].get(layer['column'], data.index[0]))]),
+                        'color': color_map.get(feature['properties'][layer['column']], 
+                                              to_hex(layer['style']['color'])),
                         'weight': layer['style'].get('linewidth', 2),
-                        'opacity': layer['style']['alpha']
+                        'opacity': layer['style']['alpha'],
+                        'fillColor': color_map.get(feature['properties'][layer['column']], 
+                                                  to_hex(layer['style']['color'])),
+                        'fillOpacity': layer['style']['alpha']
                     }
             else:
-                colors = layer['style']['color'] if isinstance(layer['style']['color'], np.ndarray) else plt.cm.get_cmap(layer['style']['color'], len(data))(np.linspace(0, 1, len(data)))
                 style_function = lambda feature: {
-                    'color': to_hex(colors[data.index[0]]),
+                    'color': to_hex(layer['style']['color'] if isinstance(layer['style']['color'], np.ndarray) 
+                                    else layer['style']['color']),
                     'weight': layer['style'].get('linewidth', 2),
-                    'opacity': layer['style']['alpha']
+                    'opacity': layer['style']['alpha'],
+                    'fillColor': to_hex(layer['style']['color'] if isinstance(layer['style']['color'], np.ndarray) 
+                                        else layer['style']['color']),
+                    'fillOpacity': layer['style']['alpha']
                 }
             
-            if layer['type'] == 'point':
-                for _, row in data.iterrows():
-                    if layer['style'].get('marker_svg'):
-                        svg_content = layer['style']['marker_svg']
-                        if os.path.isfile(svg_content):
-                            with open(svg_content, 'r') as f:
-                                svg_content = f.read()
-                        icon_size = (layer['style']['size'], layer['style']['size'])
-                        icon = folium.features.CustomIcon(
-                            icon_image=f"data:image/svg+xml;base64,{b64encode(svg_content.encode()).decode()}",
-                            icon_size=icon_size
-                        )
+            if layer['type'] in ['line', 'polygon']:
+                folium.GeoJson(
+                    data,
+                    style_function=style_function,
+                    popup=folium.GeoJsonPopup(fields=[layer['column']] if layer['column'] and layer['popup'] else [])
+                ).add_to(m)
+            elif layer['type'] == 'point':
+                if layer['style'].get('marker_svg'):
+                    svg_content = layer['style']['marker_svg']
+                    if os.path.isfile(svg_content):
+                        with open(svg_content, 'r') as f:
+                            svg_content = f.read()
+                    icon = folium.features.CustomIcon(
+                        icon_image=f"data:image/svg+xml;base64,{b64encode(svg_content.encode()).decode()}",
+                        icon_size=(layer['style']['size'], layer['style']['size'])
+                    )
+                    for _, row in data.iterrows():
                         folium.Marker(
                             location=[row.geometry.y, row.geometry.x],
                             icon=icon,
                             popup=folium.Popup(str(row[layer['column']]) if layer['column'] and layer['popup'] else None)
                         ).add_to(m)
-                    else:
-                        folium.CircleMarker(
-                            location=[row.geometry.y, row.geometry.x],
-                            radius=layer['style']['size'] / 2,
-                            color=style_function({'properties': row})['color'],
-                            fill=True,
-                            fill_opacity=layer['style']['alpha'],
-                            popup=folium.Popup(str(row[layer['column']]) if layer['column'] and layer['popup'] else None)
-                        ).add_to(m)
-            elif layer['type'] == 'line':
-                popup_fields = [layer['column']] if layer['column'] and layer['get']('popup', False) else []
-                folium.GeoJson(
-                    data,
-                    style_function=style_function,
-                    popup=folium.GeoJsonPopup(fields=popup_fields) if popup_fields else None
-                ).add_to(m)
-            elif layer['type'] == 'polygon':
-                for idx, row in data.iterrows():
+                else:
                     folium.GeoJson(
-                        row.geometry.__geo_interface__,
-                        style_function=lambda x, i=idx: style_function({'properties': data.iloc[i].to_dict()}),
-                        popup=folium.Popup(str(row[layer['column']]) if layer['column'] and layer['popup'] else str(idx))
+                        data,
+                        marker=folium.CircleMarker(
+                            radius=layer['style']['size'] / 2,
+                            color=to_hex(layer['style']['color']),
+                            fill=True,
+                            fill_opacity=layer['style']['alpha']
+                        ),
+                        style_function=style_function,
+                        popup=folium.GeoJsonPopup(fields=[layer['column']] if layer['column'] and layer['popup'] else [])
                     ).add_to(m)
             elif layer['type'] == 'raster':
                 with rasterio.open(self.data) as src:
-                    folium.raster_layers.ImageOverlay(
-                        image=src.read(1),
-                        bounds=[[src.bounds.bottom, src.bounds.left], [src.bounds.top, src.bounds.right]],
-                        colormap=plt.cm.get_cmap(layer['style']['cmap']),
-                        opacity=layer['style']['alpha']
-                    ).add_to(m)
+                    if len(layer['style']['bands']) == 1:
+                        folium.raster_layers.ImageOverlay(
+                            image=src.read(layer['style']['bands'][0]),
+                            bounds=[[src.bounds.bottom, src.bounds.left], [src.bounds.top, src.bounds.right]],
+                            colormap=plt.cm.get_cmap(layer['style']['cmap']),
+                            opacity=layer['style']['alpha']
+                        ).add_to(m)
+                    else:
+                        img = np.stack([src.read(b) for b in layer['style']['bands']], axis=-1)
+                        folium.raster_layers.ImageOverlay(
+                            image=img,
+                            bounds=[[src.bounds.bottom, src.bounds.left], [src.bounds.top, src.bounds.right]],
+                            opacity=layer['style']['alpha']
+                        ).add_to(m)
         
         if self.title:
             title_html = f'<h3 align="center" style="font-size:16px"><b>{self.title}</b></h3>'
@@ -459,7 +686,20 @@ class Map:
             '''
             m.get_root().html.add_child(folium.Element(compass_html))
         
-        if self.components['legend'] and layer['column']:
-            folium.map.LayerControl().add_to(m)
+        if self.components['legend']:
+            if self.components['legend']['labels']:
+                legend_html = f'''
+                <div style="position: absolute; {self.components['legend']['position'].replace('-', ': ')}: 10px; 
+                             background-color: white; padding: 5px; border: 1px solid black;">
+                    <h4>{self.components['legend']['title']}</h4>
+                    <ul>
+                        {"".join([f'<li style="color: {color}">{label}</li>' 
+                                  for label, color in self.components['legend']['labels'].items()])}
+                    </ul>
+                </div>
+                '''
+                m.get_root().html.add_child(folium.Element(legend_html))
+            elif layer['column']:
+                folium.map.LayerControl().add_to(m)
         
         return m
