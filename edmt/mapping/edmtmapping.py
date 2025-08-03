@@ -89,7 +89,7 @@ class Map:
             self.crs = crs
         return self
     
-    def add_points(self, column: Optional[str] = None, color: str = 'red', alpha: float = 0.7, size: int = 10, marker_svg: Optional[str] = None) -> 'Map':
+    def add_points(self, column: Optional[str] = None, color: str = 'red', alpha: float = 0.7, size: int = 10, marker_svg: Optional[str] = None, popup: bool = False) -> 'Map':
         if not isinstance(self.data, gpd.GeoDataFrame):
             raise ValueError("Data must be a GeoDataFrame to add points")
         if not any(self.data.geometry.type.isin(['Point', 'MultiPoint'])):
@@ -100,12 +100,13 @@ class Map:
         layer = {
             'type': 'point',
             'column': column,
-            'style': {'color': color, 'alpha': alpha, 'size': size, 'marker_svg': marker_svg}
+            'style': {'color': color, 'alpha': alpha, 'size': size, 'marker_svg': marker_svg},
+            'popup': popup
         }
         self.layers.append(layer)
         return self
     
-    def add_polylines(self, column: Optional[str] = None, color: str = 'blue', alpha: float = 0.7, linewidth: float = 2) -> 'Map':
+    def add_polylines(self, column: Optional[str] = None, color: str = 'blue', alpha: float = 0.7, linewidth: float = 2, popup: bool = False) -> 'Map':
         if not isinstance(self.data, gpd.GeoDataFrame):
             raise ValueError("Data must be a GeoDataFrame to add polylines")
         if not any(self.data.geometry.type.isin(['LineString', 'MultiLineString'])):
@@ -116,12 +117,13 @@ class Map:
         layer = {
             'type': 'line',
             'column': column,
-            'style': {'color': color, 'alpha': alpha, 'linewidth': linewidth}
+            'style': {'color': color, 'alpha': alpha, 'linewidth': linewidth},
+            'popup': popup
         }
         self.layers.append(layer)
         return self
     
-    def add_polygons(self, column: Optional[str] = None, color: str = 'viridis', alpha: float = 0.7) -> 'Map':
+    def add_polygons(self, column: Optional[str] = None, color: str = 'viridis', alpha: float = 0.7, popup: bool = False) -> 'Map':
         if not isinstance(self.data, gpd.GeoDataFrame):
             raise ValueError("Data must be a GeoDataFrame to add polygons")
         if not any(self.data.geometry.type.isin(['Polygon', 'MultiPolygon'])):
@@ -135,7 +137,8 @@ class Map:
         layer = {
             'type': 'polygon',
             'column': column,
-            'style': {'color': colors, 'alpha': alpha}
+            'style': {'color': colors, 'alpha': alpha},
+            'popup': popup
         }
         self.layers.append(layer)
         return self
@@ -343,7 +346,13 @@ class Map:
     
     def _plot_interactive(self) -> folium.Map:
         if isinstance(self.data, gpd.GeoDataFrame):
-            center = self.data.geometry.centroid.iloc[0].coords[0][::-1]
+            # Reproject to a projected CRS for accurate centroid if geographic
+            if self.crs == 'EPSG:4326':
+                temp_data = self.data.to_crs('EPSG:32633')  # UTM Zone 33N as an example
+                center = temp_data.geometry.centroid.iloc[0].coords[0][::-1]
+                logger.warning("Reprojected to EPSG:32633 for centroid calculation due to geographic CRS")
+            else:
+                center = self.data.geometry.centroid.iloc[0].coords[0][::-1]
         else:
             with rasterio.open(self.data) as src:
                 center = [(src.bounds.top + src.bounds.bottom) / 2, (src.bounds.left + src.bounds.right) / 2]
@@ -355,30 +364,27 @@ class Map:
             if layer['column'] and isinstance(data, gpd.GeoDataFrame):
                 data = data.dropna(subset=[layer['column']])
                 if data[layer['column']].dtype in ['int64', 'float64']:
-                    style_function = lambda x: {
-                        'fillColor': plt.cm.get_cmap(layer['style']['color'])(
-                            (x['properties'][layer['column']] - data[layer['column']].min()) /
+                    style_function = lambda feature: {
+                        'color': plt.cm.get_cmap(layer['style']['color'])(
+                            (feature['properties'][layer['column']] - data[layer['column']].min()) /
                             (data[layer['column']].max() - data[layer['column']].min())
-                        ),
-                        'color': 'black',
-                        'weight': 1,
-                        'fillOpacity': layer['style']['alpha']
+                        ) if layer['column'] else layer['style']['color'],
+                        'weight': layer['style'].get('linewidth', 2),
+                        'opacity': layer['style']['alpha']
                     }
                 else:
                     colors = layer['style']['color'] if isinstance(layer['style']['color'], np.ndarray) else plt.cm.get_cmap(layer['style']['color'], len(data))(np.linspace(0, 1, len(data)))
-                    style_function = lambda x, idx=data.index.get_loc(x['properties'][layer['column']]): {
-                        'fillColor': to_hex(colors[idx]),
-                        'color': 'black',
-                        'weight': 1,
-                        'fillOpacity': layer['style']['alpha']
+                    style_function = lambda feature: {
+                        'color': to_hex(colors[data.index.get_loc(feature['properties'].get(layer['column'], data.index[0]))]),
+                        'weight': layer['style'].get('linewidth', 2),
+                        'opacity': layer['style']['alpha']
                     }
             else:
                 colors = layer['style']['color'] if isinstance(layer['style']['color'], np.ndarray) else plt.cm.get_cmap(layer['style']['color'], len(data))(np.linspace(0, 1, len(data)))
-                style_function = lambda x, idx=data.index.get_loc(x): {
-                    'fillColor': to_hex(colors[idx]),
-                    'color': 'black',
-                    'weight': 1,
-                    'fillOpacity': layer['style']['alpha']
+                style_function = lambda feature: {
+                    'color': to_hex(colors[data.index[0]]),
+                    'weight': layer['style'].get('linewidth', 2),
+                    'opacity': layer['style']['alpha']
                 }
             
             if layer['type'] == 'point':
@@ -396,29 +402,30 @@ class Map:
                         folium.Marker(
                             location=[row.geometry.y, row.geometry.x],
                             icon=icon,
-                            popup=folium.Popup(str(row[layer['column']]) if layer['column'] else None)
+                            popup=folium.Popup(str(row[layer['column']]) if layer['column'] and layer['popup'] else None)
                         ).add_to(m)
                     else:
                         folium.CircleMarker(
                             location=[row.geometry.y, row.geometry.x],
                             radius=layer['style']['size'] / 2,
-                            color=style_function({'properties': row})['fillColor'],
+                            color=style_function({'properties': row})['color'],
                             fill=True,
                             fill_opacity=layer['style']['alpha'],
-                            popup=folium.Popup(str(row[layer['column']]) if layer['column'] else None)
+                            popup=folium.Popup(str(row[layer['column']]) if layer['column'] and layer['popup'] else None)
                         ).add_to(m)
             elif layer['type'] == 'line':
+                popup_fields = [layer['column']] if layer['column'] and layer['get']('popup', False) else []
                 folium.GeoJson(
                     data,
                     style_function=style_function,
-                    popup=folium.GeoJsonPopup(fields=[layer['column']] if layer['column'] else [])
+                    popup=folium.GeoJsonPopup(fields=popup_fields) if popup_fields else None
                 ).add_to(m)
             elif layer['type'] == 'polygon':
                 for idx, row in data.iterrows():
                     folium.GeoJson(
                         row.geometry.__geo_interface__,
-                        style_function=lambda x, i=idx: style_function(x, i),
-                        popup=folium.Popup(str(row[layer['column']]) if layer['column'] else str(idx))
+                        style_function=lambda x, i=idx: style_function({'properties': data.iloc[i].to_dict()}),
+                        popup=folium.Popup(str(row[layer['column']]) if layer['column'] and layer['popup'] else str(idx))
                     ).add_to(m)
             elif layer['type'] == 'raster':
                 with rasterio.open(self.data) as src:
