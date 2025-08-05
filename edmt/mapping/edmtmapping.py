@@ -20,6 +20,8 @@ import requests
 from xml.etree.ElementTree import ElementTree, fromstring
 from matplotlib.colors import ListedColormap, to_hex
 from urllib.parse import urlparse
+import ipywidgets as widgets
+from IPython.display import display, clear_output
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -97,6 +99,7 @@ class Map:
         self.components = {'scale_bar': None, 'compass': None, 'legend': None}
         self.basemap = None
         self.title = None
+        self.widgets = {}  # Store widgets for interactive control
     
     def set_projection(self, crs: str) -> 'Map':
         """
@@ -203,15 +206,18 @@ class Map:
         self.layers.append(layer)
         return self
     
-    def add_polygons(self, column: Optional[str] = None, color: Union[str, list, dict] = 'blue', alpha: float = 0.7, 
-                     popup: bool = False) -> 'Map':
+    def add_polygons(self, column: Optional[str] = None, fill_color: Union[str, list, dict] = 'blue', 
+                    line_color: Union[str, list, dict] = 'black', alpha: float = 0.7, 
+                    line_width: float = 1.0, popup: bool = False) -> 'Map':
         """
         Add polygon geometries to the map.
 
         Args:
             column: Data column for coloring (optional).
-            color: Color for polygons (string, list, or dict for categorical).
-            alpha: Transparency (0 to 1).
+            fill_color: Color for polygon fill (string, list, or dict for categorical).
+            line_color: Color for polygon edges (string, list, or dict for categorical).
+            alpha: Transparency (0 to 1) for both fill and line.
+            line_width: Width of polygon edges.
             popup: Enable popups for interactive mode.
 
         Returns:
@@ -224,22 +230,36 @@ class Map:
         if column and column not in self.data.columns:
             raise ValueError(f"Column '{column}' not found in data")
         
+        fill_color_map = None
+        line_color_map = None
         if column and self.data[column].dtype not in ['int64', 'float64']:
             unique_values = self.data[column].unique()
-            if isinstance(color, dict):
-                colors = [color.get(val, 'blue') for val in unique_values]
+            if isinstance(fill_color, dict):
+                fill_colors = [fill_color.get(val, 'blue') for val in unique_values]
             else:
-                colors = plt.cm.get_cmap('tab20', len(unique_values))(np.linspace(0, 1, len(unique_values)))
-            color_map = dict(zip(unique_values, colors))
+                fill_colors = plt.cm.get_cmap('tab20', len(unique_values))(np.linspace(0, 1, len(unique_values)))
+            fill_color_map = dict(zip(unique_values, fill_colors))
+            if isinstance(line_color, dict):
+                line_colors = [line_color.get(val, 'black') for val in unique_values]
+            else:
+                line_colors = plt.cm.get_cmap('tab20', len(unique_values))(np.linspace(0, 1, len(unique_values)))
+            line_color_map = dict(zip(unique_values, line_colors))
         else:
             n_counties = len(self.data)
-            colors = plt.cm.get_cmap(color, n_counties)(np.linspace(0, 1, n_counties)) if isinstance(color, str) else color
-            color_map = None
+            fill_colors = plt.cm.get_cmap(fill_color, n_counties)(np.linspace(0, 1, n_counties)) if isinstance(fill_color, str) else fill_color
+            line_colors = plt.cm.get_cmap(line_color, n_counties)(np.linspace(0, 1, n_counties)) if isinstance(line_color, str) else line_color
         
         layer = {
             'type': 'polygon',
             'column': column,
-            'style': {'color': colors, 'alpha': alpha, 'color_map': color_map},
+            'style': {
+                'fill_color': fill_colors,
+                'line_color': line_colors,
+                'alpha': alpha,
+                'line_width': line_width,
+                'fill_color_map': fill_color_map,
+                'line_color_map': line_color_map
+            },
             'popup': popup
         }
         self.layers.append(layer)
@@ -311,7 +331,7 @@ class Map:
         Args:
             position: Position ('bottom-left', 'top-right', etc.).
             units: Units for the scale bar ('km', 'm', etc.).
-            scale: Scale factor for the scale bar.
+            scale: Scale factor for the scale bar. 
 
         Returns:
             Self for method chaining.
@@ -347,26 +367,38 @@ class Map:
             try:
                 response = requests.get(svg_url, timeout=10)
                 response.raise_for_status()
-                svg_content = response.text
-                logger.debug(f"Fetched SVG content: {svg_content[:100]}...")
+                if response.headers.get('content-type', '').lower() != 'image/svg+xml':
+                    logger.warning(f"URL {svg_url} does not return SVG content. Content-Type: {response.headers.get('content-type')}")
+                    svg_content = self.FALLBACK_COMPASS_SVG
+                else:
+                    svg_content = response.text
+                    logger.debug(f"Fetched SVG from {svg_url}: {svg_content[:100]}...")
             except requests.RequestException as e:
                 logger.error(f"Failed to fetch SVG from URL {svg_url}. Error: {e}")
                 svg_content = self.FALLBACK_COMPASS_SVG
         elif custom_svg:
             if isinstance(custom_svg, str) and os.path.isfile(custom_svg):
-                with open(custom_svg, 'r') as f:
-                    svg_content = f.read()
-                logger.debug(f"Using custom SVG from {custom_svg}")
+                resolved_path = os.path.abspath(custom_svg)
+                logger.debug(f"Resolved SVG file path: {resolved_path}")
+                try:
+                    with open(resolved_path, 'r', encoding='utf-8') as f:
+                        svg_content = f.read()
+                    logger.debug(f"Loaded SVG from {resolved_path}: {svg_content[:100]}...")
+                except Exception as e:
+                    logger.error(f"Failed to read SVG file {resolved_path}. Error: {e}")
+                    svg_content = self.FALLBACK_COMPASS_SVG
             else:
                 svg_content = custom_svg
-                logger.debug(f"Using custom SVG content directly")
+                logger.debug(f"Using custom SVG content directly: {svg_content[:100]}...")
         else:
             svg_content = self.FALLBACK_COMPASS_SVG
             logger.debug("Using fallback SVG for compass")
         
-        # Validate SVG
+        # Validate SVG content
         try:
             ElementTree(fromstring(svg_content))
+            if '<path' not in svg_content:
+                logger.warning("SVG does not contain a <path> element, which may cause issues in static mode.")
         except Exception as e:
             logger.error(f"Invalid SVG content: {e}. Using fallback SVG.")
             svg_content = self.FALLBACK_COMPASS_SVG
@@ -401,6 +433,162 @@ class Map:
             'labels': labels or {}
         }
         return self
+    
+    def add_compass_widgets(self) -> None:
+        """
+        Add interactive widgets to control compass properties.
+
+        Displays widgets for position, size, custom SVG, and SVG URL.
+        """
+        if not isinstance(self.data, gpd.GeoDataFrame):
+            raise ValueError("Widgets require a GeoDataFrame for rendering")
+        
+        # Define widgets
+        position_widget = widgets.Dropdown(
+            options=['top-right', 'top-left', 'bottom-right', 'bottom-left', 'top-center', 'bottom-center'],
+            value='top-right',
+            description='Compass Position:'
+        )
+        size_widget = widgets.IntSlider(
+            value=50,
+            min=20,
+            max=100,
+            step=5,
+            description='Compass Size:'
+        )
+        svg_widget = widgets.Textarea(
+            value=self.FALLBACK_COMPASS_SVG,
+            description='Custom SVG:',
+            layout={'width': '400px', 'height': '100px'}
+        )
+        url_widget = widgets.Text(
+            value='',
+            description='SVG URL:',
+            layout={'width': '400px'}
+        )
+
+        # Store widgets
+        self.widgets['compass'] = {
+            'position': position_widget,
+            'size': size_widget,
+            'svg': svg_widget,
+            'url': url_widget
+        }
+
+        # Define update function
+        def update_compass(position, size, custom_svg, svg_url):
+            with widgets.Output():
+                clear_output(wait=True)
+                self.components['compass'] = None  # Reset compass
+                self.add_compass(position=position, size=size, custom_svg=custom_svg, svg_url=svg_url)
+                self.plot()
+
+        # Create interactive widget
+        widgets.interactive(
+            update_compass,
+            position=position_widget,
+            size=size_widget,
+            custom_svg=svg_widget,
+            svg_url=url_widget
+        )
+
+        # Display widgets
+        display(position_widget, size_widget, svg_widget, url_widget)
+    
+    def add_polygon_widgets(self) -> None:
+        """
+        Add interactive widgets to control polygon properties.
+
+        Displays widgets for column, fill color, line color, alpha, and line width.
+        """
+        if not isinstance(self.data, gpd.GeoDataFrame):
+            raise ValueError("Widgets require a GeoDataFrame for rendering")
+        
+        # Define widgets
+        columns = ['None'] + list(self.data.columns)
+        column_widget = widgets.Dropdown(
+            options=columns,
+            value='None',
+            description='Column:'
+        )
+        fill_color_widget = widgets.Text(
+            value='blue',
+            description='Fill Color:',
+            layout={'width': '200px'}
+        )
+        line_color_widget = widgets.Text(
+            value='black',
+            description='Line Color:',
+            layout={'width': '200px'}
+        )
+        alpha_widget = widgets.FloatSlider(
+            value=0.7,
+            min=0.0,
+            max=1.0,
+            step=0.1,
+            description='Alpha:'
+        )
+        line_width_widget = widgets.FloatSlider(
+            value=1.0,
+            min=0.5,
+            max=5.0,
+            step=0.5,
+            description='Line Width:'
+        )
+        popup_widget = widgets.Checkbox(
+            value=False,
+            description='Enable Popup'
+        )
+
+        # Store widgets
+        self.widgets['polygon'] = {
+            'column': column_widget,
+            'fill_color': fill_color_widget,
+            'line_color': line_color_widget,
+            'alpha': alpha_widget,
+            'line_width': line_width_widget,
+            'popup': popup_widget
+        }
+
+        # Define update function
+        def update_polygon(column, fill_color, line_color, alpha, line_width, popup):
+            with widgets.Output():
+                clear_output(wait=True)
+                self.layers = []  # Reset layers
+                if column == 'None':
+                    column = None
+                try:
+                    # Handle dictionary input for categorical colors
+                    if fill_color.startswith('{'):
+                        fill_color = eval(fill_color)
+                    if line_color.startswith('{'):
+                        line_color = eval(line_color)
+                    self.add_polygons(
+                        column=column,
+                        fill_color=fill_color,
+                        line_color=line_color,
+                        alpha=alpha,
+                        line_width=line_width,
+                        popup=popup
+                    )
+                    self.plot()
+                except Exception as e:
+                    logger.error(f"Failed to update polygon: {e}")
+                    print(f"Error: {e}")
+
+        # Create interactive widget
+        widgets.interactive(
+            update_polygon,
+            column=column_widget,
+            fill_color=fill_color_widget,
+            line_color=line_color_widget,
+            alpha=alpha_widget,
+            line_width=line_width_widget,
+            popup=popup_widget
+        )
+
+        # Display widgets
+        display(column_widget, fill_color_widget, line_color_widget, alpha_widget, line_width_widget, popup_widget)
     
     def plot(self) -> Union[None, folium.Map]:
         """
@@ -453,13 +641,16 @@ class Map:
             if layer['column'] and isinstance(data, gpd.GeoDataFrame):
                 data = data.dropna(subset=[layer['column']])
                 if data[layer['column']].dtype in ['int64', 'float64']:
-                    cmap = plt.cm.get_cmap(layer['style']['color'] if isinstance(layer['style']['color'], str) else 'viridis')
+                    cmap = plt.cm.get_cmap(layer['style']['fill_color'] if isinstance(layer['style']['fill_color'], str) else 'viridis')
                     norm = plt.Normalize(data[layer['column']].min(), data[layer['column']].max())
                     colors = cmap(norm(data[layer['column']]))
+                    line_colors = layer['style']['line_color'] if isinstance(layer['style']['line_color'], (str, list)) else colors
                 else:
-                    colors = layer['style']['color_map'] or layer['style']['color']
+                    colors = layer['style']['fill_color_map'] or layer['style']['fill_color']
+                    line_colors = layer['style']['line_color_map'] or layer['style']['line_color']
             else:
-                colors = layer['style']['color']
+                colors = layer['style']['fill_color'] if 'fill_color' in layer['style'] else layer['style']['color']
+                line_colors = layer['style']['line_color'] if 'line_color' in layer['style'] else layer['style']['color']
             
             if layer['type'] == 'point':
                 if layer['style'].get('marker_svg'):
@@ -480,8 +671,13 @@ class Map:
             elif layer['type'] == 'line':
                 data.plot(ax=ax, color=colors, alpha=layer['style']['alpha'], linewidth=layer['style']['linewidth'])
             elif layer['type'] == 'polygon':
-                data.plot(ax=ax, color=[to_hex(c) for c in colors] if isinstance(colors, np.ndarray) else colors, 
-                          alpha=layer['style']['alpha'])
+                data.plot(
+                    ax=ax,
+                    facecolor=[to_hex(c) for c in colors] if isinstance(colors, np.ndarray) else colors,
+                    edgecolor=[to_hex(c) for c in line_colors] if isinstance(line_colors, np.ndarray) else line_colors,
+                    alpha=layer['style']['alpha'],
+                    linewidth=layer['style']['line_width']
+                )
             elif layer['type'] == 'raster':
                 with rasterio.open(self.data) as src:
                     if len(layer['style']['bands']) == 1:
@@ -582,33 +778,34 @@ class Map:
                 data = data.dropna(subset=[layer['column']])
                 if data[layer['column']].dtype in ['int64', 'float64']:
                     norm = plt.Normalize(data[layer['column']].min(), data[layer['column']].max())
-                    cmap = plt.cm.get_cmap(layer['style']['color'] if isinstance(layer['style']['color'], str) else 'viridis')
+                    cmap = plt.cm.get_cmap(layer['style']['fill_color'] if isinstance(layer['style']['fill_color'], str) else 'viridis')
                     style_function = lambda feature: {
-                        'color': to_hex(cmap(norm(feature['properties'][layer['column']]))),
-                        'weight': layer['style'].get('linewidth', 2),
+                        'color': to_hex(cmap(norm(feature['properties'][layer['column']]))) if 'line_color' not in layer['style'] else to_hex(layer['style']['line_color']),
+                        'weight': layer['style'].get('line_width', 2),
                         'opacity': layer['style']['alpha'],
                         'fillColor': to_hex(cmap(norm(feature['properties'][layer['column']]))),
                         'fillOpacity': layer['style']['alpha']
                     }
                 else:
-                    color_map = layer['style'].get('color_map', {})
+                    fill_color_map = layer['style'].get('fill_color_map', {})
+                    line_color_map = layer['style'].get('line_color_map', {})
                     style_function = lambda feature: {
-                        'color': color_map.get(feature['properties'][layer['column']], 
-                                              to_hex(layer['style']['color'])),
-                        'weight': layer['style'].get('linewidth', 2),
+                        'color': line_color_map.get(feature['properties'][layer['column']], 
+                                                   to_hex(layer['style']['line_color'])),
+                        'weight': layer['style'].get('line_width', 2),
                         'opacity': layer['style']['alpha'],
-                        'fillColor': color_map.get(feature['properties'][layer['column']], 
-                                                  to_hex(layer['style']['color'])),
+                        'fillColor': fill_color_map.get(feature['properties'][layer['column']], 
+                                                       to_hex(layer['style']['fill_color'])),
                         'fillOpacity': layer['style']['alpha']
                     }
             else:
                 style_function = lambda feature: {
-                    'color': to_hex(layer['style']['color'] if isinstance(layer['style']['color'], np.ndarray) 
-                                    else layer['style']['color']),
-                    'weight': layer['style'].get('linewidth', 2),
+                    'color': to_hex(layer['style']['line_color'] if isinstance(layer['style']['line_color'], np.ndarray) 
+                                    else layer['style']['line_color']),
+                    'weight': layer['style'].get('line_width', 2),
                     'opacity': layer['style']['alpha'],
-                    'fillColor': to_hex(layer['style']['color'] if isinstance(layer['style']['color'], np.ndarray) 
-                                        else layer['style']['color']),
+                    'fillColor': to_hex(layer['style']['fill_color'] if isinstance(layer['style']['fill_color'], np.ndarray) 
+                                        else layer['style']['fill_color']),
                     'fillOpacity': layer['style']['alpha']
                 }
             
@@ -667,7 +864,7 @@ class Map:
             title_html = f'<h3 align="center" style="font-size:16px"><b>{self.title}</b></h3>'
             m.get_root().html.add_child(folium.Element(title_html))
         
-        if self.components['compass']:
+        if self.components['compass'] and self.components['compass'].get('svg'):
             svg_content = self.components['compass']['svg']
             div_style = {
                 'top-right': 'position: absolute; top: 10px; right: 10px;',
