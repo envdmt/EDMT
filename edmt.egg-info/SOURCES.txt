@@ -21,7 +21,9 @@ edmt/mapping/__init__.py
 edmt/mapping/mapping.py
 edmt/mapping/maps.py
 edmt/models/__init__.py
+edmt/models/airtable.py
 edmt/models/drones.py
+edmt/models/econiche.py
 edmt/models/uploads.py
 edmt/plotting/__init__.py
 tests/test_airdata.py

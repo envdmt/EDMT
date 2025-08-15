@@ -534,3 +534,4 @@ def airSegment(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     return append_cols(airSeg, cols=['checktime','segment_start_time','segment_end_time','segment_duration_ms','segment_distance_m','geometry'])
 
 
+
