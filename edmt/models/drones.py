@@ -132,14 +132,14 @@ class Airdata:
                   if "data" in data: 
                       normalized_data = list(tqdm(data["data"], desc="📥 Downloading"))
                       df = pd.json_normalize(normalized_data)
-                      df = df.drop(
-                          columns=[
-                              "displayLink","kmlLink",
-                              "gpxLink","originalLink",
-                              "participants.object"
-                          ],
-                          errors='ignore'
-                      )
+                    #   df = df.drop(
+                    #       columns=[
+                    #           "displayLink","kmlLink",
+                    #           "gpxLink","originalLink",
+                    #           "participants.object"
+                    #       ],
+                    #       errors='ignore'
+                    #   )
                   else:
                     df = pd.DataFrame(data)
                   return df
