@@ -389,9 +389,27 @@ def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None,log_errors: boo
         try:
             response = requests.get(csv_url)
             response.raise_for_status()
+
+            # Try to sniff delimiter
             sniffer = csv.Sniffer()
-            dialect = sniffer.sniff(response.text[:1024])
+            sample = response.text[:1024]
+            
+            # Handle empty or whitespace-only content
+            if not sample.strip():
+                raise ValueError("CSV content is empty or only whitespace")
+
+            try:
+                dialect = sniffer.sniff(sample)
+            except csv.Error:
+                # Fallback: assume comma-delimited if sniffing fails
+                if log_errors:
+                    print(f"Warning: Could not determine delimiter for id {row['id']}. Using ',' as fallback.")
+                dialect = csv.excel  # Default to comma (excel-style)
+                # Optionally, you could also try tab: csv.unix_dialect or csv.excel_tab
+
+            # Read CSV with detected (or fallback) dialect
             csv_data = pd.read_csv(StringIO(response.text), dialect=dialect)
+
             metadata_repeated = pd.DataFrame([row] * len(csv_data), index=csv_data.index)
             combined = pd.concat([metadata_repeated, csv_data], axis=1)
             all_combined_rows.append(combined)
@@ -402,9 +420,32 @@ def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None,log_errors: boo
         except pd.errors.ParserError as e:
             if log_errors:
                 print(f"Parsing error for CSV at id {row['id']}: {e}")
+        except ValueError as e:  # Catch empty content
+            if log_errors:
+                print(f"Empty or invalid CSV content for id {row['id']}: {e}")
         except Exception as e:
             if log_errors:
                 print(f"Unexpected error for id {row['id']}: {e}")
+
+        # try:
+        #     response = requests.get(csv_url)
+        #     response.raise_for_status()
+        #     sniffer = csv.Sniffer()
+        #     dialect = sniffer.sniff(response.text[:1024])
+        #     csv_data = pd.read_csv(StringIO(response.text), dialect=dialect)
+        #     metadata_repeated = pd.DataFrame([row] * len(csv_data), index=csv_data.index)
+        #     combined = pd.concat([metadata_repeated, csv_data], axis=1)
+        #     all_combined_rows.append(combined)
+
+        # except requests.RequestException as e:
+        #     if log_errors:
+        #         print(f"Network error for id {row['id']}: {e}")
+        # except pd.errors.ParserError as e:
+        #     if log_errors:
+        #         print(f"Parsing error for CSV at id {row['id']}: {e}")
+        # except Exception as e:
+        #     if log_errors:
+        #         print(f"Unexpected error for id {row['id']}: {e}")
 
     if not all_combined_rows:
         return pd.DataFrame()
