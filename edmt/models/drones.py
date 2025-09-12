@@ -77,7 +77,7 @@ class Airdata:
                 raise
 
     def get_flights(
-              self,since: str = None,until: str = None,limit: Union[int, None] = None,
+              self,since: str = None,until: str = None,limit: Union[int, None] = None, offset: Union[int, None] = None,
               created_after: Optional[str] = None,battery_ids: Optional[Union[str, list]] = None,
               pilot_ids: Optional[Union[str, list]] = None,location: Optional[list] = None,
           ) -> pd.DataFrame:
@@ -111,7 +111,8 @@ class Airdata:
               "pilot_ids": ",".join(pilot_ids) if pilot_ids else None,
               "latitude": location[0] if location else None,
               "longitude": location[1] if location else None,
-              "limit": limit
+              "limit": limit,
+              "offset": offset
           }
 
           params = {k: v for k, v in params.items() if v is not None}
@@ -132,14 +133,14 @@ class Airdata:
                   if "data" in data: 
                       normalized_data = list(tqdm(data["data"], desc="📥 Downloading"))
                       df = pd.json_normalize(normalized_data)
-                    #   df = df.drop(
-                    #       columns=[
-                    #           "displayLink","kmlLink",
-                    #           "gpxLink","originalLink",
-                    #           "participants.object"
-                    #       ],
-                    #       errors='ignore'
-                    #   )
+                      df = df.drop(
+                          columns=[
+                              "displayLink","kmlLink",
+                              "gpxLink","originalLink",
+                              "participants.object"
+                          ],
+                          errors='ignore'
+                      )
                   else:
                     df = pd.DataFrame(data)
                   return df
