@@ -144,7 +144,7 @@ class Airdata:
         page = 0
         total_fetched = 0
 
-        with tqdm(desc="📥 Downloading flights:") as pbar:
+        with tqdm(desc="📥 Downloading flights") as pbar:
             while page < max_pages:
                 current_params = params.copy()
                 current_params["offset"] = offset
@@ -194,69 +194,8 @@ class Airdata:
             return pd.DataFrame()
 
         final_df = pd.concat(all_data, ignore_index=True)
-        print(f"✅ Successfully fetched {len(final_df)} flights.")
         return final_df
-
-        # with tqdm(total=max_pages, desc="📥 Downloading flights", unit="page", ncols=100) as pbar:
-        #     while page < max_pages:
-        #         current_params = params.copy()
-        #         current_params["offset"] = offset
-
-        #         query_string = "&".join([f"{k}={v}" for k, v in current_params.items()])
-        #         endpoint = f"/flights?{query_string}"
-
-        #         try:
-        #             conn = http.client.HTTPSConnection(self.base_url)
-        #             conn.request("GET", endpoint, headers=self.auth_header)
-        #             res = conn.getresponse()
-
-        #             if res.status != 200:
-        #                 error_msg = res.read().decode('utf-8')[:300]
-        #                 print(f"❌ HTTP {res.status}: {error_msg}")
-        #                 break
-
-        #             data = json.loads(res.read().decode("utf-8"))
-        #             if not data.get("data") or len(data["data"]) == 0:
-        #                 break
-
-        #             normalized_data = data["data"]
-        #             df_page = pd.json_normalize(normalized_data)
-        #             df_page = df_page.drop(
-        #                 columns=[
-        #                     "displayLink", "kmlLink", "gpxLink", "originalLink", "participants.object"
-        #                 ],
-        #                 errors='ignore'
-        #             )
-
-        #             all_data.append(df_page)
-        #             fetched_this_page = len(normalized_data)
-        #             total_fetched += fetched_this_page
-
-        #             pbar.set_postfix({
-        #                 "total": f"{total_fetched:,}",
-        #                 "page": f"{page + 1}/{max_pages}",
-        #                 "this_page": f"{fetched_this_page}"
-        #             }, refresh=True)
-
-        #             pbar.update(1)
-
-        #             offset += limit
-        #             page += 1
-        #             time.sleep(0.1)
-
-        #         except Exception as e:
-        #             print(f"⚠️ Error on page {page + 1} at offset {offset}: {e}")
-        #             break
-
-        # if not all_data:
-        #     print("ℹ️ No flight data found.")
-        #     return pd.DataFrame()
-
-        # final_df = pd.concat(all_data, ignore_index=True)
-        # print(f"✅ Successfully fetched {len(final_df):,} flights.")
-        # return final_df
     
-
     def AccessGroups(self, endpoint: str) -> Optional[pd.DataFrame]:
       if not self.authenticated:
             logger.warning(f"Cannot fetch {endpoint}: Not authenticated.")
