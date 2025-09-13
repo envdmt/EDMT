@@ -144,8 +144,7 @@ class Airdata:
         page = 0
         total_fetched = 0
 
-        print(f"🔍 Fetching flights... (limit={limit}, max_pages={max_pages})")
-        with tqdm(total=None, desc="🔄 Paginating through pages") as pbar:
+        with tqdm(total=max_pages, desc="📥 Downloading flights", unit="page", ncols=100) as pbar:
             while page < max_pages:
                 current_params = params.copy()
                 current_params["offset"] = offset
@@ -159,15 +158,14 @@ class Airdata:
                     res = conn.getresponse()
 
                     if res.status != 200:
-                        print(f"❌ HTTP {res.status}: {res.read().decode('utf-8')[:300]}")
+                        error_msg = res.read().decode('utf-8')[:300]
+                        print(f"❌ HTTP {res.status}: {error_msg}")
                         break
 
                     data = json.loads(res.read().decode("utf-8"))
                     if not data.get("data") or len(data["data"]) == 0:
-                        print(f"✅ No more data at offset {offset}. Stopping pagination.")
                         break
 
-                    # Normalize and clean data
                     normalized_data = data["data"]
                     df_page = pd.json_normalize(normalized_data)
                     df_page = df_page.drop(
@@ -181,8 +179,14 @@ class Airdata:
                     fetched_this_page = len(normalized_data)
                     total_fetched += fetched_this_page
 
-                    pbar.set_postfix({"total": total_fetched, "page": page + 1})
+                    pbar.set_postfix({
+                        "total": f"{total_fetched:,}",
+                        "page": f"{page + 1}/{max_pages}",
+                        "this_page": f"{fetched_this_page}"
+                    }, refresh=True)
+
                     pbar.update(1)
+
                     offset += limit
                     page += 1
                     time.sleep(0.1)
@@ -196,9 +200,8 @@ class Airdata:
             return pd.DataFrame()
 
         final_df = pd.concat(all_data, ignore_index=True)
-        print(f"✅ Successfully fetched {len(final_df)} flights across {page} pages.")
+        print(f"✅ Successfully fetched {len(final_df):,} flights.")
         return final_df
-
     def AccessGroups(self, endpoint: str) -> Optional[pd.DataFrame]:
       if not self.authenticated:
             logger.warning(f"Cannot fetch {endpoint}: Not authenticated.")
@@ -422,6 +425,8 @@ def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None,log_errors: boo
         expanded_df = pd.concat(dfs_to_join, axis=1)
     gdf = df_.join(expanded_df).drop(columns=cols)
     return append_cols(gdf,cols="checktime")
+
+
 def df_to_gdf( df: pd.DataFrame,lon_col: str = 'longitude',lat_col: str = 'latitude',crs: int = 4326) -> gpd.GeoDataFrame:
     """
     Convert a pandas DataFrame with latitude and longitude columns into a GeoDataFrame
