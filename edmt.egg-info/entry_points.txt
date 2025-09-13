@@ -1,2 +1,2 @@
 [console_scripts]
-edmt-version = edmt.__version__
+edmt = edmt.cli:main
