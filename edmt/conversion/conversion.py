@@ -1,25 +1,10 @@
-"""
-EDMT Utilities Module
-
-This module contains utility functions for:
-- Time, speed, and distance unit conversion
-- Spatial DataFrame to GeoDataFrame conversion
-- UUID generation
-"""
-
 import uuid
 import pandas as pd
 import geopandas as gpd
 from shapely import make_valid
 from edmt.contrib.utils import clean_vars
 
-
-"""
-Time Unit Conversion Chart
-
-A dictionary mapping time units to their equivalent in seconds.
-Used for converting between different time units like hours to milliseconds.
-"""
+# Time unit conversion factors relative to seconds
 time_chart: dict[str, float] = {
     "microseconds": 0.000001,
     "microsecond": 0.000001,

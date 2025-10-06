@@ -35,7 +35,7 @@ exclude_patterns = [
 html_theme = "pydata_sphinx_theme"
 html_theme_path = ["."]
 html_static_path = ['_static']
-# html_logo = '_static/edmt.jpeg'
+html_logo = '_static/edmt.jpeg'
 
 nbsphinx_pygments_lexer = 'python3'
 

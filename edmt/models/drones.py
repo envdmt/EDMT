@@ -88,26 +88,46 @@ class Airdata:
         limit: int = 100,
         max_pages: int = 100,
     ) -> pd.DataFrame:
-        """
-        Fetch ALL flight data from the Airdata API by paginating through all available pages.
-        Automatically handles offset pagination until no more data is returned or max_pages is reached.
+        """Retrieve paginated flight records from the Airdata API.
+
+        Fetches flight data by automatically handling offset-based pagination across
+        multiple API requests. Continues until no more results are returned or the
+        maximum page limit is reached.
 
         Args:
-            since (str): Start date/time (ISO format). Flights starting after this time.
-            until (str): End date/time (ISO format). Flights starting before this time.
-            created_after (str): Flights created after this timestamp.
-            battery_ids (str or list): Comma-separated string or list of battery IDs.
-            pilot_ids (str or list): Comma-separated string or list of pilot IDs.
-            location (list): [latitude, longitude] for radius-based search.
-            limit (int): Number of results per page. Max 100. Default: 100.
-            max_pages (int): Maximum number of pages to fetch. Prevents infinite loops. Default: 100.
+            since (str, optional): 
+                Filter flights that started on or after this ISO 8601 timestamp
+            until (str, optional): 
+                Filter flights that started before this ISO 8601 timestamp.
+            created_after (str, optional): 
+                Include only flights created after this ISO 8601 timestamp.
+            battery_ids (str or list, optional): 
+                Filter by specific battery ID(s). Accepts either a comma-separated 
+                string or a list of strings
+            pilot_ids (str or list, optional): 
+                Filter by specific pilot ID(s).
+            location (list, optional): 
+                Geographic center point for radius-based search as 
+                ``[latitude, longitude]``.
+            limit (int, optional): 
+                Number of records per page. Must be ≤ 100. Defaults to 100.
+            max_pages (int, optional): 
+                Maximum number of pages to retrieve. Prevents excessive API usage. 
+                Defaults to 100.
 
         Returns:
-            pd.DataFrame: Combined DataFrame of all flights across all pages.
-                        Empty if no data or error occurs.
+            pd.DataFrame: 
+                A DataFrame containing all retrieved flight records with standardized 
+                columns. Returns an empty DataFrame if:
+                
+                - No flights match the query parameters
+                - API returns an error
+                - Authentication fails
 
         Raises:
-            ValueError: If location is malformed.
+            ValueError: 
+                If ``location`` is provided but doesn't contain exactly two numeric 
+                elements (latitude and longitude).
         """
 
         if location is not None:

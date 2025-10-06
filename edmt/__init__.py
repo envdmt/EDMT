@@ -26,12 +26,12 @@ def init(silent=False, force=False):
     """
     Initializes the environment with EDMT-specific customizations.
 
-    Parameters
+    Parameters:
     ----------
-    silent : bool, optional
-        Suppresses console output (default is False).
-    force : bool, optional
-        Forces re-initialization even if already initialized (default is False).
+            silent : bool, optional
+                Suppresses console output (default is False).
+            force : bool, optional
+                Forces re-initialization even if already initialized (default is False).
     """
     global __initialized
     if __initialized and not force:

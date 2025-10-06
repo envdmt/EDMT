@@ -27,7 +27,8 @@ dependencies = [
   "plotly>=5.24.1",
   "seaborn>=0.13.2",
   "tqdm>=4",
-  "pillow>=11.3.0"
+  "pillow>=11.3.0",
+  "requests"
 ]
 
 [project.urls]
@@ -38,3 +39,5 @@ edmt = "edmt.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["edmt*"]
+
+pip install -e .[dev] 

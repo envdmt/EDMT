@@ -1,17 +1,14 @@
-.. EDMT documentation master file, created by
-   sphinx-quickstart on Sun Jul  6 19:13:54 2025.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-EDMT documentation
+EDMT Documentation
 ==================
 
-Add your content using ``reStructuredText`` syntax. See the
-`reStructuredText <https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html>`_
-documentation for details.
+Welcome to the official documentation for **EDMT**, a Python module developed by Odero, Kuloba, and Musasia.
 
+This documentation provides a comprehensive guide to using EDMT, including installation instructions, usage examples, and detailed API references.
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
+   installation
+
+   api/modules
