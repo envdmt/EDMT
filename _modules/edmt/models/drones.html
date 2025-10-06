@@ -357,7 +357,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="Airdata">
-<a class="viewcode-back" href="../../../api/edmt.models.html#edmt.models.Airdata">[docs]</a>
+<a class="viewcode-back" href="../../../api/models.html#edmt.models.Airdata">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Airdata</span><span class="p">:</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">api_key</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">api_key</span> <span class="o">=</span> <span class="n">api_key</span>
@@ -375,7 +375,7 @@ document.write(`
         <span class="p">}</span>
 
 <div class="viewcode-block" id="Airdata.authenticate">
-<a class="viewcode-back" href="../../../api/edmt.models.html#edmt.models.Airdata.authenticate">[docs]</a>
+<a class="viewcode-back" href="../../../api/models.html#edmt.models.Airdata.authenticate">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">authenticate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">validate</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Authenticates with the API by calling /version or /flights.</span>
@@ -413,7 +413,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="Airdata.get_flights">
-<a class="viewcode-back" href="../../../api/edmt.models.html#edmt.models.Airdata.get_flights">[docs]</a>
+<a class="viewcode-back" href="../../../api/models.html#edmt.models.Airdata.get_flights">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_flights</span><span class="p">(</span>
               <span class="bp">self</span><span class="p">,</span><span class="n">since</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span><span class="n">until</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span><span class="n">limit</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
               <span class="n">created_after</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span><span class="n">battery_ids</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -491,7 +491,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="Airdata.AccessGroups">
-<a class="viewcode-back" href="../../../api/edmt.models.html#edmt.models.Airdata.AccessGroups">[docs]</a>
+<a class="viewcode-back" href="../../../api/models.html#edmt.models.Airdata.AccessGroups">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">AccessGroups</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">endpoint</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
       <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">authenticated</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot fetch </span><span class="si">{</span><span class="n">endpoint</span><span class="si">}</span><span class="s2">: Not authenticated.&quot;</span><span class="p">)</span>
@@ -524,7 +524,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="Airdata.get_flightgroups">
-<a class="viewcode-back" href="../../../api/edmt.models.html#edmt.models.Airdata.get_flightgroups">[docs]</a>
+<a class="viewcode-back" href="../../../api/models.html#edmt.models.Airdata.get_flightgroups">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_flightgroups</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">sort_by</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -556,7 +556,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="Airdata.AccessItems">
-<a class="viewcode-back" href="../../../api/edmt.models.html#edmt.models.Airdata.AccessItems">[docs]</a>
+<a class="viewcode-back" href="../../../api/models.html#edmt.models.Airdata.AccessItems">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">AccessItems</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">endpoint</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Sends a GET request to the specified API endpoint and returns normalized data as a DataFrame.</span>
@@ -611,7 +611,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="Airdata.get_drones">
-<a class="viewcode-back" href="../../../api/edmt.models.html#edmt.models.Airdata.get_drones">[docs]</a>
+<a class="viewcode-back" href="../../../api/models.html#edmt.models.Airdata.get_drones">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_drones</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Fetch drone data from the Airdata API based on the provided query parameters.</span>
@@ -627,7 +627,7 @@ document.write(`
 
         
 <div class="viewcode-block" id="Airdata.get_batteries">
-<a class="viewcode-back" href="../../../api/edmt.models.html#edmt.models.Airdata.get_batteries">[docs]</a>
+<a class="viewcode-back" href="../../../api/models.html#edmt.models.Airdata.get_batteries">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_batteries</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Fetch batteries data from the Airdata API based on the provided query parameters.</span>
@@ -642,7 +642,7 @@ document.write(`
 
     
 <div class="viewcode-block" id="Airdata.get_pilots">
-<a class="viewcode-back" href="../../../api/edmt.models.html#edmt.models.Airdata.get_pilots">[docs]</a>
+<a class="viewcode-back" href="../../../api/models.html#edmt.models.Airdata.get_pilots">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_pilots</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Fetch pilots data from the Airdata API based on the provided query parameters.</span>
@@ -660,7 +660,7 @@ document.write(`
     
 
 <div class="viewcode-block" id="airPoint">
-<a class="viewcode-back" href="../../../api/edmt.models.html#edmt.models.airPoint">[docs]</a>
+<a class="viewcode-back" href="../../../api/models.html#edmt.models.airPoint">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">airPoint</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">filter_ids</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span><span class="n">log_errors</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Parameters:</span>
@@ -738,7 +738,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="df_to_gdf">
-<a class="viewcode-back" href="../../../api/edmt.models.html#edmt.models.df_to_gdf">[docs]</a>
+<a class="viewcode-back" href="../../../api/models.html#edmt.models.df_to_gdf">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">df_to_gdf</span><span class="p">(</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span><span class="n">lon_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;longitude&#39;</span><span class="p">,</span><span class="n">lat_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;latitude&#39;</span><span class="p">,</span><span class="n">crs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4326</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Convert a pandas DataFrame with latitude and longitude columns into a GeoDataFrame</span>
@@ -784,7 +784,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="airLine">
-<a class="viewcode-back" href="../../../api/edmt.models.html#edmt.models.airLine">[docs]</a>
+<a class="viewcode-back" href="../../../api/models.html#edmt.models.airLine">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">airLine</span><span class="p">(</span><span class="n">gdf</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Converts a GeoDataFrame with point geometries into a GeoDataFrame with</span>
@@ -843,7 +843,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="airSegment">
-<a class="viewcode-back" href="../../../api/edmt.models.html#edmt.models.airSegment">[docs]</a>
+<a class="viewcode-back" href="../../../api/models.html#edmt.models.airSegment">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">airSegment</span><span class="p">(</span><span class="n">gdf</span><span class="p">:</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Converts a GeoDataFrame with point geometries into a GeoDataFrame with</span>

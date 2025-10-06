@@ -1,16 +1,16 @@
-edmt.mapping package
+Mapping
 ====================
 
-Mapping Module contents
-------------------------
+Mapping Module 
+---------------
 
 .. automodule:: edmt.mapping.mapping
    :members:
    :show-inheritance:
    :undoc-members:
 
-Maps Module contents
----------------------
+Maps Module 
+------------
 
 .. automodule:: edmt.mapping.maps
    :members:

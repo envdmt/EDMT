@@ -1,8 +1,8 @@
-edmt.models 
+Models 
 ============
 
-Models Module contents
--------------------------
+Module contents
+----------------
 
 .. automodule:: edmt.models
    :members:

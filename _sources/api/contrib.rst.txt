@@ -1,8 +1,8 @@
-edmt.contrib package
+Contrib
 ====================
 
-contrib.utils Module contents
-------------------------------
+Module contents
+-----------------
 
 .. automodule:: edmt.contrib
    :members:

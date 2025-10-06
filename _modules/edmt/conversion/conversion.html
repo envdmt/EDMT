@@ -446,7 +446,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="sdf_to_gdf">
-<a class="viewcode-back" href="../../../api/edmt.conversion.html#edmt.conversion.conversion.sdf_to_gdf">[docs]</a>
+<a class="viewcode-back" href="../../../api/conversion.html#edmt.conversion.conversion.sdf_to_gdf">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">sdf_to_gdf</span><span class="p">(</span><span class="n">sdf</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Converts a spatial DataFrame to a GeoDataFrame with optional CRS assignment.</span>
@@ -489,7 +489,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="generate_uuid">
-<a class="viewcode-back" href="../../../api/edmt.conversion.html#edmt.conversion.conversion.generate_uuid">[docs]</a>
+<a class="viewcode-back" href="../../../api/conversion.html#edmt.conversion.conversion.generate_uuid">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">generate_uuid</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Adds a &#39;uuid&#39; column to the DataFrame if no existing UUID-like column exists.</span>
@@ -535,7 +535,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="get_utm_epsg">
-<a class="viewcode-back" href="../../../api/edmt.conversion.html#edmt.conversion.conversion.get_utm_epsg">[docs]</a>
+<a class="viewcode-back" href="../../../api/conversion.html#edmt.conversion.conversion.get_utm_epsg">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_utm_epsg</span><span class="p">(</span><span class="n">longitude</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Generates UTM EPSG code based on longitude.</span>
@@ -562,7 +562,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="to_gdf">
-<a class="viewcode-back" href="../../../api/edmt.conversion.html#edmt.conversion.conversion.to_gdf">[docs]</a>
+<a class="viewcode-back" href="../../../api/conversion.html#edmt.conversion.conversion.to_gdf">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">to_gdf</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Converts a DataFrame with location data into a GeoDataFrame with point geometries.</span>
@@ -587,7 +587,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="convert_time">
-<a class="viewcode-back" href="../../../api/edmt.conversion.html#edmt.conversion.conversion.convert_time">[docs]</a>
+<a class="viewcode-back" href="../../../api/conversion.html#edmt.conversion.conversion.convert_time">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">convert_time</span><span class="p">(</span><span class="n">time_value</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">unit_from</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">unit_to</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Converts a given time value between different units.</span>
@@ -629,7 +629,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="convert_speed">
-<a class="viewcode-back" href="../../../api/edmt.conversion.html#edmt.conversion.conversion.convert_speed">[docs]</a>
+<a class="viewcode-back" href="../../../api/conversion.html#edmt.conversion.conversion.convert_speed">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">convert_speed</span><span class="p">(</span><span class="n">speed</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">unit_from</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">unit_to</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Converts speed between different units.</span>
@@ -660,7 +660,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="convert_distance">
-<a class="viewcode-back" href="../../../api/edmt.conversion.html#edmt.conversion.conversion.convert_distance">[docs]</a>
+<a class="viewcode-back" href="../../../api/conversion.html#edmt.conversion.conversion.convert_distance">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">convert_distance</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">from_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">to_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Converts distance values between metric and imperial units.</span>

@@ -5,7 +5,7 @@ API Modules
    :maxdepth: 1
 
    init
-   edmt.contrib
-   edmt.conversion
-   edmt.mapping
-   edmt.models
+   contrib
+   conversion
+   mapping
+   models

@@ -1,4 +1,4 @@
-edmt.init
+Init
 =======================
 
 .. automodule:: edmt.init

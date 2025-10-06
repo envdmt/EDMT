@@ -1,8 +1,8 @@
-edmt.conversion
+Conversion
 =======================
 
-Conversion Module contents
-----------------------------
+Module contents
+-----------------
 
 .. automodule:: edmt.conversion.conversion
    :members:
