@@ -1,0 +1,18 @@
+edmt.mapping package
+====================
+
+Mapping Module contents
+------------------------
+
+.. automodule:: edmt.mapping.mapping
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Maps Module contents
+---------------------
+
+.. automodule:: edmt.mapping.maps
+   :members:
+   :show-inheritance:
+   :undoc-members:

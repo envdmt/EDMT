@@ -1,0 +1,11 @@
+API Modules
+===========
+
+.. toctree::
+   :maxdepth: 1
+
+   init
+   edmt.contrib
+   edmt.conversion
+   edmt.mapping
+   edmt.models
