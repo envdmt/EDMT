@@ -27,13 +27,14 @@ dependencies = [
   "plotly>=5.24.1",
   "seaborn>=0.13.2",
   "tqdm>=4",
+  "pillow>=11.3.0"
 ]
 
 [project.urls]
 "Homepage" = "https://github.com/envqwewdmt/EDMT"
 
 [project.scripts]
-edmt-version = "edmt.__version__"
+edmt = "edmt.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["edmt*"]

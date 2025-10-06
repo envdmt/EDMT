@@ -19,6 +19,7 @@ Requires-Dist: mapclassify>=2.8.0
 Requires-Dist: plotly>=5.24.1
 Requires-Dist: seaborn>=0.13.2
 Requires-Dist: tqdm>=4
+Requires-Dist: pillow>=11.3.0
 Dynamic: license-file
 
 # edmt
