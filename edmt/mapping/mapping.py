@@ -6,34 +6,34 @@ from pyproj import CRS
 
 from edmt.contrib.utils import clean_vars
 
-class Mapping:
-    def __init__(self):
-        pass
+# class Mapping:
+#     def __init__(self):
+#         pass
 
-    @staticmethod
-    def gplot(df, column=None, title=None, legend=True, fill=None, grids=None, **additional_args):
-        df = df.copy()
-        df = df.to_crs(epsg=4326)
+#     @staticmethod
+#     def gplot(df, column=None, title=None, legend=True, fill=None, grids=None, **additional_args):
+#         df = df.copy()
+#         df = df.to_crs(epsg=4326)
 
-        ax = plt.subplots(figsize=(10, 10))
-        plot_args = {
-            "ax": ax,
-            "alpha": 0.6,
-            "edgecolor": "black",
-            "column": column,
-            "legend": legend,
-            "legend_kwds": {
-                "loc": "lower right",
-                "bbox_to_anchor": (1, 0),
-                "frameon": True,
-                "title": column,
-            },
-            "facecolor": fill,
-        }
-        plot_args = clean_vars(additional_args, **plot_args)
-        df.plot(**plot_args)
-        cx.add_basemap(ax, crs=df.crs, source=cx.providers.OpenStreetMap.Mapnik)
-        return ax
+#         ax = plt.subplots(figsize=(10, 10))
+#         plot_args = {
+#             "ax": ax,
+#             "alpha": 0.6,
+#             "edgecolor": "black",
+#             "column": column,
+#             "legend": legend,
+#             "legend_kwds": {
+#                 "loc": "lower right",
+#                 "bbox_to_anchor": (1, 0),
+#                 "frameon": True,
+#                 "title": column,
+#             },
+#             "facecolor": fill,
+#         }
+#         plot_args = clean_vars(additional_args, **plot_args)
+#         df.plot(**plot_args)
+#         cx.add_basemap(ax, crs=df.crs, source=cx.providers.OpenStreetMap.Mapnik)
+#         return ax
 
 class Mapping:
 
@@ -148,59 +148,59 @@ class Mapping:
     #     cx.add_basemap(ax, crs=df.crs, source=cx.providers.OpenStreetMap.Mapnik)
     #     return ax
     
-    @staticmethod
-    def TileLayer(self, df):
+    # @staticmethod
+    # def TileLayer(self, df):
 
-        "list of base layers to use"
+    #     "list of base layers to use"
 
-        """
-        Add names, opacity, 
+    #     """
+    #     Add names, opacity, 
 
-        addl_args()
+    #     addl_args()
 
-        Use clean var to
-        """
+    #     Use clean var to
+    #     """
 
-    @staticmethod
-    def title(df):
-        """
-        Plot a GeoDataFrame with optional dynamic column-based styling and a categorical legend.
-        """
-        df = df.copy()
-        df = df.to_crs(epsg=4326)  # Ensure WGS 84 
+    # @staticmethod
+    # def title(df):
+    #     """
+    #     Plot a GeoDataFrame with optional dynamic column-based styling and a categorical legend.
+    #     """
+    #     df = df.copy()
+    #     df = df.to_crs(epsg=4326)  # Ensure WGS 84 
 
-        # Create plot
-        if ax is None:
-            _, ax = plt.subplots(figsize=(10, 10))
+    #     # Create plot
+    #     if ax is None:
+    #         _, ax = plt.subplots(figsize=(10, 10))
 
-        return ax
+    #     return ax
     
-    @staticmethod
-    def legend(df):
+    # @staticmethod
+    # def legend(df):
 
-        return df
+    #     return df
     
-    @staticmethod
-    def scale_bar(df):
+    # @staticmethod
+    # def scale_bar(df):
 
-        return df
+    #     return df
     
-    @staticmethod
-    def add_table(df):
+    # @staticmethod
+    # def add_table(df):
 
-        return df
+    #     return df
     
-    @staticmethod
-    def html(df):
+    # @staticmethod
+    # def html(df):
 
-        return df
+    #     return df
     
-    @staticmethod
-    def png(df):
+    # @staticmethod
+    # def png(df):
 
-        return df
+    #     return df
     
-    @staticmethod
-    def legend(df):
+    # @staticmethod
+    # def legend(df):
 
-        return df
+    #     return df
