@@ -27,7 +27,7 @@ def init(silent=False, force=False):
     Initializes the environment with EDMT-specific customizations.
 
     Parameters:
-    ----------
+    ------------
             silent : bool, optional
                 Suppresses console output (default is False).
             force : bool, optional

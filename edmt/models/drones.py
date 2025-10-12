@@ -3,6 +3,8 @@ from edmt.contrib.utils import (
     append_cols,
     norm_exp
 )
+
+from edmt.base.base import AirdataBaseClass
 import logging
 logger = logging.getLogger(__name__)
 
@@ -26,57 +28,133 @@ from pyproj import Geod
 geod = Geod(ellps="WGS84")
 
 
-class Airdata:
-    def __init__(self, api_key):
-        self.api_key = api_key
-        self.base_url = "api.airdata.com"
-        self.authenticated = False
-        self.auth_header = self._get_auth_header()
+class Airdata(AirdataBaseClass):
+    """
+    Client for interacting with the Airdata API.
+    Handles authentication and provides methods to fetch various data types
+    such as flights, drones, batteries, and pilots.
+    """
+    
+    def AccessGroups(self, endpoint: str) -> Optional[pd.DataFrame]:
+      if not self.authenticated:
+            logger.warning(f"Cannot fetch {endpoint}: Not authenticated.")
+            return None
 
-        self.authenticate(validate=True)
+      try:
+          conn = http.client.HTTPSConnection(self.base_url)
+          conn.request("GET", endpoint, headers=self._get_auth_header())
+          res = conn.getresponse()
 
-    def _get_auth_header(self):
-        key_with_colon = self.api_key + ":"
-        encoded_key = base64.b64encode(key_with_colon.encode()).decode("utf-8")
-        return {
-            "Authorization": f"Basic {encoded_key}"
-        }
+          if res.status == 200:
+              data = json.loads(res.read().decode("utf-8"))
+              if "data" in data:
+                  normalized_data = list(tqdm(data["data"], desc="📥 Downloading"))
+                  normalized = pd.json_normalize(normalized_data)
+                  df = norm_exp(normalized,"flights.data")
+              else:
+                  df = pd.DataFrame(data)
+              return df
+          else:
+              logger.warning(f"Failed to fetch flights. Status code: {res.status}")
+              logger.warning(f"Response: {res.read().decode('utf-8')[:500]}")
+              return None
+      except Exception as e:
+          logger.warning(f"Error fetching flights: {e}")
+          return None
+      finally:
+          if 'conn' in locals() and conn:
+              conn.close()
 
-    def authenticate(self,validate=True):
+    def AccessItems(self, endpoint: str) -> Optional[pd.DataFrame]:
         """
-        Authenticates with the API by calling /version or /flights.
+        Sends a GET request to the specified API endpoint and returns normalized data as a DataFrame.
+
+        Parameters:
+            endpoint (str): The full API path including query parameters.
+
+        Returns:
+            Optional[pd.DataFrame]: A DataFrame containing the retrieved data, or None if the request fails.
         """
-        conn = http.client.HTTPSConnection(self.base_url)
-        payload = ''
+        if not self.authenticated:
+            logger.warning("Cannot fetch data: Not authenticated.")
+            return None
 
         try:
-            conn.request("GET", "/version", payload, self.auth_header)
-            res = conn.getresponse()
-            
-            if res.status == 200:
-                self.authenticated = True
-                print("✅ Authentication successful.")
-                return
-
-            if res.status == 404:
-                conn = http.client.HTTPSConnection(self.base_url)
-                conn.request("GET", "/flights", payload, self.auth_header)
+            conn = http.client.HTTPSConnection(self.base_url)
+            try:
+                conn.request("GET", f"/{endpoint}", headers=self.auth_header)
                 res = conn.getresponse()
+                if res.status == 200:
+                    raw_data = res.read().decode("utf-8")
+                    try:
+                        data = json.loads(raw_data)
+                    except json.JSONDecodeError as e:
+                        logger.warning(f"Failed to decode JSON response: {e}")
+                        return None
 
-            if res.status == 200:
-                self.authenticated = True
-                print("✅ Authentication successful.")
-            else:
-                print(f"❌ Authentication failed. Status code: {res.status}")
-                print(f"Response: {res.read().decode('utf-8')[:200]}")
-                if validate:
-                    raise ValueError("Authentication failed: Invalid API key or permissions.")
+                    if isinstance(data, list):
+                        normalized_data = list(tqdm(data, desc="Downloading"))
+                    else:
+                        logger.info("Response data is not a list; returning raw.")
+                        normalized_data = data
+
+                    if not isinstance(normalized_data, (list, dict)):
+                        logger.warning("Data is not a valid type for json_normalize.")
+                        return None
+
+                    df = pd.json_normalize(normalized_data)
+                    return df
+                else:
+                    logger.warning(f"Failed to fetch '{endpoint}'.")
+                    return None
+            finally:
+                conn.close()
 
         except Exception as e:
-            print(f"⚠️ Network error during authentication: {e}")
-            if validate:
-                raise
+            logger.warning(f"Network error while fetching '{endpoint}': {e}")
+            return None
+        finally:
+            if 'conn' in locals() and conn:
+                conn.close()
 
+    def get_drones(self) -> pd.DataFrame:
+        """
+        Fetch drone data from the Airdata API based on the provided query parameters.
+
+
+        Returns:
+            pd.DataFrame: A DataFrame containing the retrieved flight data. 
+                        If the request fails or no data is found, returns an empty DataFrame.
+        """
+
+        df = self.AccessItems(endpoint="drones")
+        return df if df is not None else pd.DataFrame()
+        
+    def get_batteries(self) -> pd.DataFrame:
+        """
+        Fetch batteries data from the Airdata API based on the provided query parameters.
+
+
+        Returns:
+            pd.DataFrame: A DataFrame containing the retrieved flight data. 
+                        If the request fails or no data is found, returns an empty DataFrame.
+        """
+        df = self.AccessItems(endpoint="batteries")
+        return df if df is not None else pd.DataFrame()
+    
+    def get_pilots(self) -> pd.DataFrame:
+        """
+        Fetch pilots data from the Airdata API based on the provided query parameters.
+
+
+        Returns:
+            pd.DataFrame: A DataFrame containing the retrieved flight data. 
+                        If the request fails or no data is found, returns an empty DataFrame.
+        """
+
+        df = self.AccessItems(endpoint="pilots")
+        return df if df is not None else pd.DataFrame()
+    
     def get_flights(
         self,
         since: str = None,
@@ -164,7 +242,7 @@ class Airdata:
         page = 0
         total_fetched = 0
 
-        with tqdm(desc="📥 Downloading flights") as pbar:
+        with tqdm(desc="Downloading flights") as pbar:
             while page < max_pages:
                 current_params = params.copy()
                 current_params["offset"] = offset
@@ -179,7 +257,7 @@ class Airdata:
 
                     if res.status != 200:
                         error_msg = res.read().decode('utf-8')[:300]
-                        print(f"❌ HTTP {res.status}: {error_msg}")
+                        print(f"HTTP {res.status}: {error_msg}")
                         break
 
                     data = json.loads(res.read().decode("utf-8"))
@@ -206,45 +284,15 @@ class Airdata:
                     time.sleep(0.1)
 
                 except Exception as e:
-                    print(f"⚠️ Error on page {page + 1} at offset {offset}: {e}")
+                    print(f"Error on page {page + 1} at offset {offset}: {e}")
                     break
 
         if not all_data:
-            print("ℹ️ No flight data found.")
+            print("No flight data found.")
             return pd.DataFrame()
 
         final_df = pd.concat(all_data, ignore_index=True)
         return final_df
-    
-    def AccessGroups(self, endpoint: str) -> Optional[pd.DataFrame]:
-      if not self.authenticated:
-            logger.warning(f"Cannot fetch {endpoint}: Not authenticated.")
-            return None
-
-      try:
-          conn = http.client.HTTPSConnection(self.base_url)
-          conn.request("GET", endpoint, headers=self._get_auth_header())
-          res = conn.getresponse()
-
-          if res.status == 200:
-              data = json.loads(res.read().decode("utf-8"))
-              if "data" in data:
-                  normalized_data = list(tqdm(data["data"], desc="📥 Downloading"))
-                  normalized = pd.json_normalize(normalized_data)
-                  df = norm_exp(normalized,"flights.data")
-              else:
-                  df = pd.DataFrame(data)
-              return df
-          else:
-              logger.warning(f"Failed to fetch flights. Status code: {res.status}")
-              logger.warning(f"Response: {res.read().decode('utf-8')[:500]}")
-              return None
-      except Exception as e:
-          logger.warning(f"Error fetching flights: {e}")
-          return None
-      finally:
-          if 'conn' in locals() and conn:
-              conn.close()
 
     def get_flightgroups(
         self,
@@ -275,96 +323,6 @@ class Airdata:
         df = self.AccessGroups(endpoint=endpoint)
         return df if df is not None else pd.DataFrame()
 
-    def AccessItems(self, endpoint: str) -> Optional[pd.DataFrame]:
-        """
-        Sends a GET request to the specified API endpoint and returns normalized data as a DataFrame.
-
-        Parameters:
-            endpoint (str): The full API path including query parameters.
-
-        Returns:
-            Optional[pd.DataFrame]: A DataFrame containing the retrieved data, or None if the request fails.
-        """
-        if not self.authenticated:
-            logger.warning("Cannot fetch data: Not authenticated.")
-            return None
-
-        try:
-            conn = http.client.HTTPSConnection(self.base_url)
-            try:
-                conn.request("GET", f"/{endpoint}", headers=self.auth_header)
-                res = conn.getresponse()
-                if res.status == 200:
-                    raw_data = res.read().decode("utf-8")
-                    try:
-                        data = json.loads(raw_data)
-                    except json.JSONDecodeError as e:
-                        logger.warning(f"Failed to decode JSON response: {e}")
-                        return None
-
-                    if isinstance(data, list):
-                        normalized_data = list(tqdm(data, desc="📥 Downloading"))
-                    else:
-                        logger.info("Response data is not a list; returning raw.")
-                        normalized_data = data
-
-                    if not isinstance(normalized_data, (list, dict)):
-                        logger.warning("Data is not a valid type for json_normalize.")
-                        return None
-
-                    df = pd.json_normalize(normalized_data)
-                    return df
-                else:
-                    logger.warning(f"Failed to fetch '{endpoint}'.")
-                    return None
-            finally:
-                conn.close()
-
-        except Exception as e:
-            logger.warning(f"Network error while fetching '{endpoint}': {e}")
-            return None
-        finally:
-            if 'conn' in locals() and conn:
-                conn.close()
-
-    def get_drones(self) -> pd.DataFrame:
-        """
-        Fetch drone data from the Airdata API based on the provided query parameters.
-
-
-        Returns:
-            pd.DataFrame: A DataFrame containing the retrieved flight data. 
-                        If the request fails or no data is found, returns an empty DataFrame.
-        """
-
-        df = self.AccessItems(endpoint="drones")
-        return df if df is not None else pd.DataFrame()
-        
-    def get_batteries(self) -> pd.DataFrame:
-        """
-        Fetch batteries data from the Airdata API based on the provided query parameters.
-
-
-        Returns:
-            pd.DataFrame: A DataFrame containing the retrieved flight data. 
-                        If the request fails or no data is found, returns an empty DataFrame.
-        """
-        df = self.AccessItems(endpoint="batteries")
-        return df if df is not None else pd.DataFrame()
-    
-    def get_pilots(self) -> pd.DataFrame:
-        """
-        Fetch pilots data from the Airdata API based on the provided query parameters.
-
-
-        Returns:
-            pd.DataFrame: A DataFrame containing the retrieved flight data. 
-                        If the request fails or no data is found, returns an empty DataFrame.
-        """
-
-        df = self.AccessItems(endpoint="pilots")
-        return df if df is not None else pd.DataFrame()
-    
 
 def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None,log_errors: bool = True) -> gpd.GeoDataFrame:
     """
@@ -400,7 +358,7 @@ def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None,log_errors: boo
 
     all_combined_rows = []
 
-    for _, row in tqdm(df.iterrows(), total=len(df), desc="🔄 Processing"):
+    for _, row in tqdm(df.iterrows(), total=len(df), desc="Processing"):
         csv_url = row['csvLink']
 
         try:
@@ -502,7 +460,7 @@ def airLine(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     gdf = gdf[gdf['geometry'] != Point(0, 0)]
 
     grouped = []
-    for flight_id in tqdm(gdf['id'].unique(), desc="🔄 Processing flights"):
+    for flight_id in tqdm(gdf['id'].unique(), desc="Processing flights"):
         flight_data = gdf[gdf['id'] == flight_id].sort_values(by='time(millisecond)')
         grouped.append(flight_data)
 
@@ -558,7 +516,7 @@ def airSegment(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
     gdf = gdf[gdf['geometry'] != Point(0, 0)]
 
-    for flight_id in tqdm(gdf['id'].unique(), desc="🔄 Processing segments"):
+    for flight_id in tqdm(gdf['id'].unique(), desc="Processing segments"):
         flight_data = gdf[gdf['id'] == flight_id].sort_values(by='time(millisecond)').reset_index(drop=True)
 
         for i in range(len(flight_data) - 1):

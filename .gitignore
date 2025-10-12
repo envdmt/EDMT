@@ -2,6 +2,7 @@
 Outputs
 contextily_provider.txt
 required.txt
+requirements.txt
 notes.txt
 encoding.py
 QHAE

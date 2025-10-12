@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "edmt"
-version = "1.0.1.dev0"
+version = "1.0.1"
 description = "Environmental Data Management Toolbox"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -40,4 +40,6 @@ edmt = "edmt.cli:main"
 [tool.setuptools.packages.find]
 include = ["edmt*"]
 
-pip install -e .[dev] 
+
+[tool.poetry]
+packages = [{ include = "edmt", from = "src" }]
