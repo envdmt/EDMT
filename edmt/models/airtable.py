@@ -3,8 +3,9 @@ from datetime import datetime
 from typing import Optional, Union
 import pandas as pd
 from urllib.parse import urlencode, quote
+from edmt.base.base import AirtableBaseClass
 
-class Airtable:
+class Airtable(AirtableBaseClass):
     """
     A clean, modular Airtable API client with support for:
     - Authentication via Personal Access Token
@@ -13,22 +14,6 @@ class Airtable:
     - Pagination
     - Long URL safety (falls back to POST)
     """
-
-    BASE_URL = "https://api.airtable.com/v0"
-
-    def __init__(self, api_key: str):
-        """
-        Initialize the Airtable client with an API key.
-
-        Args:
-            api_key (str): Your Airtable Personal Access Token.
-        """
-        self.api_key = api_key
-        self.session = requests.Session()
-        self.session.headers.update({
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
-        })
 
     def table(self, base_id: str, table_id_or_name: str):
         """
@@ -48,7 +33,7 @@ class Airtable:
             client=self.session
         )
 
-    class TableContext:
+    class TableContext():
         """
         Represents a specific table in a base. All data operations happen here.
         """

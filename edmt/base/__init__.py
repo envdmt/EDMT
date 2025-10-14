@@ -1,7 +1,9 @@
 from .base import (
-    AirdataBaseClass
+    AirdataBaseClass,
+    AirtableBaseClass
 )
 
 __all__ = [
-    "AirdataBaseClass"
+    "AirdataBaseClass",
+    "AirtableBaseClass"
 ]
