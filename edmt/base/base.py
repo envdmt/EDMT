@@ -95,14 +95,17 @@ class AirtableBaseClass:
         Raises:
             requests.HTTPError: If the request fails due to invalid credentials or network issues.
         """
-        
+
         url = f"{self.BASE_URL}/meta/bases"
         
         try:
             response = self.session.get(url, timeout=10)
             if response.status_code == 200:
                 self.authenticated = True
-                return True
+                print("Authentication successful.")
+                self.session.headers["Authorization"] = f"Bearer {self.api_key}"
+                return 
+
             elif response.status_code == 401 or response.status_code == 403:
                 raise requests.HTTPError(
                     f"Authentication failed: Invalid or missing API key. "
