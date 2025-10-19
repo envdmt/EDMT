@@ -60,7 +60,7 @@ class AirdataBaseClass:
 
 
 
-class AirtableBaseClass():
+class AirtableBaseClass:
 
     BASE_URL = "https://api.airtable.com/v0"
 
