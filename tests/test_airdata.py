@@ -1,5 +1,5 @@
 import edmt
-from edmt.models import Airdata
+from edmt.conversion import to_gdf
 
 # print(f"EDMT Version: {edmt.__version__}")
 # # print all funtions in Airdata
