@@ -112,9 +112,6 @@ def sdf_to_gdf(sdf, crs=None):
     Raises:
         ValueError: If input is not a DataFrame or is empty.
 
-    Example:
-        >>> sdf = pd.read_csv("spatial_data.csv")
-        >>> gdf = sdf_to_gdf(sdf)
     """
     if not isinstance(sdf, pd.DataFrame):
         raise ValueError("Input must be a pandas DataFrame.")
@@ -152,9 +149,6 @@ def generate_uuid(df, index=False):
     Raises:
         ValueError: If input is not a DataFrame or is empty.
 
-    Example:
-        >>> df = pd.DataFrame({"name": ["Alice", "Bob"]})
-        >>> df = generate_uuid(df)
     """
     if not isinstance(df, pd.DataFrame):
         raise ValueError("Input must be a pandas DataFrame.")
@@ -194,8 +188,6 @@ def get_utm_epsg(longitude=None):
     Raises:
         KeyError: If longitude is not provided.
 
-    Example:
-        >>> epsg = get_utm_epsg(36.82)
     """
     if longitude is None:
         raise KeyError("Select column with longitude values")
@@ -215,9 +207,6 @@ def to_gdf(df):
     Returns:
         gpd.GeoDataFrame: GeoDataFrame with point geometries.
 
-    Example:
-        >>> df = pd.DataFrame({"location": [[36.82, -1.29], [39.67, -0.09]]})
-        >>> gdf = to_gdf(df)
     """
     longitude, latitude = (0, 1) if isinstance(df["location"].iat[0], list) else ("longitude", "latitude")
     return gpd.GeoDataFrame(
@@ -242,9 +231,6 @@ def convert_time(time_value: float, unit_from: str, unit_to: str) -> float:
     Raises:
         ValueError: If units are unsupported or value is invalid.
 
-    Example:
-        >>> convert_time(2, 'hours', 'minutes')
-        120.0
     """
     if not isinstance(time_value, (int, float)) or time_value < 0:
         raise ValueError("'time_value' must be a non-negative number.")
@@ -281,9 +267,6 @@ def convert_speed(speed: float, unit_from: str, unit_to: str) -> float:
     Raises:
         ValueError: If unit is unsupported.
 
-    Example:
-        >>> convert_speed(60, 'km/h', 'mph')
-        37.282
     """
     if unit_to not in speed_chart or unit_from not in speed_chart_inverse:
         msg = (
@@ -309,9 +292,6 @@ def convert_distance(value: float, from_type: str, to_type: str) -> float:
     Raises:
         ValueError: If unit is unsupported.
 
-    Example:
-        >>> convert_distance(100, 'm', 'km')
-        0.1
     """
     from_sanitized = from_type.lower().strip("s")
     to_sanitized = to_type.lower().strip("s")
@@ -335,3 +315,5 @@ def convert_distance(value: float, from_type: str, to_type: str) -> float:
     converted = value_in_meters / distance_chart[to_sanitized]
 
     return round(converted, 3)
+
+
