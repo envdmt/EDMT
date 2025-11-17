@@ -168,12 +168,12 @@ class Airdata:
 
                     normalized_data = data["data"]
                     df_page = pd.json_normalize(normalized_data)
-                    df_page = df_page.drop(
-                        columns=[
-                            "displayLink", "kmlLink", "gpxLink", "originalLink", "participants.object"
-                        ],
-                        errors='ignore'
-                    )
+                    # df_page = df_page.drop(
+                    #     columns=[
+                    #         "displayLink", "kmlLink", "gpxLink", "originalLink", "participants.object"
+                    #     ],
+                    #     errors='ignore'
+                    # )
 
                     all_data.append(df_page)
                     fetched_this_page = len(normalized_data)
