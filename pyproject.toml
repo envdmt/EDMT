@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.9"
 license = "MIT"
 authors = [
-  {name = "Odero, Kuloba & musasia", email = "franodex10@gmail.com"},
+  {name = "Odero, Kuloba & musasia", email = "francisodero10@gmail.com"},
 ]
 classifiers = [
   "Programming Language :: Python :: 3",
@@ -29,11 +29,12 @@ dependencies = [
   "seaborn>=0.13.2",
   "tqdm>=4",
   "pillow>=11.3.0",
-  "requests"
+  "requests",
+  "PyPDF2"
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/envqwewdmt/EDMT"
+"Homepage" = "https://github.com/envdmt/EDMT/"
 
 [project.scripts]
 edmt = "edmt.cli:main"

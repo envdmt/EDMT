@@ -136,22 +136,3 @@ class AirtableBaseClass:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
-
-# class AirtableBaseClass:
-
-#     BASE_URL = "https://api.airtable.com/v0"
-
-#     def __init__(self, api_key: str):
-#         """
-#         Initialize the Airtable client with an API key.
-
-#         Args:
-#             api_key (str): Your Airtable Personal Access Token.
-#         """
-#         self.api_key = api_key
-#         self.session = requests.Session()
-#         self.session.headers.update({
-#             "Authorization": f"Bearer {api_key}",
-#             "Content-Type": "application/json"
-#         })
-#         print("Airtable client initialized with API key.")
