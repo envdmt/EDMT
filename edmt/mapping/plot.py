@@ -1,9 +1,6 @@
 import leafmap
 
 
-
-
-
 class Mapping:
     def __init__(self, zoom=None, height=None, width=None, **kwargs):
         default_params = {
