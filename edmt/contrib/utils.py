@@ -169,40 +169,4 @@ def Airpoint_Extractor(row, session=None, timeout=10):
     return pd.concat([metadata_df, csv_df], axis=1)
 
 
-# def merge_pdfs(pdf_paths, output_path):
-#     """
-#     Merge multiple PDF files into a single PDF.
-
-#     Args:
-#         pdf_paths (list[str]): A list of file paths to PDF files that will be merged.
-#         output_path (str): The file path where the merged PDF will be saved.
-
-#     Returns:
-#         str: The output path of the merged PDF.
-
-#     Raises:
-#         FileNotFoundError: If any of the provided PDF paths do not exist.
-#         ValueError: If pdf_paths is empty or not a list.
-#     """
-
-#     if not isinstance(pdf_paths, list) or len(pdf_paths) == 0:
-#         raise ValueError("pdf_paths must be a non-empty list of PDF file paths.")
-
-#     for path in pdf_paths:
-#         if not os.path.exists(path):
-#             raise FileNotFoundError(f"PDF file not found: {path}")
-
-#     merger = PdfMerger()
-
-#     try:
-#         for pdf in pdf_paths:
-#             merger.append(pdf)
-
-#         merger.write(output_path)
-
-#     finally:
-#         merger.close()
-
-#     return output_path
-
 
