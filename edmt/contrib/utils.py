@@ -1,11 +1,10 @@
 import os
-import sys
-from dateutil import parser
+import requests
 import pandas as pd
-import geopandas as gpd
+from io import StringIO
+from typing import Union
+from dateutil import parser
 from contextlib import contextmanager
-from typing import Union, List
-from PyPDF2 import PdfMerger
 
 def clean_vars(addl_kwargs={}, **kwargs):
     for k in addl_kwargs.keys():
@@ -184,6 +183,26 @@ def merge_pdfs(pdf_paths, output_path):
     return output_path
 
 
+def Airpoint_Extractor(row, session=None, timeout=10):
+    """
+    Fetch a CSV from row['csvLink'], repeat row metadata,
+    and return a combined DataFrame.
+    """
+    csv_url = row["csvLink"]
 
+    session = session or requests.Session()
+
+    response = session.get(csv_url, timeout=timeout)
+    response.raise_for_status()
+
+    csv_df = pd.read_csv(StringIO(response.text))
+
+    # Faster than building a DataFrame row-by-row
+    metadata_df = pd.DataFrame(
+        {col: row[col] for col in row.index},
+        index=csv_df.index
+    )
+
+    return pd.concat([metadata_df, csv_df], axis=1)
 
 

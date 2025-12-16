@@ -16,7 +16,6 @@ Requires-Dist: fiona==1.9.6
 Requires-Dist: folium>=0.18.0
 Requires-Dist: geopandas>=0.12.2
 Requires-Dist: mapclassify>=2.8.0
-Requires-Dist: leafmap
 Requires-Dist: plotly>=5.24.1
 Requires-Dist: seaborn>=0.13.2
 Requires-Dist: tqdm>=4

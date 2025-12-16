@@ -1,7 +1,8 @@
 from edmt.contrib.utils import (
     format_iso_time,
     append_cols,
-    norm_exp
+    norm_exp,
+    Airpoint_Extractor
 )
 
 from edmt.base.base import AirdataBaseClass
@@ -19,6 +20,7 @@ import csv
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import LineString, Point
+from concurrent.futures import ThreadPoolExecutor
 
 from io import StringIO
 from tqdm import tqdm
@@ -359,25 +361,26 @@ def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None,log_errors: boo
     all_combined_rows = []
 
     for _, row in tqdm(df.iterrows(), total=len(df), desc="Processing"):
-        csv_url = row['csvLink']
+        with requests.Session() as session:
+            for _, row in df.iterrows():
+                try:
+                    def process_row(row):
+                        return Airpoint_Extractor(row, session=session)
 
-        try:
-            response = requests.get(csv_url)
-            response.raise_for_status()
-            csv_data = pd.read_csv(StringIO(response.text))
-            metadata_repeated = pd.DataFrame([row] * len(csv_data), index=csv_data.index)
-            combined = pd.concat([metadata_repeated, csv_data], axis=1)
-            all_combined_rows.append(combined)
+                    with ThreadPoolExecutor(max_workers=8) as executor:
+                        results = list(executor.map(process_row, [row for _, row in df.iterrows()]))
 
-        except requests.RequestException as e:
-            if log_errors:
-                print(f"Network error for id {row['id']}: {e}")
-        except pd.errors.ParserError as e:
-            if log_errors:
-                print(f"Parsing error for CSV at id {row['id']}: {e}")
-        except Exception as e:
-            if log_errors:
-                print(f"Unexpected error for id {row['id']}: {e}")
+                    all_combined_rows = pd.concat(results, ignore_index=True)
+
+                except requests.RequestException as e:
+                    if log_errors:
+                        print(f"Network error for id {row['id']}: {e}")
+                except pd.errors.ParserError as e:
+                    if log_errors:
+                        print(f"Parsing error for CSV at id {row['id']}: {e}")
+                except Exception as e:
+                    if log_errors:
+                        print(f"Unexpected error for id {row['id']}: {e}")
 
     if not all_combined_rows:
         return pd.DataFrame()
