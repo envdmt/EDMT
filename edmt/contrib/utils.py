@@ -150,8 +150,6 @@ def norm_exp(df: pd.DataFrame,
         ).drop(columns=['original_index'])
 
 
-
-
 async def fetch_csv(session: aiohttp.ClientSession, row, log_errors: bool = True) -> Optional[pd.DataFrame]:
     """
     Asynchronously fetches a CSV file from a URL and enriches its rows with metadata.

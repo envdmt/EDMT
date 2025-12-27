@@ -579,7 +579,6 @@ def airSegment(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     if not segments:
         return gpd.GeoDataFrame(gdf,geometry='geometry')
 
-
     airSeg = gpd.GeoDataFrame(segments, geometry='geometry')
 
     return append_cols(airSeg, cols=['checktime','segment_start_time','segment_end_time','segment_duration_ms','segment_distance_m','geometry'])
