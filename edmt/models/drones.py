@@ -1,200 +1,33 @@
 from edmt.contrib.utils import (
     format_iso_time,
     append_cols,
-    norm_exp
+    norm_exp,
+    load_all_csvs
 )
+from edmt.base.base import AirdataBaseClass
+
 import logging
 logger = logging.getLogger(__name__)
-
-from typing import Union
-import base64
-import http.client
 import json
-import requests
+import asyncio
 import time
-
-import csv
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import LineString, Point
-
-from io import StringIO
 from tqdm import tqdm
 from typing import Union, Optional
-
+from typing import Union
+import http.client
 from pyproj import Geod
 geod = Geod(ellps="WGS84")
 
 
-class Airdata:
-    def __init__(self, api_key):
-        self.api_key = api_key
-        self.base_url = "api.airdata.com"
-        self.authenticated = False
-        self.auth_header = self._get_auth_header()
-
-        self.authenticate(validate=True)
-
-    def _get_auth_header(self):
-        key_with_colon = self.api_key + ":"
-        encoded_key = base64.b64encode(key_with_colon.encode()).decode("utf-8")
-        return {
-            "Authorization": f"Basic {encoded_key}"
-        }
-
-    def authenticate(self,validate=True):
-        """
-        Authenticates with the API by calling /version or /flights.
-        """
-        conn = http.client.HTTPSConnection(self.base_url)
-        payload = ''
-
-        try:
-            conn.request("GET", "/version", payload, self.auth_header)
-            res = conn.getresponse()
-            
-            if res.status == 200:
-                self.authenticated = True
-                print("✅ Authentication successful.")
-                return
-
-            if res.status == 404:
-                conn = http.client.HTTPSConnection(self.base_url)
-                conn.request("GET", "/flights", payload, self.auth_header)
-                res = conn.getresponse()
-
-            if res.status == 200:
-                self.authenticated = True
-                print("✅ Authentication successful.")
-            else:
-                print(f"❌ Authentication failed. Status code: {res.status}")
-                print(f"Response: {res.read().decode('utf-8')[:200]}")
-                if validate:
-                    raise ValueError("Authentication failed: Invalid API key or permissions.")
-
-        except Exception as e:
-            print(f"⚠️ Network error during authentication: {e}")
-            if validate:
-                raise
-
-    def get_flights(
-        self,
-        since: str = None,
-        until: str = None,
-        created_after: Optional[str] = None,
-        battery_ids: Optional[Union[str, list]] = None,
-        pilot_ids: Optional[Union[str, list]] = None,
-        location: Optional[list] = None,
-        limit: int = 100,
-        max_pages: int = 100,
-    ) -> pd.DataFrame:
-        """
-        Fetch ALL flight data from the Airdata API by paginating through all available pages.
-        Automatically handles offset pagination until no more data is returned or max_pages is reached.
-
-        Args:
-            since (str): Start date/time (ISO format). Flights starting after this time.
-            until (str): End date/time (ISO format). Flights starting before this time.
-            created_after (str): Flights created after this timestamp.
-            battery_ids (str or list): Comma-separated string or list of battery IDs.
-            pilot_ids (str or list): Comma-separated string or list of pilot IDs.
-            location (list): [latitude, longitude] for radius-based search.
-            limit (int): Number of results per page. Max 100. Default: 100.
-            max_pages (int): Maximum number of pages to fetch. Prevents infinite loops. Default: 100.
-
-        Returns:
-            pd.DataFrame: Combined DataFrame of all flights across all pages.
-                        Empty if no data or error occurs.
-
-        Raises:
-            ValueError: If location is malformed.
-        """
-
-        if location is not None:
-            if not isinstance(location, list) or len(location) != 2 or not all(isinstance(x, (int, float)) for x in location):
-                raise ValueError("Location must be a list of exactly two numbers: [latitude, longitude]")
-
-        def format_for_api(dt_str):
-            return format_iso_time(dt_str).replace("T", "+") if dt_str else None
-
-        formatted_since = format_for_api(since)
-        formatted_until = format_for_api(until)
-        formatted_created_after = format_for_api(created_after)
-
-        params = {
-            "start": formatted_since,
-            "end": formatted_until,
-            "detail_level": "comprehensive",
-            "created_after": formatted_created_after,
-            "battery_ids": ",".join(battery_ids) if isinstance(battery_ids, list) else battery_ids,
-            "pilot_ids": ",".join(pilot_ids) if isinstance(pilot_ids, list) else pilot_ids,
-            "latitude": location[0] if location else None,
-            "longitude": location[1] if location else None,
-            "limit": limit,
-        }
-
-        params = {k: v for k, v in params.items() if v is not None}
-
-        if not self.authenticated:
-            print("Cannot fetch flights: Not authenticated.")
-            return pd.DataFrame()
-
-        all_data = []
-        offset = 0
-        page = 0
-        total_fetched = 0
-
-        with tqdm(desc="📥 Downloading flights") as pbar:
-            while page < max_pages:
-                current_params = params.copy()
-                current_params["offset"] = offset
-
-                query_string = "&".join([f"{k}={v}" for k, v in current_params.items()])
-                endpoint = f"/flights?{query_string}"
-
-                try:
-                    conn = http.client.HTTPSConnection(self.base_url)
-                    conn.request("GET", endpoint, headers=self.auth_header)
-                    res = conn.getresponse()
-
-                    if res.status != 200:
-                        error_msg = res.read().decode('utf-8')[:300]
-                        print(f"❌ HTTP {res.status}: {error_msg}")
-                        break
-
-                    data = json.loads(res.read().decode("utf-8"))
-                    if not data.get("data") or len(data["data"]) == 0:
-                        break
-
-                    normalized_data = data["data"]
-                    df_page = pd.json_normalize(normalized_data)
-                    # df_page = df_page.drop(
-                    #     columns=[
-                    #         "displayLink", "kmlLink", "gpxLink", "originalLink", "participants.object"
-                    #     ],
-                    #     errors='ignore'
-                    # )
-
-                    all_data.append(df_page)
-                    fetched_this_page = len(normalized_data)
-
-                    for _ in range(fetched_this_page):
-                        pbar.update(1)
-
-                    offset += limit
-                    page += 1
-                    time.sleep(0.1)
-
-                except Exception as e:
-                    print(f"⚠️ Error on page {page + 1} at offset {offset}: {e}")
-                    break
-
-        if not all_data:
-            print("ℹ️ No flight data found.")
-            return pd.DataFrame()
-
-        final_df = pd.concat(all_data, ignore_index=True)
-        return final_df
+class Airdata(AirdataBaseClass):
+    """
+    Client for interacting with the Airdata API.
+    Handles authentication and provides methods to fetch various data types
+    such as flights, drones, batteries, and pilots.
+    """
     
     def AccessGroups(self, endpoint: str) -> Optional[pd.DataFrame]:
       if not self.authenticated:
@@ -226,35 +59,6 @@ class Airdata:
           if 'conn' in locals() and conn:
               conn.close()
 
-    def get_flightgroups(
-        self,
-        sort_by: str = None,
-        ascending: bool = True
-    ) -> pd.DataFrame:
-        """
-        Fetch Flight Groups data from the Airdata API based on query parameters.
-
-        Parameters:
-            sort_by (str, optional): Field to sort by. Valid values are 'title' and 'created'.
-                                     If None, no sorting is applied.
-            ascending (bool): Whether to sort in ascending order. Defaults to True.
-            id (str, optional): Specific ID of a flight group to fetch.
-
-        Returns:
-            pd.DataFrame: DataFrame containing retrieved flight data.
-                          Returns empty DataFrame if request fails or no data found.
-        """
-        params = {}
-        if sort_by:
-            if sort_by not in ["title", "created"]:
-                raise ValueError("Invalid sort_by value. Must be 'title' or 'created'.")
-            params["sort_by"] = sort_by
-            params["sort_dir"] = "asc" if ascending else "desc"
-        endpoint = "/flightgroups?" + "&".join([f"{k}={v}" for k, v in params.items()])
-
-        df = self.AccessGroups(endpoint=endpoint)
-        return df if df is not None else pd.DataFrame()
-
     def AccessItems(self, endpoint: str) -> Optional[pd.DataFrame]:
         """
         Sends a GET request to the specified API endpoint and returns normalized data as a DataFrame.
@@ -283,7 +87,7 @@ class Airdata:
                         return None
 
                     if isinstance(data, list):
-                        normalized_data = list(tqdm(data, desc="📥 Downloading"))
+                        normalized_data = list(tqdm(data, desc="Downloading"))
                     else:
                         logger.info("Response data is not a list; returning raw.")
                         normalized_data = data
@@ -345,6 +149,174 @@ class Airdata:
         df = self.AccessItems(endpoint="pilots")
         return df if df is not None else pd.DataFrame()
     
+    def get_flights(
+        self,
+        since: str = None,
+        until: str = None,
+        created_after: Optional[str] = None,
+        battery_ids: Optional[Union[str, list]] = None,
+        pilot_ids: Optional[Union[str, list]] = None,
+        location: Optional[list] = None,
+        limit: int = 100,
+        max_pages: int = 100,
+    ) -> pd.DataFrame:
+        """Retrieve paginated flight records from the Airdata API.
+
+        Fetches flight data by automatically handling offset-based pagination across
+        multiple API requests. Continues until no more results are returned or the
+        maximum page limit is reached.
+
+        Args:
+            since (str, optional): 
+                Filter flights that started on or after this ISO 8601 timestamp
+            until (str, optional): 
+                Filter flights that started before this ISO 8601 timestamp.
+            created_after (str, optional): 
+                Include only flights created after this ISO 8601 timestamp.
+            battery_ids (str or list, optional): 
+                Filter by specific battery ID(s). Accepts either a comma-separated 
+                string or a list of strings
+            pilot_ids (str or list, optional): 
+                Filter by specific pilot ID(s).
+            location (list, optional): 
+                Geographic center point for radius-based search as 
+                ``[latitude, longitude]``.
+            limit (int, optional): 
+                Number of records per page. Must be ≤ 100. Defaults to 100.
+            max_pages (int, optional): 
+                Maximum number of pages to retrieve. Prevents excessive API usage. 
+                Defaults to 100.
+
+        Returns:
+            pd.DataFrame: 
+                A DataFrame containing all retrieved flight records with standardized 
+                columns. Returns an empty DataFrame if:
+                
+                - No flights match the query parameters
+                - API returns an error
+                - Authentication fails
+
+        Raises:
+            ValueError: 
+                If ``location`` is provided but doesn't contain exactly two numeric 
+                elements (latitude and longitude).
+        """
+
+        if location is not None:
+            if not isinstance(location, list) or len(location) != 2 or not all(isinstance(x, (int, float)) for x in location):
+                raise ValueError("Location must be a list of exactly two numbers: [latitude, longitude]")
+
+        def format_for_api(dt_str):
+            return format_iso_time(dt_str).replace("T", "+") if dt_str else None
+
+        formatted_since = format_for_api(since)
+        formatted_until = format_for_api(until)
+        formatted_created_after = format_for_api(created_after)
+
+        params = {
+            "start": formatted_since,
+            "end": formatted_until,
+            "detail_level": "comprehensive",
+            "created_after": formatted_created_after,
+            "battery_ids": ",".join(battery_ids) if isinstance(battery_ids, list) else battery_ids,
+            "pilot_ids": ",".join(pilot_ids) if isinstance(pilot_ids, list) else pilot_ids,
+            "latitude": location[0] if location else None,
+            "longitude": location[1] if location else None,
+            "limit": limit,
+        }
+
+        params = {k: v for k, v in params.items() if v is not None}
+
+        if not self.authenticated:
+            print("Cannot fetch flights: Not authenticated.")
+            return pd.DataFrame()
+
+        all_data = []
+        offset = 0
+        page = 0
+        total_fetched = 0
+
+        with tqdm(desc="Downloading flights") as pbar:
+            while page < max_pages:
+                current_params = params.copy()
+                current_params["offset"] = offset
+
+                query_string = "&".join([f"{k}={v}" for k, v in current_params.items()])
+                endpoint = f"/flights?{query_string}"
+
+                try:
+                    conn = http.client.HTTPSConnection(self.base_url)
+                    conn.request("GET", endpoint, headers=self.auth_header)
+                    res = conn.getresponse()
+
+                    if res.status != 200:
+                        error_msg = res.read().decode('utf-8')[:300]
+                        print(f"HTTP {res.status}: {error_msg}")
+                        break
+
+                    data = json.loads(res.read().decode("utf-8"))
+                    if not data.get("data") or len(data["data"]) == 0:
+                        break
+
+                    normalized_data = data["data"]
+                    df_page = pd.json_normalize(normalized_data)
+                    # df_page = df_page.drop(
+                    #     columns=[
+                    #         "displayLink", "kmlLink", "gpxLink", "originalLink", "participants.object"
+                    #     ],
+                    #     errors='ignore'
+                    # )
+
+                    all_data.append(df_page)
+                    fetched_this_page = len(normalized_data)
+
+                    for _ in range(fetched_this_page):
+                        pbar.update(1)
+
+                    offset += limit
+                    page += 1
+                    time.sleep(0.1)
+
+                except Exception as e:
+                    print(f"Error on page {page + 1} at offset {offset}: {e}")
+                    break
+
+        if not all_data:
+            print("No flight data found.")
+            return pd.DataFrame()
+
+        final_df = pd.concat(all_data, ignore_index=True)
+        return final_df
+
+    def get_flightgroups(
+        self,
+        sort_by: str = None,
+        ascending: bool = True
+    ) -> pd.DataFrame:
+        """
+        Fetch Flight Groups data from the Airdata API based on query parameters.
+
+        Parameters:
+            sort_by (str, optional): Field to sort by. Valid values are 'title' and 'created'.
+                                     If None, no sorting is applied.
+            ascending (bool): Whether to sort in ascending order. Defaults to True.
+            id (str, optional): Specific ID of a flight group to fetch.
+
+        Returns:
+            pd.DataFrame: DataFrame containing retrieved flight data.
+                          Returns empty DataFrame if request fails or no data found.
+        """
+        params = {}
+        if sort_by:
+            if sort_by not in ["title", "created"]:
+                raise ValueError("Invalid sort_by value. Must be 'title' or 'created'.")
+            params["sort_by"] = sort_by
+            params["sort_dir"] = "asc" if ascending else "desc"
+        endpoint = "/flightgroups?" + "&".join([f"{k}={v}" for k, v in params.items()])
+
+        df = self.AccessGroups(endpoint=endpoint)
+        return df if df is not None else pd.DataFrame()
+
 
 def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None,log_errors: bool = True) -> gpd.GeoDataFrame:
     """
@@ -368,57 +340,41 @@ def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None,log_errors: boo
         ValueError:
             If required columns ('id', 'csvLink') are missing from the input DataFrame.
     """
-    df = df.copy()
-    df.loc[:, 'checktime'] = pd.to_datetime(df['time'], errors="coerce")
 
-    required_cols = {'id', 'csvLink'}
-    if not required_cols.issubset(df.columns):
-        raise ValueError(f"Input DataFrame must contain columns: {required_cols}")
+    df = df.copy()
+    df["checktime"] = pd.to_datetime(df["time"], errors="coerce")
 
     if filter_ids is not None:
-        df = df[df['id'].isin(filter_ids)]
+        df = df[df["id"].isin(filter_ids)]
 
-    all_combined_rows = []
-
-    for _, row in tqdm(df.iterrows(), total=len(df), desc="🔄 Processing"):
-        csv_url = row['csvLink']
-
-        try:
-            response = requests.get(csv_url)
-            response.raise_for_status()
-            csv_data = pd.read_csv(StringIO(response.text))
-            metadata_repeated = pd.DataFrame([row] * len(csv_data), index=csv_data.index)
-            combined = pd.concat([metadata_repeated, csv_data], axis=1)
-            all_combined_rows.append(combined)
-
-        except requests.RequestException as e:
-            if log_errors:
-                print(f"Network error for id {row['id']}: {e}")
-        except pd.errors.ParserError as e:
-            if log_errors:
-                print(f"Parsing error for CSV at id {row['id']}: {e}")
-        except Exception as e:
-            if log_errors:
-                print(f"Unexpected error for id {row['id']}: {e}")
-
-    if not all_combined_rows:
+    if df.empty:
         return pd.DataFrame()
 
-    df_ = pd.concat(all_combined_rows, ignore_index=True)
+    results = asyncio.run(load_all_csvs(df, log_errors=log_errors, max_conn=32))
+
+    if not results:
+        return pd.DataFrame()
+
+    df_ = pd.concat(results, ignore_index=True)
+
     cols = ["participants.data", "batteries.data"]
-    dfs_to_join = []
+    expanded_parts = []
+
     for col in cols:
-        try:
-            expanded = pd.json_normalize(df_[col].explode(ignore_index=True))
-            expanded.columns = [f"{col}_{subcol}" for subcol in expanded.columns]
-            dfs_to_join.append(expanded)
-        except Exception as e:
-            if log_errors:
-                print(f"Error expanding column '{col}': {e}")
-    if dfs_to_join:
-        expanded_df = pd.concat(dfs_to_join, axis=1)
-    gdf = df_.join(expanded_df).drop(columns=cols)
-    return append_cols(gdf,cols="checktime")
+        if col in df_.columns:
+            try:
+                expanded = pd.json_normalize(df_[col].explode(ignore_index=True))
+                expanded.columns = [f"{col}_{c}" for c in expanded.columns]
+                expanded_parts.append(expanded)
+            except Exception as e:
+                if log_errors:
+                    print(f"Expand failed: {col}: {e}")
+
+    if expanded_parts:
+        df_ = df_.join(pd.concat(expanded_parts, axis=1))
+
+    return append_cols(df_.drop(columns=[c for c in cols if c in df_.columns]),
+                       cols="checktime")
 
 
 def df_to_gdf( df: pd.DataFrame,lon_col: str = 'longitude',lat_col: str = 'latitude',crs: int = 4326) -> gpd.GeoDataFrame:
@@ -482,7 +438,7 @@ def airLine(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     gdf = gdf[gdf['geometry'] != Point(0, 0)]
 
     grouped = []
-    for flight_id in tqdm(gdf['id'].unique(), desc="🔄 Processing flights"):
+    for flight_id in tqdm(gdf['id'].unique(), desc="Processing flights"):
         flight_data = gdf[gdf['id'] == flight_id].sort_values(by='time(millisecond)')
         grouped.append(flight_data)
 
@@ -538,7 +494,7 @@ def airSegment(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
     gdf = gdf[gdf['geometry'] != Point(0, 0)]
 
-    for flight_id in tqdm(gdf['id'].unique(), desc="🔄 Processing segments"):
+    for flight_id in tqdm(gdf['id'].unique(), desc="Processing segments"):
         flight_data = gdf[gdf['id'] == flight_id].sort_values(by='time(millisecond)').reset_index(drop=True)
 
         for i in range(len(flight_data) - 1):
@@ -570,7 +526,6 @@ def airSegment(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
     if not segments:
         return gpd.GeoDataFrame(gdf,geometry='geometry')
-
 
     airSeg = gpd.GeoDataFrame(segments, geometry='geometry')
 

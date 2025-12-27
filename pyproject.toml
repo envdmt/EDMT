@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "edmt"
-version = "1.0.1.dev0"
+version = "1.0.1"
 description = "Environmental Data Management Toolbox"
 readme = "README.md"
 requires-python = ">=3.9"
 license = "MIT"
 authors = [
-  {name = "Odero, Kuloba & musasia", email = "franodex10@gmail.com"},
+  {name = "Odero, Kuloba & musasia", email = "francisodero10@gmail.com"},
 ]
 classifiers = [
   "Programming Language :: Python :: 3",
@@ -27,14 +27,21 @@ dependencies = [
   "plotly>=5.24.1",
   "seaborn>=0.13.2",
   "tqdm>=4",
-  "pillow>=11.3.0"
+  "pillow>=11.3.0",
+  "requests",
+  "aiohttp",
+  "PyPDF2"
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/envqwewdmt/EDMT"
+"Homepage" = "https://github.com/envdmt/EDMT/"
 
 [project.scripts]
 edmt = "edmt.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["edmt*"]
+
+
+[tool.poetry]
+packages = [{ include = "edmt", from = "src" }]

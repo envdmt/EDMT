@@ -5,15 +5,12 @@ from .drones import (
     airLine,
     airSegment
 )
-from .airtable import (
-    Airtable
-)
 
 __all__ = [
+    "Airtable",
     "Airdata",
     "airPoint",
     "df_to_gdf",
     "airLine",
-    "airSegment",
-    "Airtable"
+    "airSegment"
 ]

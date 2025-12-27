@@ -15,11 +15,11 @@ edmt/base/base.py
 edmt/contrib/__init__.py
 edmt/contrib/utils.py
 edmt/conversion/__init__.py
-edmt/conversion/computational.py
 edmt/conversion/conversion.py
 edmt/mapping/__init__.py
 edmt/mapping/mapping.py
 edmt/mapping/maps.py
+edmt/mapping/plot.py
 edmt/models/__init__.py
 edmt/models/airtable.py
 edmt/models/drones.py

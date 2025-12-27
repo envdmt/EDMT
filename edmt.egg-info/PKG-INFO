@@ -1,10 +1,10 @@
 Metadata-Version: 2.4
 Name: edmt
-Version: 1.0.1.dev0
+Version: 1.0.1
 Summary: Environmental Data Management Toolbox
-Author-email: "Odero, Kuloba & musasia" <franodex10@gmail.com>
+Author-email: "Odero, Kuloba & musasia" <francisodero10@gmail.com>
 License-Expression: MIT
-Project-URL: Homepage, https://github.com/envqwewdmt/EDMT
+Project-URL: Homepage, https://github.com/envdmt/EDMT/
 Classifier: Programming Language :: Python :: 3
 Classifier: Operating System :: OS Independent
 Requires-Python: >=3.9
@@ -20,6 +20,9 @@ Requires-Dist: plotly>=5.24.1
 Requires-Dist: seaborn>=0.13.2
 Requires-Dist: tqdm>=4
 Requires-Dist: pillow>=11.3.0
+Requires-Dist: requests
+Requires-Dist: aiohttp
+Requires-Dist: PyPDF2
 Dynamic: license-file
 
 # edmt

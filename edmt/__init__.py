@@ -26,12 +26,12 @@ def init(silent=False, force=False):
     """
     Initializes the environment with EDMT-specific customizations.
 
-    Parameters
-    ----------
-    silent : bool, optional
-        Suppresses console output (default is False).
-    force : bool, optional
-        Forces re-initialization even if already initialized (default is False).
+    Parameters:
+    ------------
+            silent : bool, optional
+                Suppresses console output (default is False).
+            force : bool, optional
+                Forces re-initialization even if already initialized (default is False).
     """
     global __initialized
     if __initialized and not force:
@@ -74,5 +74,7 @@ __all__ = [
     "conversion", 
     "mapping", 
     "models", 
-    "plotting"
+    "plotting",
+    "plans"
     ]
+
