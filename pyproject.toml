@@ -29,6 +29,7 @@ dependencies = [
   "tqdm>=4",
   "pillow>=11.3.0",
   "requests",
+  "aiohttp",
   "PyPDF2"
 ]
 
