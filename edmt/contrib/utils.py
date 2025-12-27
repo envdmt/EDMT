@@ -1,10 +1,14 @@
-import os
-import requests
+import aiohttp
 import pandas as pd
 from io import StringIO
 from typing import Union
 from dateutil import parser
-from contextlib import contextmanager
+from typing import Optional, List
+from tqdm.asyncio import tqdm_asyncio
+import nest_asyncio
+nest_asyncio.apply()
+
+
 
 def clean_vars(addl_kwargs={}, **kwargs):
     for k in addl_kwargs.keys():
@@ -146,27 +150,98 @@ def norm_exp(df: pd.DataFrame,
         ).drop(columns=['original_index'])
 
 
-def Airpoint_Extractor(row, session=None, timeout=10):
+
+
+async def fetch_csv(session: aiohttp.ClientSession, row, log_errors: bool = True) -> Optional[pd.DataFrame]:
     """
-    Fetch a CSV from row['csvLink'], repeat row metadata,
-    and return a combined DataFrame.
+    Asynchronously fetches a CSV file from a URL and enriches its rows with metadata.
+
+    This function retrieves a CSV from the URL specified in `row.csvLink`, parses it into a
+    pandas DataFrame, and then adds metadata columns (taken from the input `row`) to every
+    row of the CSV data. If the request fails or parsing errors occur, the function returns
+    `None` and optionally logs the error.
+
+    Parameters
+    ----------
+    session : aiohttp.ClientSession
+        An active aiohttp session used to make the HTTP GET request.
+    row : pandas.Series or namedtuple-like object
+        An object with at least two attributes:
+        - `csvLink`: the URL to the CSV file (str)
+        - `id`: a unique identifier for logging/error reporting (any)
+        Other attributes will be duplicated as metadata columns.
+    log_errors : bool, optional
+        If True (default), errors will be printed to stdout with the associated row ID.
+
+    Returns
+    -------
+    pd.DataFrame or None
+        A DataFrame combining the original CSV data and repeated metadata from `row`.
+        Returns None if an exception occurs during fetch or parsing.
     """
-    csv_url = row["csvLink"]
+    try:
+        async with session.get(row.csvLink, timeout=aiohttp.ClientTimeout(total=100)) as r:
+            r.raise_for_status()  
+            text = await r.text() 
 
-    session = session or requests.Session()
+        csv_data = pd.read_csv(StringIO(text))
 
-    response = session.get(csv_url, timeout=timeout)
-    response.raise_for_status()
+        meta = pd.DataFrame([row._asdict()] * len(csv_data), index=csv_data.index)
 
-    csv_df = pd.read_csv(StringIO(response.text))
+        return pd.concat([meta, csv_data], axis=1)
 
-    # Faster than building a DataFrame row-by-row
-    metadata_df = pd.DataFrame(
-        {col: row[col] for col in row.index},
-        index=csv_df.index
-    )
-
-    return pd.concat([metadata_df, csv_df], axis=1)
+    except Exception as e:
+        if log_errors:
+            print(f"[Error] id={row.id}: {e}")
+        return None
 
 
+async def load_all_csvs(df: pd.DataFrame, log_errors: bool = True, max_conn: int = 32) -> List[pd.DataFrame]:
+    """
+    Asynchronously downloads and processes multiple CSV files defined in a DataFrame.
+
+    This function concurrently fetches CSV files using URLs from the `csvLink` column of
+    the input DataFrame `df`. Each CSV is enriched with its corresponding metadata row.
+    Results are collected in a list of DataFrames. Failed fetches are silently skipped
+    (unless `log_errors=True`).
+
+    Uses `tqdm_asyncio` to display a real-time progress bar during execution.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input DataFrame containing at least:
+        - `csvLink`: URL to each CSV file (str)
+        - `id`: unique identifier for error reporting (any)
+        Other columns are treated as metadata and replicated into the fetched CSV data.
+    log_errors : bool, optional
+        Whether to print error messages for failed downloads (default: True).
+    max_conn : int, optional
+        Maximum number of concurrent TCP connections (default: 32). Passed to aiohttp's
+        TCPConnector to limit parallelism and avoid overwhelming the server or OS.
+
+    Returns
+    -------
+    List[pd.DataFrame]
+        A list of successfully fetched and enriched DataFrames. Order does not necessarily
+        match input `df` due to asynchronous completion order.
+
+    Notes
+    -----
+    - Requires `nest_asyncio.apply()` if running inside a Jupyter notebook or nested event loop.
+    - Uses `tqdm_asyncio.as_completed()` for progress tracking without blocking concurrency.
+    - Memory usage scales with the number and size of CSVs—use cautiously on large datasets.
+    """
+    connector = aiohttp.TCPConnector(limit=max_conn, ttl_dns_cache=300)
+
+    async with aiohttp.ClientSession(connector=connector) as session:
+        tasks = [fetch_csv(session, row, log_errors) for row in df.itertuples(index=False)]
+
+        results = []
+        for coro in tqdm_asyncio.as_completed(tasks, total=len(tasks), desc="Processing Flights"):
+            res = await coro
+            if res is not None:
+                results.append(res)
+
+    return results
 

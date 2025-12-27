@@ -2,30 +2,22 @@ from edmt.contrib.utils import (
     format_iso_time,
     append_cols,
     norm_exp,
-    Airpoint_Extractor
+    load_all_csvs
 )
-
 from edmt.base.base import AirdataBaseClass
+
 import logging
 logger = logging.getLogger(__name__)
-
-from typing import Union
-import base64
-import http.client
 import json
-import requests
+import asyncio
 import time
-
-import csv
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import LineString, Point
-from concurrent.futures import ThreadPoolExecutor
-
-from io import StringIO
 from tqdm import tqdm
 from typing import Union, Optional
-
+from typing import Union
+import http.client
 from pyproj import Geod
 geod = Geod(ellps="WGS84")
 
@@ -348,58 +340,93 @@ def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None,log_errors: boo
         ValueError:
             If required columns ('id', 'csvLink') are missing from the input DataFrame.
     """
-    df = df.copy()
-    df.loc[:, 'checktime'] = pd.to_datetime(df['time'], errors="coerce")
+    # df = df.copy()
+    # df.loc[:, 'checktime'] = pd.to_datetime(df['time'], errors="coerce")
 
-    required_cols = {'id', 'csvLink'}
-    if not required_cols.issubset(df.columns):
-        raise ValueError(f"Input DataFrame must contain columns: {required_cols}")
+    # required_cols = {'id', 'csvLink'}
+    # if not required_cols.issubset(df.columns):
+    #     raise ValueError(f"Input DataFrame must contain columns: {required_cols}")
+
+    # if filter_ids is not None:
+    #     df = df[df['id'].isin(filter_ids)]
+
+    # all_combined_rows = []
+
+    # for _, row in tqdm(df.iterrows(), total=len(df), desc="Processing"):
+    #     with requests.Session() as session:
+    #         for _, row in df.iterrows():
+    #             try:
+    #                 def process_row(row):
+    #                     return Airpoint_Extractor(row, session=session)
+
+    #                 with ThreadPoolExecutor(max_workers=8) as executor:
+    #                     results = list(executor.map(process_row, [row for _, row in df.iterrows()]))
+
+    #                 all_combined_rows = pd.concat(results, ignore_index=True)
+
+    #             except requests.RequestException as e:
+    #                 if log_errors:
+    #                     print(f"Network error for id {row['id']}: {e}")
+    #             except pd.errors.ParserError as e:
+    #                 if log_errors:
+    #                     print(f"Parsing error for CSV at id {row['id']}: {e}")
+    #             except Exception as e:
+    #                 if log_errors:
+    #                     print(f"Unexpected error for id {row['id']}: {e}")
+
+    # if not all_combined_rows:
+    #     return pd.DataFrame()
+
+    # df_ = pd.concat(all_combined_rows, ignore_index=True)
+    # cols = ["participants.data", "batteries.data"]
+    # dfs_to_join = []
+    # for col in cols:
+    #     try:
+    #         expanded = pd.json_normalize(df_[col].explode(ignore_index=True))
+    #         expanded.columns = [f"{col}_{subcol}" for subcol in expanded.columns]
+    #         dfs_to_join.append(expanded)
+    #     except Exception as e:
+    #         if log_errors:
+    #             print(f"Error expanding column '{col}': {e}")
+    # if dfs_to_join:
+    #     expanded_df = pd.concat(dfs_to_join, axis=1)
+    # gdf = df_.join(expanded_df).drop(columns=cols)
+    # return append_cols(gdf,cols="checktime")
+
+    df = df.copy()
+    df["checktime"] = pd.to_datetime(df["time"], errors="coerce")
 
     if filter_ids is not None:
-        df = df[df['id'].isin(filter_ids)]
+        df = df[df["id"].isin(filter_ids)]
 
-    all_combined_rows = []
-
-    for _, row in tqdm(df.iterrows(), total=len(df), desc="Processing"):
-        with requests.Session() as session:
-            for _, row in df.iterrows():
-                try:
-                    def process_row(row):
-                        return Airpoint_Extractor(row, session=session)
-
-                    with ThreadPoolExecutor(max_workers=8) as executor:
-                        results = list(executor.map(process_row, [row for _, row in df.iterrows()]))
-
-                    all_combined_rows = pd.concat(results, ignore_index=True)
-
-                except requests.RequestException as e:
-                    if log_errors:
-                        print(f"Network error for id {row['id']}: {e}")
-                except pd.errors.ParserError as e:
-                    if log_errors:
-                        print(f"Parsing error for CSV at id {row['id']}: {e}")
-                except Exception as e:
-                    if log_errors:
-                        print(f"Unexpected error for id {row['id']}: {e}")
-
-    if not all_combined_rows:
+    if df.empty:
         return pd.DataFrame()
 
-    df_ = pd.concat(all_combined_rows, ignore_index=True)
+    results = asyncio.run(load_all_csvs(df, log_errors=log_errors, max_conn=32))
+
+    if not results:
+        return pd.DataFrame()
+
+    df_ = pd.concat(results, ignore_index=True)
+
     cols = ["participants.data", "batteries.data"]
-    dfs_to_join = []
+    expanded_parts = []
+
     for col in cols:
-        try:
-            expanded = pd.json_normalize(df_[col].explode(ignore_index=True))
-            expanded.columns = [f"{col}_{subcol}" for subcol in expanded.columns]
-            dfs_to_join.append(expanded)
-        except Exception as e:
-            if log_errors:
-                print(f"Error expanding column '{col}': {e}")
-    if dfs_to_join:
-        expanded_df = pd.concat(dfs_to_join, axis=1)
-    gdf = df_.join(expanded_df).drop(columns=cols)
-    return append_cols(gdf,cols="checktime")
+        if col in df_.columns:
+            try:
+                expanded = pd.json_normalize(df_[col].explode(ignore_index=True))
+                expanded.columns = [f"{col}_{c}" for c in expanded.columns]
+                expanded_parts.append(expanded)
+            except Exception as e:
+                if log_errors:
+                    print(f"Expand failed: {col}: {e}")
+
+    if expanded_parts:
+        df_ = df_.join(pd.concat(expanded_parts, axis=1))
+
+    return append_cols(df_.drop(columns=[c for c in cols if c in df_.columns]),
+                       cols="checktime")
 
 
 def df_to_gdf( df: pd.DataFrame,lon_col: str = 'longitude',lat_col: str = 'latitude',crs: int = 4326) -> gpd.GeoDataFrame:

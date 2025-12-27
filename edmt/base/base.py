@@ -58,9 +58,7 @@ class AirdataBaseClass:
                 if validate:
                     raise
 
-import requests
-from typing import Optional
-import logging
+
 
 # Configure logging (you can adjust level/format as needed)
 logging.basicConfig(level=logging.INFO)
