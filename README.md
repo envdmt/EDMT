@@ -32,7 +32,13 @@ It provides modular tools for:
 - Basic analytics & summaries
 - Reusable, reproducible workflows
 
-The goal is to make environmental data engineering **simple, reliable, and repeatable**.
+Why EDMT?
+
+Environmental data workflows often require stitching together formats, checks, and cleaning steps that are repetitive and error-prone. EDMT centralizes these common operations into reusable Python functions and classes, helping you:
+
+- Save development time and reduce duplication
+- Standardize procedures across different projects
+- Improve reproducibility and traceability of results
 
 ---
 
