@@ -1,1 +1,42 @@
-# EDMT
+<h1 align="center">EDMT — Environmental Data Management Toolbox</h1>
+
+<p align="center">
+  <a href="https://pypi.org/project/edmt/">
+    <img src="https://img.shields.io/pypi/v/edmt.svg" />
+  </a>
+  <!-- <a href="https://github.com/envdmt/EDMT/actions">
+    <img src="https://github.com/envdmt/EDMT/actions/workflows/tests.yml/badge.svg" />
+  </a>
+  <a href="https://codecov.io/gh/envdmt/EDMT">
+    <img src="https://codecov.io/gh/envdmt/EDMT/branch/main/graph/badge.svg" />
+  </a> -->
+  <a href="https://envdmt.github.io/EDMT/">
+    <img src="https://img.shields.io/badge/docs-online-brightgreen.svg" />
+  </a>
+  <!-- <img src="https://img.shields.io/badge/Jupyter-Lab-orange" /> -->
+  <img src="https://img.shields.io/badge/license-MIT-blue.svg" />
+</p>
+
+---
+
+## Overview
+
+**EDMT (Environmental Data Management Toolbox)** is a lightweight Python library designed to make environmental data ingestion, cleaning, transformation, and basic analysis workflows easier and more reproducible. It provides a set of tools and helper functions tailored to the common needs of environmental scientists, data engineers, and analysts working with diverse observational and sensor-derived datasets.
+
+It provides modular tools for:
+
+- Data ingestion (CSV, sensors, exports, logs)
+- Cleaning & quality control
+- Time-series handling
+- Spatial & temporal transformations
+- Basic analytics & summaries
+- Reusable, reproducible workflows
+
+The goal is to make environmental data engineering **simple, reliable, and repeatable**.
+
+---
+
+## Installation
+
+```bash
+pip install edmt
