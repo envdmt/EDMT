@@ -5,8 +5,7 @@ from edmt import (
     conversion, 
     mapping, 
     models, 
-    plotting,
-    plans
+    plotting
     )
 
 import importlib.metadata
