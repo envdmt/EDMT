@@ -6,10 +6,6 @@ from .drones import (
     airSegment
 )
 
-from .airtable import (
-    Airtable
-)
-
 __all__ = [
     "Airtable",
     "Airdata",
