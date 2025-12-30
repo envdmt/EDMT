@@ -4,7 +4,8 @@ from .utils import (
     normalize_column,
     format_iso_time,
     norm_exp,
-    append_cols
+    append_cols,
+    dict_expand
 )
 
 __all__ = [
@@ -12,5 +13,6 @@ __all__ = [
     "norm_exp",
     "normalize_column",
     "format_iso_time",
-    "append_cols"
+    "append_cols",
+    "dict_expand",
     ]

@@ -2,19 +2,23 @@ from edmt.contrib.utils import (
     format_iso_time,
     append_cols,
     norm_exp,
-    load_all_csvs
+    dict_expand
 )
-from edmt.base.base import AirdataBaseClass
+from edmt.base.base import (
+    AirdataBaseClass,
+    AirdataCSV
+)
 
 import logging
 logger = logging.getLogger(__name__)
+
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
-import asyncio
 import time
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import LineString, Point
-from tqdm import tqdm
+from tqdm.auto import tqdm
 from typing import Union, Optional
 from typing import Union
 import http.client
@@ -318,65 +322,6 @@ class Airdata(AirdataBaseClass):
         return df if df is not None else pd.DataFrame()
 
 
-def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None,log_errors: bool = True) -> gpd.GeoDataFrame:
-    """
-    Parameters:
-        df (pd.DataFrame):
-            A DataFrame containing at least two columns:
-                - 'id': Unique identifier for each row.
-                - 'csvLink': URL pointing to a CSV file.
-        filter_ids (list or None):
-            Optional list of IDs to restrict processing to specific rows.
-        log_errors (bool):
-            If True, prints errors encountered during CSV fetching or parsing. Defaults to True.
-        expand_dict (bool):
-            If True, expands dictionary fields like participants.data and batteries.data into separate columns.
-
-    Returns:
-        pd.DataFrame: A DataFrame combining metadata with CSV content.
-                      Returns an empty DataFrame if no valid data was retrieved.
-
-    Raises:
-        ValueError:
-            If required columns ('id', 'csvLink') are missing from the input DataFrame.
-    """
-
-    df = df.copy()
-    df["checktime"] = pd.to_datetime(df["time"], errors="coerce")
-
-    if filter_ids is not None:
-        df = df[df["id"].isin(filter_ids)]
-
-    if df.empty:
-        return pd.DataFrame()
-
-    results = asyncio.run(load_all_csvs(df, log_errors=log_errors, max_conn=32))
-
-    if not results:
-        return pd.DataFrame()
-
-    df_ = pd.concat(results, ignore_index=True)
-
-    cols = ["participants.data", "batteries.data"]
-    expanded_parts = []
-
-    for col in cols:
-        if col in df_.columns:
-            try:
-                expanded = pd.json_normalize(df_[col].explode(ignore_index=True))
-                expanded.columns = [f"{col}_{c}" for c in expanded.columns]
-                expanded_parts.append(expanded)
-            except Exception as e:
-                if log_errors:
-                    print(f"Expand failed: {col}: {e}")
-
-    if expanded_parts:
-        df_ = df_.join(pd.concat(expanded_parts, axis=1))
-
-    return append_cols(df_.drop(columns=[c for c in cols if c in df_.columns]),
-                       cols="checktime")
-
-
 def df_to_gdf( df: pd.DataFrame,lon_col: str = 'longitude',lat_col: str = 'latitude',crs: int = 4326) -> gpd.GeoDataFrame:
     """
     Convert a pandas DataFrame with latitude and longitude columns into a GeoDataFrame
@@ -418,6 +363,91 @@ def df_to_gdf( df: pd.DataFrame,lon_col: str = 'longitude',lat_col: str = 'latit
         raise ValueError(f"Failed to create GeoDataFrame: {e}")
 
     return gdf
+
+
+def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None) -> pd.DataFrame:
+    """
+    Parameters:
+        df (pd.DataFrame):
+            A DataFrame containing at least two columns:
+                - 'id': Unique identifier for each row.
+                - 'csvLink': URL pointing to a CSV file.
+        filter_ids (list or None):
+            Optional list of IDs to restrict processing to specific rows.
+        log_errors (bool):
+            If True, prints errors encountered during CSV fetching or parsing. Defaults to True.
+        expand_dict (bool):
+            If True, expands dictionary fields like participants.data and batteries.data into separate columns.
+
+    Returns:
+        pd.DataFrame:
+            A DataFrame combining metadata with CSV content.
+                      Returns an empty DataFrame if no valid data was retrieved.
+
+    Raises:
+        ValueError:
+            If required columns ('id', 'csvLink') are missing from the input DataFrame.
+    """
+    chunk_size=200 # Process rows in chunks if len(df) > chunk_size (default: 200).
+    max_workers=20 # Number of parallel threads for downloading (default: 20).
+    retries=3 # Number of retry attempts per URL (default: 3).
+    timeout=10 # Timeout for each HTTP request in seconds (default: 10).
+    cols = ["participants.data", "batteries.data"]
+
+    df = df.copy()
+    df["checktime"] = pd.to_datetime(df["time"], errors="coerce")
+
+    if filter_ids is not None:
+        df = df[df["id"].isin(filter_ids)]
+
+    if df.empty:
+        return pd.DataFrame()
+
+    if "csvLink" not in df.columns:
+        raise ValueError(f"Column 'csvLink' not found in DataFrame.")
+    
+    total_rows = len(df)
+    use_chunks = total_rows > chunk_size
+    all_dfs = []
+
+    if use_chunks:
+        iterable = range(0, total_rows, chunk_size)
+        total_chunks = len(iterable)
+        chunk_iter = tqdm(iterable, desc="Processing", total=total_chunks)
+    else:
+        chunk_iter = [0]
+        total_chunks = 1
+
+    for start_idx in chunk_iter:
+        if use_chunks:
+            chunk_df = df.iloc[start_idx:start_idx + chunk_size].reset_index(drop=True)
+        else:
+            chunk_df = df.reset_index(drop=True)
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            future_to_idx = {
+                executor.submit(AirdataCSV, row, retries, timeout): idx
+                for idx, row in chunk_df.iterrows()
+            }
+            chunk_pbar = tqdm(
+                total=len(future_to_idx),
+                desc=f"Chunk {start_idx // chunk_size + 1}/{total_chunks}" if use_chunks else "Processing",
+                leave=not use_chunks
+            )
+
+            for future in as_completed(future_to_idx):
+                result = future.result()
+                if result is not None:
+                    all_dfs.append(result)
+                chunk_pbar.update(1)
+            chunk_pbar.close()
+
+    if not all_dfs:
+        return pd.DataFrame()
+
+    df_ = pd.concat(all_dfs, ignore_index=True)
+    df = dict_expand(df,cols)
+    return append_cols(df,cols="checktime")
 
 
 def airLine(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:

@@ -2,7 +2,13 @@ import logging
 logger = logging.getLogger(__name__)
 import base64
 import http.client
+import requests
+import pandas as pd
+import requests
+from io import StringIO
+import time
 
+logging.basicConfig(level=logging.WARNING)
 
 # API key authentication
 class AirdataBaseClass:
@@ -55,3 +61,27 @@ class AirdataBaseClass:
                 print(f"Network error during authentication: {e}")
                 if validate:
                     raise
+
+
+def AirdataCSV(row, retries=3, timeout=10):
+    """
+    Fetch a single CSV from a URL with retry logic.
+    Returns the parsed DataFrame or None on failure.
+    """
+    csv_link = row.get('csvLink')
+    if not isinstance(csv_link, str) or not csv_link.strip():
+        return None
+
+    for attempt in range(retries):
+        try:
+            resp = requests.get(csv_link.strip(), timeout=timeout)
+            resp.raise_for_status()
+            csv_data = StringIO(resp.text)
+            df = pd.read_csv(csv_data, low_memory=False)
+            df['_source_url'] = csv_link
+            return df
+        except Exception as e:
+            if attempt == retries - 1:
+                # logging.warning(f"Failed to fetch {csv_link} after {retries} attempts: {e}")
+                return None
+            time.sleep(0.5 * (2 ** attempt))
