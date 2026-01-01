@@ -28,9 +28,7 @@ dependencies = [
   "seaborn>=0.13.2",
   "tqdm>=4",
   "pillow>=11.3.0",
-  "requests",
-  "aiohttp",
-  "PyPDF2"
+  "requests"
 ]
 
 [project.urls]

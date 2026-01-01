@@ -1,15 +1,9 @@
 import aiohttp
 import pandas as pd
-from io import StringIO
 from typing import Union
 from dateutil import parser
 from typing import Optional, List
-from tqdm.asyncio import tqdm_asyncio
-import nest_asyncio
-import backoff
-import asyncio
-
-nest_asyncio.apply()
+import logging
 
 
 
@@ -107,31 +101,28 @@ def append_cols(df: pd.DataFrame, cols: Union[str, list]):
     return df[remaining_cols + cols]
 
 
-import pandas as pd
-import requests
-from io import StringIO
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from tqdm.auto import tqdm
-import time
-import logging
 
-# Optional: configure logging for retries/failures
-logging.basicConfig(level=logging.WARNING)
-
-
-def dict_expand(df,cols):
+def dict_expand(data,cols):
   dfs_to_join = []
+  df_processed = data.copy()
+
   for col in cols:
-      if col in df.columns:
+      if col in df_processed.columns:
           try:
-              exploded = df[col].explode(ignore_index=True)
-              expanded = pd.json_normalize(exploded)
-              expanded.columns = [f"{col}_{subcol}" for subcol in expanded.columns]
-              dfs_to_join.append(expanded)
+              valid_data = df_processed[col].apply(lambda x: x if isinstance(x, (dict, list)) else None).dropna()
+              if not valid_data.empty:
+                  exploded = valid_data.explode(ignore_index=False)
+                  expanded = pd.json_normalize(exploded)
+                  expanded.columns = [f"{col}_{subcol}" for subcol in expanded.columns]
+                  dfs_to_join.append(expanded)
           except Exception as e:
-                return None
+            #   logging.warning(f"Error expanding column '{col}': {e}. Skipping column.")
+              return None
+      else:
+          logging.debug(f"Column '{col}' not found in DataFrame for expansion.")
+          return None
 
   if dfs_to_join:
       expanded_df = pd.concat(dfs_to_join, axis=1)
-      df = df.join(expanded_df).drop(columns=[col for col in cols if col in df.columns])
-  return df
+
+  return df_processed.join(expanded_df).drop(columns=cols, errors='ignore')

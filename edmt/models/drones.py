@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import time
+import numpy as np
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import LineString, Point
@@ -238,7 +239,6 @@ class Airdata(AirdataBaseClass):
         all_data = []
         offset = 0
         page = 0
-        total_fetched = 0
 
         with tqdm(desc="Downloading flights") as pbar:
             while page < max_pages:
@@ -264,13 +264,6 @@ class Airdata(AirdataBaseClass):
 
                     normalized_data = data["data"]
                     df_page = pd.json_normalize(normalized_data)
-                    # df_page = df_page.drop(
-                    #     columns=[
-                    #         "displayLink", "kmlLink", "gpxLink", "originalLink", "participants.object"
-                    #     ],
-                    #     errors='ignore'
-                    # )
-
                     all_data.append(df_page)
                     fetched_this_page = len(normalized_data)
 
@@ -289,8 +282,9 @@ class Airdata(AirdataBaseClass):
             print("No flight data found.")
             return pd.DataFrame()
 
-        final_df = pd.concat(all_data, ignore_index=True)
-        return final_df
+        df = pd.concat(all_data, ignore_index=True)
+        df["checktime"] = pd.to_datetime(df["time"], errors="coerce").dt.tz_localize(None)
+        return append_cols(df,cols="checktime")
 
     def get_flightgroups(
         self,
@@ -367,27 +361,30 @@ def df_to_gdf( df: pd.DataFrame,lon_col: str = 'longitude',lat_col: str = 'latit
 
 def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None) -> pd.DataFrame:
     """
-    Parameters:
-        df (pd.DataFrame):
-            A DataFrame containing at least two columns:
-                - 'id': Unique identifier for each row.
-                - 'csvLink': URL pointing to a CSV file.
-        filter_ids (list or None):
-            Optional list of IDs to restrict processing to specific rows.
-        log_errors (bool):
-            If True, prints errors encountered during CSV fetching or parsing. Defaults to True.
-        expand_dict (bool):
-            If True, expands dictionary fields like participants.data and batteries.data into separate columns.
+    Downloads and processes CSV data from URLs in a metadata DataFrame, optionally filtered by ID.
+
+    Args:
+        df (pd.DataFrame): 
+            Input metadata DataFrame containing at least:
+                - 'id': Unique identifier for each record.
+                - 'csvLink': Valid URL string pointing to a downloadable CSV file.
+        filter_ids (list, optional): 
+            If provided, only rows with 'id' values in this list will be processed.
+            Defaults to None (process all rows).
 
     Returns:
-        pd.DataFrame:
-            A DataFrame combining metadata with CSV content.
-                      Returns an empty DataFrame if no valid data was retrieved.
+        pd.DataFrame: 
+            A combined DataFrame where each row from each downloaded CSV is annotated
+            with its source metadata (e.g., 'id', 'csvLink', etc.), and structured
+            dictionary fields (like 'participants.data') are expanded into flat columns.
+            Returns an empty DataFrame if no valid CSV data could be retrieved.
 
     Raises:
-        ValueError:
-            If required columns ('id', 'csvLink') are missing from the input DataFrame.
+        ValueError: 
+            If the required column 'csvLink' is missing from the input DataFrame.
+
     """
+
     chunk_size=200 # Process rows in chunks if len(df) > chunk_size (default: 200).
     max_workers=20 # Number of parallel threads for downloading (default: 20).
     retries=3 # Number of retry attempts per URL (default: 3).
@@ -446,7 +443,7 @@ def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None) -> pd.DataFram
         return pd.DataFrame()
 
     df_ = pd.concat(all_dfs, ignore_index=True)
-    df = dict_expand(df,cols)
+    df = dict_expand(df_,cols)
     return append_cols(df,cols="checktime")
 
 
@@ -465,41 +462,54 @@ def airLine(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         A new GeoDataFrame where each row represents a unique 'id' and its
         corresponding LineString geometry and total distance in meters.
     """
-    gdf = gdf[gdf['geometry'] != Point(0, 0)]
+    mask = ~((gdf.geometry.x == 0) & (gdf.geometry.y == 0))
+    gdf = gdf[mask].copy()
 
-    grouped = []
-    for flight_id in tqdm(gdf['id'].unique(), desc="Processing flights"):
-        flight_data = gdf[gdf['id'] == flight_id].sort_values(by='time(millisecond)')
-        grouped.append(flight_data)
+    if gdf.empty:
+        return gpd.GeoDataFrame(geometry=[], crs="EPSG:4326")
 
-    gdf_sorted = pd.concat(grouped)
+    id_col = 'id'
+    time_col = 'time(millisecond)'
+    gdf = gdf.sort_values([id_col, time_col]).reset_index(drop=True)
 
-    def compute_distance(group):
-        coords = [(p.x, p.y) for p in group.geometry.values]
-        if len(coords) < 2:
-            return None, None
-        linestring = LineString(coords)
-        total_distance = 0
-        for i in range(len(coords) - 1):
-            lon1, lat1 = coords[i]
-            lon2, lat2 = coords[i + 1]
-            _, _, dist = geod.inv(lon1, lat1, lon2, lat2)
-            total_distance += dist
-        return linestring, total_distance
+    gdf['_x'] = gdf.geometry.x
+    gdf['_y'] = gdf.geometry.y
 
     results = []
+    groups = gdf.groupby(id_col, sort=False)
 
-    for flight_id, group in gdf_sorted.groupby('id'):
-        linestring, distance = compute_distance(group)
-        if linestring is not None:
-            metadata = group.iloc[0].drop(['geometry', 'time(millisecond)']).to_dict()
-            metadata['airline_time'] = group['time(millisecond)'].max()
-            results.append({
-                'id': flight_id,
-                'geometry': linestring,
-                'airline_distance_m': distance,
-                **metadata
-            })
+    for flight_id, group in tqdm(groups, desc="Processing flights", total=groups.ngroups):
+        if len(group) < 2:
+            continue
+
+        coords = group[['_x', '_y']].values
+        linestring = LineString(coords)
+
+        lons1 = coords[:-1, 0]
+        lats1 = coords[:-1, 1]
+        lons2 = coords[1:, 0]
+        lats2 = coords[1:, 1]
+
+        _, _, dists = geod.inv(lons1, lats1, lons2, lats2)
+        total_distance = np.sum(dists)
+
+        first_row = group.iloc[0]
+        metadata = {
+            col: first_row[col]
+            for col in group.columns
+            if col not in {'geometry', time_col, '_x', '_y'}
+        }
+
+        metadata.update({
+            'id': flight_id,
+            'geometry': linestring,
+            'airline_time': group[time_col].max(),
+            'airline_distance_m': total_distance
+        })
+        results.append(metadata)
+
+    if not results:
+        return gpd.GeoDataFrame(geometry=[], crs="EPSG:4326")
 
     line_gdf = gpd.GeoDataFrame(results, geometry='geometry', crs="EPSG:4326")
 
