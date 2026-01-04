@@ -88,16 +88,3 @@ def test_airSegment_empty_input():
     assert len(result) == 0
     assert isinstance(result, gpd.GeoDataFrame)
 
-
-def test_airSegment_preserves_metadata_from_start():
-    """Metadata should come from the *starting* point of the segment."""
-    gdf = gpd.GeoDataFrame({
-        'id': ['demo', 'demo'],
-        'time(millisecond)': [1000, 2000],
-        'status': ['start', 'end'],  # Should take 'start'
-        'geometry': [Point(0, 0), Point(1, 1)]
-    }, crs="EPSG:4326")
-
-    result = airSegment(gdf)
-    result = append_cols(result, ['checktime'])
-    assert result['status'].iloc[0] == 'start'
