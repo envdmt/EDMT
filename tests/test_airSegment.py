@@ -4,6 +4,7 @@ import pandas as pd
 from shapely.geometry import Point
 from pyproj import Geod
 from edmt.models import airSegment
+from edmt.contrib.utils import append_cols
 from shapely.geometry import LineString
 
 
@@ -24,6 +25,7 @@ def test_airSegment_basic():
     }, crs="EPSG:4326")
 
     result = airSegment(gdf)
+    result = append_cols(result, ['checktime'])
 
     # Assertions
     assert len(result) == 1
