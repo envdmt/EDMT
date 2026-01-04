@@ -48,6 +48,7 @@ def test_airSegment_multiple_tracks():
     }, crs="EPSG:4326")
 
     result = airSegment(gdf)
+    result = append_cols(result, ['checktime'])
     assert len(result) == 2
     assert set(result['id']) == {'A', 'B'}
 
@@ -61,6 +62,7 @@ def test_airSegment_filters_zero_points():
     }, crs="EPSG:4326")
 
     result = airSegment(gdf)
+    result = append_cols(result, ['checktime'])
     assert len(result) == 1
     assert result.geometry.iloc[0].coords[:] == [(1, 1), (2, 2)]
 
@@ -74,6 +76,7 @@ def test_airSegment_single_point_ignored():
     }, crs="EPSG:4326")
 
     result = airSegment(gdf)
+    result = append_cols(result, ['checktime'])
     assert len(result) == 0
 
 
@@ -81,6 +84,7 @@ def test_airSegment_empty_input():
     """Empty input should return empty GeoDataFrame."""
     gdf = gpd.GeoDataFrame(columns=['id', 'time(millisecond)', 'geometry'], crs="EPSG:4326")
     result = airSegment(gdf)
+    result = append_cols(result, ['checktime'])
     assert len(result) == 0
     assert isinstance(result, gpd.GeoDataFrame)
 
@@ -95,4 +99,5 @@ def test_airSegment_preserves_metadata_from_start():
     }, crs="EPSG:4326")
 
     result = airSegment(gdf)
+    result = append_cols(result, ['checktime'])
     assert result['status'].iloc[0] == 'start'
