@@ -42,8 +42,6 @@ Requires-Dist: seaborn>=0.13.2
 Requires-Dist: tqdm>=4
 Requires-Dist: pillow>=11.3.0
 Requires-Dist: requests
-Requires-Dist: aiohttp
-Requires-Dist: PyPDF2
 Dynamic: license-file
 
 <h1 align="center">EDMT — Environmental Data Management Toolbox</h1>

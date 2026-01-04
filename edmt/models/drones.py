@@ -21,7 +21,6 @@ import geopandas as gpd
 from shapely.geometry import LineString, Point
 from tqdm.auto import tqdm
 from typing import Union, Optional
-from typing import Union
 import http.client
 from pyproj import Geod
 geod = Geod(ellps="WGS84")
@@ -518,58 +517,85 @@ def airLine(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
 def airSegment(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """
-    Converts a GeoDataFrame with point geometries into a GeoDataFrame with
-    LineString segment geometries for each pair of consecutive points,
-    grouped by 'id' and ordered by 'time(millisecond)'.
+    The function is optimized for large datasets using vectorized operations and avoids
+    slow per-row loops.
 
     Args:
-        gdf: The input GeoDataFrame with 'id', 'time(millisecond)', and 'geometry'
-             (Point) columns.
-
-    Returns:
-        A new GeoDataFrame where each row represents a line segment between two
-        consecutive points.
+        gdf (geopandas.GeoDataFrame): 
+            Input trajectory data with the following required columns:
+            - `id`: Unique track identifier (e.g., flight ID)
+            - `time(millisecond)`: Numeric timestamp in milliseconds
+            - `segment_duration_ms`: Time difference between points (ms)
+            - `segment_distance_m`: Geodesic distance between points (meters)
+            - Original metadata columns (copied from the *starting* point of each segment)
+            
+            The output retains the original CRS (assumed to be EPSG:4326) and uses
+            LineString geometries. Returns an empty GeoDataFrame if no valid segments
+            can be formed.
     """
-    segments = []
+    if gdf.empty:
+        return gpd.GeoDataFrame(geometry=[], crs=gdf.crs or "EPSG:4326")
 
-    gdf = gdf[gdf['geometry'] != Point(0, 0)]
+    mask = ~((gdf.geometry.x == 0) & (gdf.geometry.y == 0))
+    gdf = gdf[mask].copy()
 
-    for flight_id in tqdm(gdf['id'].unique(), desc="Processing segments"):
-        flight_data = gdf[gdf['id'] == flight_id].sort_values(by='time(millisecond)').reset_index(drop=True)
+    if gdf.empty:
+        return gpd.GeoDataFrame(geometry=[], crs=gdf.crs)
 
-        for i in range(len(flight_data) - 1):
-            pt1 = flight_data.loc[i, 'geometry']
-            pt2 = flight_data.loc[i + 1, 'geometry']
+    gdf = gdf.sort_values(['id', 'time(millisecond)']).reset_index(drop=True)
 
-            lon1, lat1 = pt1.x, pt1.y
-            lon2, lat2 = pt2.x, pt2.y
+    gdf['_x'] = gdf.geometry.x
+    gdf['_y'] = gdf.geometry.y
 
-            _, _, D_meters = geod.inv(lon1, lat1, lon2, lat2)
-            t1 = flight_data.loc[i, 'time(millisecond)']
-            t2 = flight_data.loc[i + 1, 'time(millisecond)']
-            T = t2 - t1
-            segment = LineString([pt1, pt2])
+    all_segments = []
+    grouped = gdf.groupby('id', sort=False)
 
-            attrs = flight_data.loc[i].drop(['geometry', 'time(millisecond)'])
+    for flight_id, group in tqdm(grouped, desc="Processing segments", total=grouped.ngroups):
+        n = len(group)
+        if n < 2:
+            continue
 
-            seg_dict = {
-                'id': flight_id,
-                'segment_start_time': t1,
-                'segment_end_time': t2,
-                'segment_duration_ms': T,
-                'segment_distance_m': D_meters,
-                'geometry': segment,
-                **attrs.to_dict()
-            }
+        coords = group[['_x', '_y']].values
+        starts = coords[:-1]
+        ends = coords[1:]
 
-            segments.append(seg_dict)
+        lons1, lats1 = starts[:, 0], starts[:, 1]
+        lons2, lats2 = ends[:, 0], ends[:, 1]
+        _, _, dists = geod.inv(lons1, lats1, lons2, lats2)
 
-    if not segments:
-        return gpd.GeoDataFrame(gdf,geometry='geometry')
+        times = group['time(millisecond)'].values
+        t1s = times[:-1]
+        t2s = times[1:]
+        durations = t2s - t1s
 
-    airSeg = gpd.GeoDataFrame(segments, geometry='geometry')
+        geometries = [
+            LineString([(x1, y1), (x2, y2)])
+            for (x1, y1), (x2, y2) in zip(starts, ends)
+        ]
 
-    return append_cols(airSeg, cols=['checktime','segment_start_time','segment_end_time','segment_duration_ms','segment_distance_m','geometry'])
+        base_attrs = group.drop(columns=['geometry', 'time(millisecond)', '_x', '_y']).iloc[:-1].reset_index(drop=True)
 
+        seg_df = pd.DataFrame({
+            'id': flight_id,
+            'segment_start_time': t1s,
+            'segment_end_time': t2s,
+            'segment_duration_ms': durations,
+            'segment_distance_m': dists,
+            'geometry': geometries
+        })
 
+        combined = pd.concat([seg_df, base_attrs], axis=1)
+        all_segments.append(combined)
+
+    if not all_segments:
+        return gpd.GeoDataFrame(geometry=[], crs=gdf.crs)
+
+    result = pd.concat(all_segments, ignore_index=True)
+    segment_gdf = gpd.GeoDataFrame(result, geometry='geometry', crs=gdf.crs)
+
+    return append_cols(
+        segment_gdf,
+        cols=['checktime', 'segment_start_time', 'segment_end_time',
+              'segment_duration_ms', 'segment_distance_m', 'geometry']
+    )
 
