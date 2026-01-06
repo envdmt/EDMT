@@ -19,9 +19,7 @@ edmt/conversion/conversion.py
 edmt/mapping/__init__.py
 edmt/models/__init__.py
 edmt/models/drones.py
-edmt/models/get_flight_routes.py
 edmt/plotting/__init__.py
-tests/test_airSegment.py
 tests/test_analysis.py
 tests/test_base.py
 tests/test_contrib.py
