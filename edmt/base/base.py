@@ -63,46 +63,49 @@ class AirdataBaseClass:
                     raise
 
 
-def AirdataCSV(row, retries=3, timeout=10):
+def AirdataCSV(
+        row, 
+        col : str,
+        max_retries : int = 3, 
+        timeout : int = 15
+        ) -> pd.DataFrame:
     """
-    Fetches and processes a CSV file from a URL specified in a metadata row.
+    Fetches a CSV file from a URL specified in a given column of a metadata record.
 
-    This function downloads a CSV file from the URL provided in the 'csvLink' field of
-    the input `row`, parses it into a pandas DataFrame, and merges it with the metadata
-    from `row` (repeated for each row of the CSV). It includes robust retry logic
-    with exponential backoff to handle transient network issues.
+    This function retrieves a CSV file from the URL found in the specified column (`col`)
+    of the input `row`, parses it into a pandas DataFrame, and returns the result.
+    It includes retry logic with exponential backoff to handle transient network errors.
 
     Args:
-        row (dict or pandas.Series): A metadata record containing at least the key
-            'csvLink' with a valid URL string pointing to a CSV file.
-        retries (int, optional): Maximum number of retry attempts in case of failure.
+        row (dict or pandas.Series): A metadata record containing a URL string in the 
+            column specified by `col`.
+        col (str): The key or column name in `row` that contains the URL to the CSV file.
+        max_retries (int, optional): Maximum number of retry attempts in case of failure.
             Defaults to 3.
-        timeout (int or float, optional): Request timeout in seconds for each HTTP attempt.
-            Defaults to 10 seconds.
+        timeout (int or float, optional): Timeout for each HTTP request in seconds.
+            Defaults to 15 seconds.
 
     Returns:
-        pandas.DataFrame or None: 
-            - A DataFrame combining the downloaded CSV data with the input metadata 
-              (each CSV row is annotated with the full metadata from `row`).
-            - Returns `None` if the URL is missing/invalid or if all retry attempts fail.
+        pandas.DataFrame or None:
+            - A pandas DataFrame containing the parsed CSV data if successful.
+            - `None` if the URL is missing, invalid, or if all retry attempts fail.
+
     Raises:
         None
     """
-    csv_link = row.get('csvLink')
+    csv_link = row[col]
     if not isinstance(csv_link, str) or not csv_link.strip():
         return None
 
-    for attempt in range(retries):
+    for attempt in range(max_retries):
         try:
             resp = requests.get(csv_link.strip(), timeout=timeout)
             resp.raise_for_status()
-            csv_data = pd.read_csv(StringIO(resp.text), low_memory=False)
-            metadata_repeated = pd.DataFrame([row] * len(csv_data), index=csv_data.index)
-            combined = pd.concat([metadata_repeated, csv_data], axis=1)
-            return combined
+
+            csv_df = pd.read_csv(StringIO(resp.text), low_memory=False)
+            return csv_df
         except Exception as e:
-            if attempt == retries - 1:
-                # logging.warning(f"Failed to fetch {csv_link} after {retries} attempts: {e}")
+            if attempt == max_retries - 1:
                 return None
             time.sleep(0.5 * (2 ** attempt))
 

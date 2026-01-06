@@ -1,8 +1,7 @@
 from edmt.contrib.utils import (
     format_iso_time,
     append_cols,
-    norm_exp,
-    dict_expand
+    norm_exp
 )
 from edmt.base.base import (
     AirdataBaseClass,
@@ -20,7 +19,7 @@ import pandas as pd
 import geopandas as gpd
 from shapely.geometry import LineString, Point
 from tqdm.auto import tqdm
-from typing import Union, Optional
+from typing import List, Union, Optional
 import http.client
 from pyproj import Geod
 geod = Geod(ellps="WGS84")
@@ -315,287 +314,165 @@ class Airdata(AirdataBaseClass):
         return df if df is not None else pd.DataFrame()
 
 
-def df_to_gdf( df: pd.DataFrame,lon_col: str = 'longitude',lat_col: str = 'latitude',crs: int = 4326) -> gpd.GeoDataFrame:
+
+def _flight_to_polyline(
+    row, 
+    lon_col="longitude", 
+    lat_col="latitude", 
+    time_col="time(millisecond)",
+    max_retries=3, 
+    timeout=15
+    ):
     """
-    Convert a pandas DataFrame with latitude and longitude columns into a GeoDataFrame
-    with point geometries.
+    Processes a single flight metadata record by downloading its telemetry CSV, 
+    cleaning the trajectory data, and constructing a geographic LineString.
 
-    Parameters:
-        df (pd.DataFrame):
-            Input DataFrame containing geographic coordinates.
-        lon_col (str):
-            Name of the column in `df` that contains longitude values. Default is `'longitude'`.
-        lat_col (str):
-            Name of the column in `df` that contains latitude values. Default is `'latitude'`.
-        crs (int):
-            Coordinate Reference System (CRS) to assign to the resulting GeoDataFrame.
-            Defaults to 4326 (WGS84 - standard latitude/longitude).
-
-    Returns:
-        gpd.GeoDataFrame:
-            A GeoDataFrame with point geometries created from the latitude and longitude columns.
-            The original DataFrame columns are preserved.
-
-    Raises:
-        KeyError:
-            If either of the specified latitude or longitude columns is not present in the DataFrame.
-        ValueError:
-            If the CRS is invalid or not supported by GeoPandas.
-    """
-    if lat_col not in df.columns or lon_col not in df.columns:
-        missing = [col for col in [lat_col, lon_col] if col not in df.columns]
-        raise KeyError(f"Missing required column(s): {missing}")
-
-    try:
-        gdf = gpd.GeoDataFrame(
-            df,
-            geometry=gpd.points_from_xy(df[lon_col], df[lat_col]),
-            crs=crs
-        )
-    except Exception as e:
-        raise ValueError(f"Failed to create GeoDataFrame: {e}")
-
-    return gdf
-
-
-def airPoint(df: pd.DataFrame, filter_ids: Optional[list] = None) -> pd.DataFrame:
-    """
-    Downloads and processes CSV data from URLs in a metadata DataFrame, optionally filtered by ID.
+    This function:
+    - Fetches a CSV file from the 'csvLink' field in `row` using `AirdataCSV`.
+    - Validates that the required columns (`lon_col`, `lat_col`, `time_col`) exist.
+    - Filters out invalid coordinates (e.g., (0, 0)).
+    - Sorts points by timestamp and ensures at least two valid points remain.
+    - Constructs a `shapely.geometry.LineString` from the cleaned coordinates.
+    - Computes the total geodesic distance (in meters) along the trajectory using the WGS84 ellipsoid.
+    - Returns a dictionary containing the original flight metadata (excluding 'csvLink'), 
+      enriched with geometry and derived metrics.
 
     Args:
-        df (pd.DataFrame): 
-            Input metadata DataFrame containing at least:
-                - 'id': Unique identifier for each record.
-                - 'csvLink': Valid URL string pointing to a downloadable CSV file.
-        filter_ids (list, optional): 
-            If provided, only rows with 'id' values in this list will be processed.
-            Defaults to None (process all rows).
+        row (pandas.Series or dict): A flight metadata record expected to contain 
+            a valid URL under the key 'csvLink' and a unique identifier under 'id'.
+        lon_col (str, optional): Column name for longitude values in the CSV. 
+            Defaults to "longitude".
+        lat_col (str, optional): Column name for latitude values in the CSV. 
+            Defaults to "latitude".
+        time_col (str, optional): Column name for timestamp values (in milliseconds). 
+            Defaults to "time(millisecond)".
+        max_retries (int, optional): Maximum number of download retry attempts. 
+            Passed to `AirdataCSV`. Defaults to 3.
+        timeout (int or float, optional): Request timeout (in seconds) for CSV download. 
+            Passed to `AirdataCSV`. Defaults to 15.
 
     Returns:
-        pd.DataFrame: 
-            A combined DataFrame where each row from each downloaded CSV is annotated
-            with its source metadata (e.g., 'id', 'csvLink', etc.), and structured
-            dictionary fields (like 'participants.data') are expanded into flat columns.
-            Returns an empty DataFrame if no valid CSV data could be retrieved.
+        dict or None:
+            - If successful: a dictionary with the following keys:
+                - All original metadata fields from `row` (except 'csvLink'),
+                - "id": flight identifier,
+                - "geometry": `shapely.geometry.LineString` of the flight path,
+                - "flight_distance_m": total geodesic distance in meters (float),
+                - "flight_time_max_ms": maximum timestamp in the cleaned CSV (int/float).
+            - `None` if the URL is missing/invalid, required columns are absent, 
+              fewer than two valid points remain after cleaning, or an unhandled 
+              exception occurs during processing.
 
     Raises:
-        ValueError: 
-            If the required column 'csvLink' is missing from the input DataFrame.
+        None — all exceptions are caught internally, and `None` is returned on failure.
+    """
+    try:
+        url = row.get("csvLink")
+        flight_id = row.get("id", "unknown")
+        if not isinstance(url, str) or not url.startswith("http"):
+            return None
 
+        csv_df = AirdataCSV(row, max_retries=max_retries, timeout=timeout)
+
+        required_cols = [lon_col, lat_col, time_col]
+        if not all(col in csv_df.columns for col in required_cols):
+            logger.warning(f"Flight {flight_id}: missing required columns")
+            return None
+
+        valid = (csv_df[lon_col] != 0) & (csv_df[lat_col] != 0)
+        pts = csv_df[valid].copy()
+        if len(pts) < 2:
+            return None
+
+        pts[time_col] = pd.to_numeric(pts[time_col], errors="coerce")
+        pts = pts.dropna(subset=[time_col]).sort_values(by=time_col)
+
+        if len(pts) < 2:
+            return None
+
+        coords = list(zip(pts[lon_col], pts[lat_col]))
+        line = LineString(coords)
+
+        total_dist = 0.0
+        for i in range(len(coords) - 1):
+            try:
+                _, _, d = geod.inv(*coords[i], *coords[i + 1])
+                total_dist += abs(d)
+            except Exception:
+                continue
+
+        meta = row.drop(["csvLink"]).to_dict()
+        meta.update({
+            "id": flight_id,
+            "geometry": line,
+            "flight_distance_m": total_dist,
+            "flight_time_max_ms": pts[time_col].max()
+        })
+        return meta
+
+    except Exception as e:
+        return None
+    
+
+
+def get_flight_route(
+    df: pd.DataFrame,
+    filter_ids: Optional[List] = None,
+    max_workers: int = 8,
+    lon_col: str = "longitude",
+    lat_col: str = "latitude",
+    time_col: str = "time(millisecond)",
+    crs: str = "EPSG:4326"
+) -> gpd.GeoDataFrame:
+    """
+    Extract flight routes from a DataFrame containing flight metadata and CSV URLs.
+
+    This function processes each flight record in the input DataFrame, retrieves
+    the associated CSV file containing flight data, and computes the flight route
+    as a LineString geometry. It supports filtering by specific flight IDs and
+    parallel processing for efficiency.
+
+    Args:
+        df (pd.DataFrame): DataFrame containing flight metadata, including a column
+            named 'csvLink' with URLs to CSV files.
+        filter_ids (list, optional): List of flight IDs to process. If provided,
+            only flights with IDs in this list will be processed.   
+        max_workers (int, optional): Number of parallel download threads.
+
+        lon_col (str, optional): Column name for longitude in the CSV files.
+        lat_col (str, optional): Column name for latitude in the CSV files.
+        time_col (str, optional): Column name for timestamp in the CSV files.
+        crs (str, optional): Coordinate Reference System for the output GeoDataFrame.   
+    Returns:
+        gpd.GeoDataFrame: A GeoDataFrame with one row per flight, containing the
+            flight metadata and a LineString geometry representing the flight route.
     """
 
-    chunk_size=200 # Process rows in chunks if len(df) > chunk_size (default: 200).
-    max_workers=20 # Number of parallel threads for downloading (default: 20).
-    retries=3 # Number of retry attempts per URL (default: 3).
-    timeout=10 # Timeout for each HTTP request in seconds (default: 10).
-    cols = ["participants.data", "batteries.data"]
+    required = {"id", "csvLink"}
+    if not required.issubset(df.columns):
+        raise ValueError(f"Missing required columns: {required}")
 
     df = df.copy()
-    df["checktime"] = pd.to_datetime(df["time"], errors="coerce")
-
-    if filter_ids is not None:
-        df = df[df["id"].isin(filter_ids)]
+    if filter_ids:
+        df = df[df["id"].isin(filter_ids)].reset_index(drop=True)
 
     if df.empty:
-        return pd.DataFrame()
-
-    if "csvLink" not in df.columns:
-        raise ValueError(f"Column 'csvLink' not found in DataFrame.")
-    
-    total_rows = len(df)
-    use_chunks = total_rows > chunk_size
-    all_dfs = []
-
-    if use_chunks:
-        iterable = range(0, total_rows, chunk_size)
-        total_chunks = len(iterable)
-        chunk_iter = tqdm(iterable, desc="Processing", total=total_chunks)
-    else:
-        chunk_iter = [0]
-        total_chunks = 1
-
-    for start_idx in chunk_iter:
-        if use_chunks:
-            chunk_df = df.iloc[start_idx:start_idx + chunk_size].reset_index(drop=True)
-        else:
-            chunk_df = df.reset_index(drop=True)
-
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            future_to_idx = {
-                executor.submit(AirdataCSV, row, retries, timeout): idx
-                for idx, row in chunk_df.iterrows()
-            }
-            chunk_pbar = tqdm(
-                total=len(future_to_idx),
-                desc=f"Chunk {start_idx // chunk_size + 1}/{total_chunks}" if use_chunks else "Processing",
-                leave=not use_chunks
-            )
-
-            for future in as_completed(future_to_idx):
-                result = future.result()
-                if result is not None:
-                    all_dfs.append(result)
-                chunk_pbar.update(1)
-            chunk_pbar.close()
-
-    if not all_dfs:
-        return pd.DataFrame()
-
-    df_ = pd.concat(all_dfs, ignore_index=True)
-    df = dict_expand(df_,cols)
-    return append_cols(df,cols="checktime")
-
-
-def airLine(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-    """
-    Converts a GeoDataFrame with point geometries into a GeoDataFrame with
-    LineString geometries for each unique 'id', ordered by 'time(millisecond)'.
-
-    Adds a new column 'distance_m' representing the total geodesic length of the line.
-
-    Args:
-        gdf: The input GeoDataFrame with 'id', 'time(millisecond)', and 'geometry'
-            (Point) columns.
-
-    Returns:
-        A new GeoDataFrame where each row represents a unique 'id' and its
-        corresponding LineString geometry and total distance in meters.
-    """
-    mask = ~((gdf.geometry.x == 0) & (gdf.geometry.y == 0))
-    gdf = gdf[mask].copy()
-
-    if gdf.empty:
-        return gpd.GeoDataFrame(geometry=[], crs="EPSG:4326")
-
-    id_col = 'id'
-    time_col = 'time(millisecond)'
-    gdf = gdf.sort_values([id_col, time_col]).reset_index(drop=True)
-
-    gdf['_x'] = gdf.geometry.x
-    gdf['_y'] = gdf.geometry.y
+        return gpd.GeoDataFrame()
 
     results = []
-    groups = gdf.groupby(id_col, sort=False)
-
-    for flight_id, group in tqdm(groups, desc="Processing flights", total=groups.ngroups):
-        if len(group) < 2:
-            continue
-
-        coords = group[['_x', '_y']].values
-        linestring = LineString(coords)
-
-        lons1 = coords[:-1, 0]
-        lats1 = coords[:-1, 1]
-        lons2 = coords[1:, 0]
-        lats2 = coords[1:, 1]
-
-        _, _, dists = geod.inv(lons1, lats1, lons2, lats2)
-        total_distance = np.sum(dists)
-
-        first_row = group.iloc[0]
-        metadata = {
-            col: first_row[col]
-            for col in group.columns
-            if col not in {'geometry', time_col, '_x', '_y'}
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {
+            executor.submit(_flight_to_polyline, row, lon_col, lat_col, time_col): idx
+            for idx, row in df.iterrows()
         }
 
-        metadata.update({
-            'id': flight_id,
-            'geometry': linestring,
-            'airline_time': group[time_col].max(),
-            'airline_distance_m': total_distance
-        })
-        results.append(metadata)
+        for future in tqdm(as_completed(futures), total=len(futures), desc="Processing"):
+            res = future.result()
+            if res is not None:
+                results.append(res)
 
     if not results:
-        return gpd.GeoDataFrame(geometry=[], crs="EPSG:4326")
+        return gpd.GeoDataFrame()
 
-    line_gdf = gpd.GeoDataFrame(results, geometry='geometry', crs="EPSG:4326")
-
-    return append_cols(line_gdf, cols=['checktime','airline_time','airline_distance_m','geometry'])
-
-
-def airSegment(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-    """
-    The function is optimized for large datasets using vectorized operations and avoids
-    slow per-row loops.
-
-    Args:
-        gdf (geopandas.GeoDataFrame): 
-            Input trajectory data with the following required columns:
-            - `id`: Unique track identifier (e.g., flight ID)
-            - `time(millisecond)`: Numeric timestamp in milliseconds
-            - `segment_duration_ms`: Time difference between points (ms)
-            - `segment_distance_m`: Geodesic distance between points (meters)
-            - Original metadata columns (copied from the *starting* point of each segment)
-            
-            The output retains the original CRS (assumed to be EPSG:4326) and uses
-            LineString geometries. Returns an empty GeoDataFrame if no valid segments
-            can be formed.
-    """
-    if gdf.empty:
-        return gpd.GeoDataFrame(geometry=[], crs=gdf.crs or "EPSG:4326")
-
-    mask = ~((gdf.geometry.x == 0) & (gdf.geometry.y == 0))
-    gdf = gdf[mask].copy()
-
-    if gdf.empty:
-        return gpd.GeoDataFrame(geometry=[], crs=gdf.crs)
-
-    gdf = gdf.sort_values(['id', 'time(millisecond)']).reset_index(drop=True)
-
-    gdf['_x'] = gdf.geometry.x
-    gdf['_y'] = gdf.geometry.y
-
-    all_segments = []
-    grouped = gdf.groupby('id', sort=False)
-
-    for flight_id, group in tqdm(grouped, desc="Processing segments", total=grouped.ngroups):
-        n = len(group)
-        if n < 2:
-            continue
-
-        coords = group[['_x', '_y']].values
-        starts = coords[:-1]
-        ends = coords[1:]
-
-        lons1, lats1 = starts[:, 0], starts[:, 1]
-        lons2, lats2 = ends[:, 0], ends[:, 1]
-        _, _, dists = geod.inv(lons1, lats1, lons2, lats2)
-
-        times = group['time(millisecond)'].values
-        t1s = times[:-1]
-        t2s = times[1:]
-        durations = t2s - t1s
-
-        geometries = [
-            LineString([(x1, y1), (x2, y2)])
-            for (x1, y1), (x2, y2) in zip(starts, ends)
-        ]
-
-        base_attrs = group.drop(columns=['geometry', 'time(millisecond)', '_x', '_y']).iloc[:-1].reset_index(drop=True)
-
-        seg_df = pd.DataFrame({
-            'id': flight_id,
-            'segment_start_time': t1s,
-            'segment_end_time': t2s,
-            'segment_duration_ms': durations,
-            'segment_distance_m': dists,
-            'geometry': geometries
-        })
-
-        combined = pd.concat([seg_df, base_attrs], axis=1)
-        all_segments.append(combined)
-
-    if not all_segments:
-        return gpd.GeoDataFrame(geometry=[], crs=gdf.crs)
-
-    result = pd.concat(all_segments, ignore_index=True)
-    segment_gdf = gpd.GeoDataFrame(result, geometry='geometry', crs=gdf.crs)
-
-    return append_cols(
-        segment_gdf,
-        cols=['checktime', 'segment_start_time', 'segment_end_time',
-              'segment_duration_ms', 'segment_distance_m', 'geometry']
-    )
-
+    gdf = gpd.GeoDataFrame(results, geometry="geometry", crs=crs)
+    return gdf
