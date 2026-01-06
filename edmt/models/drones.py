@@ -415,7 +415,7 @@ def _flight_to_polyline(
     
 
 
-def get_flight_route(
+def get_flight_routes(
     df: pd.DataFrame,
     filter_ids: Optional[List] = None,
     max_workers: int = 8,
