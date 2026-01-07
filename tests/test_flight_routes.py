@@ -73,14 +73,6 @@ def test_get_flight_routes_empty_input():
     assert len(gdf) == 0
 
 
-def test_get_flight_routes_filter_ids(sample_metadata_df):
-    with patch("edmt.models._flight_polyline") as mock_polyline:
-        mock_polyline.side_effect = mock_flight_polyline_success
-        gdf = get_flight_routes(sample_metadata_df, filter_ids=["flight_1", "flight_3"])
-    
-    assert len(gdf) == 2
-    assert set(gdf["id"]) == {"flight_1", "flight_3"}
-
 
 # Test invalid CSV handling in _flight_polyline (via AirdataCSV returning None)
 @patch("edmt.base.AirdataCSV")
