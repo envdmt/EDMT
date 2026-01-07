@@ -415,7 +415,6 @@ def _flight_polyline(
         return None
     
 
-
 def get_flight_routes(
     df: pd.DataFrame,
     filter_ids: Optional[List] = None,
@@ -463,7 +462,16 @@ def get_flight_routes(
     results = []
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {
-            executor.submit(_flight_polyline, row, lon_col, lat_col, time_col): idx
+            executor.submit(
+                _flight_polyline,
+                row,
+                link_col="csvLink",
+                lon_col=lon_col,
+                lat_col=lat_col,
+                time_col=time_col,
+                max_retries=3,
+                timeout=15
+            ): idx
             for idx, row in df.iterrows()
         }
 
