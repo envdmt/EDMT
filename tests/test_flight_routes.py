@@ -74,7 +74,7 @@ def test_get_flight_routes_success(mock_polyline, sample_metadata_df):
     assert "csvLink" not in gdf.columns
 
 
-@patch("_flight_polyline")
+@patch("edmt.models._flight_polyline")
 def test_get_flight_routes_partial_success(mock_polyline, sample_metadata_df):
     # Simulate one failure
     def side_effect(row, **kwargs):
@@ -89,8 +89,7 @@ def test_get_flight_routes_partial_success(mock_polyline, sample_metadata_df):
     assert len(gdf) == 2
     assert set(gdf["id"]) == {"flight_1", "flight_3"}
 
-
-@patch("your_module._flight_polyline")
+@patch("edmt.models._flight_polyline")
 def test_get_flight_routes_all_fail(mock_polyline, sample_metadata_df):
     mock_polyline.return_value = None
     gdf = get_flight_routes(sample_metadata_df)
@@ -120,7 +119,7 @@ def test_get_flight_routes_missing_required_columns():
         get_flight_routes(df_bad)
 
 
-@patch("_flight_polyline")
+@patch("edmt.models._flight_polyline")
 def test_get_flight_routes_custom_columns(mock_polyline, sample_metadata_df):
     # Add custom column names
     sample_metadata_df["custom_lon"] = 0  # dummy; actual data comes from CSV
@@ -149,7 +148,7 @@ def test_get_flight_routes_custom_columns(mock_polyline, sample_metadata_df):
 
 
 # Integration-style test (optional, slower): mock actual HTTP + CSV parsing
-@patch("AirdataCSV")
+@patch("edmt.base.AirdataCSV")
 def test_flight_polyline_integration(mock_airdata, sample_metadata_df):
     # Mock AirdataCSV to return valid DataFrame
     mock_df = pd.read_csv(pd.io.common.StringIO(VALID_CSV_CONTENT))
@@ -167,7 +166,7 @@ def test_flight_polyline_integration(mock_airdata, sample_metadata_df):
 
 
 # Test invalid CSV handling in _flight_polyline (via AirdataCSV returning None)
-@patch("AirdataCSV")
+@patch("edmt.base.AirdataCSV")
 def test_flight_polyline_csv_missing_columns(mock_airdata, sample_metadata_df):
     invalid_df = pd.read_csv(pd.io.common.StringIO(INVALID_CSV_MISSING_COLS))
     mock_airdata.return_value = invalid_df
@@ -177,7 +176,7 @@ def test_flight_polyline_csv_missing_columns(mock_airdata, sample_metadata_df):
     assert result is None
 
 
-@patch("AirdataCSV")
+@patch("edmt.base.AirdataCSV")
 def test_flight_polyline_insufficient_points(mock_airdata, sample_metadata_df):
     df_one_point = pd.read_csv(pd.io.common.StringIO(CSV_ONE_VALID_POINT))
     mock_airdata.return_value = df_one_point
