@@ -315,8 +315,9 @@ class Airdata(AirdataBaseClass):
 
 
 
-def _flight_to_polyline(
-    row, 
+def _flight_polyline(
+    row,
+    link_col="csvLink",
     lon_col="longitude", 
     lat_col="latitude", 
     time_col="time(millisecond)",
@@ -367,12 +368,12 @@ def _flight_to_polyline(
         None — all exceptions are caught internally, and `None` is returned on failure.
     """
     try:
-        url = row.get("csvLink")
+        url = row[link_col]
         flight_id = row.get("id", "unknown")
         if not isinstance(url, str) or not url.startswith("http"):
             return None
 
-        csv_df = AirdataCSV(row, max_retries=max_retries, timeout=timeout)
+        csv_df = AirdataCSV(row, col=link_col,max_retries=max_retries, timeout=timeout)
 
         required_cols = [lon_col, lat_col, time_col]
         if not all(col in csv_df.columns for col in required_cols):
@@ -439,9 +440,9 @@ def get_flight_routes(
             only flights with IDs in this list will be processed.   
         max_workers (int, optional): Number of parallel download threads.
 
-        lon_col (str, optional): Column name for longitude in the CSV files.
-        lat_col (str, optional): Column name for latitude in the CSV files.
-        time_col (str, optional): Column name for timestamp in the CSV files.
+        lon_col (str, optional): Column name for longitude.
+        lat_col (str, optional): Column name for latitude.
+        time_col (str, optional): Column name for timestamp.
         crs (str, optional): Coordinate Reference System for the output GeoDataFrame.   
     Returns:
         gpd.GeoDataFrame: A GeoDataFrame with one row per flight, containing the
@@ -462,7 +463,7 @@ def get_flight_routes(
     results = []
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {
-            executor.submit(_flight_to_polyline, row, lon_col, lat_col, time_col): idx
+            executor.submit(_flight_polyline, row, lon_col, lat_col, time_col): idx
             for idx, row in df.iterrows()
         }
 
