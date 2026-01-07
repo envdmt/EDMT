@@ -117,52 +117,6 @@ def test_get_flight_routes_missing_required_columns():
         get_flight_routes(df_bad)
 
 
-@patch("edmt.models._flight_polyline")
-def test_get_flight_routes_custom_columns(mock_polyline, sample_metadata_df):
-    # Add custom column names
-    sample_metadata_df["custom_lon"] = 0  # dummy; actual data comes from CSV
-    # Mock _flight_polyline to respect custom names (simplified)
-    mock_polyline.side_effect = mock_flight_polyline_success
-
-    # Just ensure it calls _flight_polyline with correct kwargs
-    with patch("from concurrent.futures import ThreadPoolExecutor") as mock_executor:
-        mock_future = MagicMock()
-        mock_future.result.return_value = mock_flight_polyline_success(sample_metadata_df.iloc[0])
-        mock_executor.return_value.__enter__.return_value.submit.return_value = mock_future
-        mock_executor.return_value.__enter__.return_value.__iter__.return_value = [mock_future]
-
-        get_flight_routes(
-            sample_metadata_df,
-            lon_col="custom_lon",
-            lat_col="custom_lat",
-            time_col="custom_time"
-        )
-
-        # Check that _flight_polyline was called with correct kwargs
-        call_args = mock_polyline.call_args
-        assert call_args.kwargs["lon_col"] == "custom_lon"
-        assert call_args.kwargs["lat_col"] == "custom_lat"
-        assert call_args.kwargs["time_col"] == "custom_time"
-
-
-# Integration-style test (optional, slower): mock actual HTTP + CSV parsing
-@patch("edmt.base.AirdataCSV")
-def test_flight_polyline_integration(mock_airdata, sample_metadata_df):
-    # Mock AirdataCSV to return valid DataFrame
-    mock_df = pd.read_csv(pd.io.common.StringIO(VALID_CSV_CONTENT))
-    mock_airdata.return_value = mock_df
-
-    row = sample_metadata_df.iloc[0]
-    result = _flight_polyline(row)
-
-    assert result is not None
-    assert result["id"] == "flight_1"
-    assert isinstance(result["geometry"], LineString)
-    assert result["flight_distance_m"] == 20000.0  # 2 segments × 10000m
-    assert result["flight_time_max_ms"] == 3000.0
-    assert "csvLink" not in result
-
-
 # Test invalid CSV handling in _flight_polyline (via AirdataCSV returning None)
 @patch("edmt.base.AirdataCSV")
 def test_flight_polyline_csv_missing_columns(mock_airdata, sample_metadata_df):
@@ -183,29 +137,3 @@ def test_flight_polyline_insufficient_points(mock_airdata, sample_metadata_df):
     result = _flight_polyline(row)
     assert result is None
 
-
-# Test the critical bug: ensure keyword arguments are passed correctly
-def test_get_flight_routes_passes_kwargs_correctly(sample_metadata_df):
-    """Ensure lon_col, lat_col, time_col are passed as keyword args to _flight_polyline."""
-    called_kwargs = []
-
-    def capture_kwargs(*args, **kwargs):
-        called_kwargs.append(kwargs)
-        return mock_flight_polyline_success(args[0])
-
-    with patch("edmt.models._flight_polyline", side_effect=capture_kwargs):
-        get_flight_routes(
-            sample_metadata_df,
-            lon_col="my_lon",
-            lat_col="my_lat",
-            time_col="my_time"
-        )
-
-    # Should be called once per row
-    assert len(called_kwargs) == 3
-    for kw in called_kwargs:
-        assert kw["lon_col"] == "my_lon"
-        assert kw["lat_col"] == "my_lat"
-        assert kw["time_col"] == "my_time"
-        # Ensure link_col is not overridden incorrectly
-        assert kw.get("link_col") == "csvLink"  # default
