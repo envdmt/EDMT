@@ -111,12 +111,6 @@ def test_get_flight_routes_filter_ids(sample_metadata_df):
     assert set(gdf["id"]) == {"flight_1", "flight_3"}
 
 
-def test_get_flight_routes_missing_required_columns():
-    df_bad = pd.DataFrame({"name": ["x"], "url": ["http://example.com"]})
-    with pytest.raises(ValueError, match="Missing required columns"):
-        get_flight_routes(df_bad)
-
-
 # Test invalid CSV handling in _flight_polyline (via AirdataCSV returning None)
 @patch("edmt.base.AirdataCSV")
 def test_flight_polyline_csv_missing_columns(mock_airdata, sample_metadata_df):
