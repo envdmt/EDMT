@@ -259,8 +259,6 @@ class Airdata(AirdataBaseClass):
             "limit": limit,
         }
         params = {k: v for k, v in params.items() if v is not None}
-        session = requests.Session()
-        session.headers.update(self.auth_header)
 
         all_data = []
         offset = 0
@@ -268,27 +266,34 @@ class Airdata(AirdataBaseClass):
         with tqdm(desc="Downloading flights") as pbar:
             for page in range(max_pages):
                 current_params = {**params, "offset": offset}
-                query = "&".join(f"{k}={v}" for k, v in current_params.items())
-                endpoint = f"https://{self.base_url}/flights?{query}"
+                query_string = "&".join(f"{k}={v}" for k, v in current_params.items())
+                endpoint = f"/flights?{query_string}"
 
                 try:
-                    response = session.get(endpoint, timeout=15)
-                    if response.status_code != 200:
-                        error_msg = response.text[:300]
-                        print(f"HTTP {response.status_code}: {error_msg}")
+                    conn = http.client.HTTPSConnection(self.base_url)
+                    conn.request("GET", endpoint, headers=self.auth_header)
+                    res = conn.getresponse()
+
+                    if res.status != 200:
+                        error_msg = res.read().decode('utf-8')[:300]
+                        print(f"HTTP {res.status}: {error_msg}")
                         break
 
-                    payload = response.json()
-                    records = payload.get("data", [])
-                    if not records:
+                    data = json.loads(res.read().decode("utf-8"))
+                    if not data.get("data") or len(data["data"]) == 0:
                         break
 
-                    df_page = pd.json_normalize(records)
+                    normalized_data = data["data"]
+                    df_page = pd.json_normalize(normalized_data)
+
                     all_data.append(df_page)
-                    fetched = len(records)
-                    pbar.update(fetched)
+                    fetched_this_page = len(normalized_data)
+
+                    for _ in range(fetched_this_page):
+                        pbar.update(1)
 
                     offset += limit
+                    page += 1
                     time.sleep(0.1)
 
                 except Exception as e:
