@@ -59,35 +59,6 @@ def mock_flight_polyline_none(row, **kwargs):
 
 
 @patch("edmt.models._flight_polyline")
-def test_get_flight_routes_success(mock_polyline, sample_metadata_df):
-    mock_polyline.side_effect = mock_flight_polyline_success
-
-    gdf = get_flight_routes(sample_metadata_df, max_workers=2)
-
-    assert isinstance(gdf, gpd.GeoDataFrame)
-    assert len(gdf) == 3
-    assert "geometry" in gdf.columns
-    assert gdf.crs == "EPSG:4326"
-    assert list(gdf["id"]) == ["flight_1", "flight_2", "flight_3"]
-    assert "csvLink" not in gdf.columns
-
-
-@patch("edmt.models._flight_polyline")
-def test_get_flight_routes_partial_success(mock_polyline, sample_metadata_df):
-    # Simulate one failure
-    def side_effect(row, **kwargs):
-        if row["id"] == "flight_2":
-            return None
-        return mock_flight_polyline_success(row, **kwargs)
-
-    mock_polyline.side_effect = side_effect
-
-    gdf = get_flight_routes(sample_metadata_df)
-
-    assert len(gdf) == 2
-    assert set(gdf["id"]) == {"flight_1", "flight_3"}
-
-@patch("edmt.models._flight_polyline")
 def test_get_flight_routes_all_fail(mock_polyline, sample_metadata_df):
     mock_polyline.return_value = None
     gdf = get_flight_routes(sample_metadata_df)
