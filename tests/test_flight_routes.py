@@ -60,7 +60,7 @@ def mock_flight_polyline_none(row, **kwargs):
     return None
 
 
-@patch("_flight_polyline")
+@patch("edmt.models._flight_polyline")
 def test_get_flight_routes_success(mock_polyline, sample_metadata_df):
     mock_polyline.side_effect = mock_flight_polyline_success
 
