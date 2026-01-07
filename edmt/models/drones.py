@@ -14,10 +14,11 @@ logger = logging.getLogger(__name__)
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import time
-import numpy as np
+import requests
+from datetime import datetime
 import pandas as pd
 import geopandas as gpd
-from shapely.geometry import LineString, Point
+from shapely.geometry import LineString
 from tqdm.auto import tqdm
 from typing import List, Union, Optional
 import http.client
@@ -29,32 +30,32 @@ class Airdata(AirdataBaseClass):
     """
     Client for interacting with the Airdata API.
     Handles authentication and provides methods to fetch various data types
-    such as flights, drones, batteries, and pilots.
+    such as flights,flight groups, drones, batteries, and pilots.
     """
     
     def AccessGroups(self, endpoint: str) -> Optional[pd.DataFrame]:
       if not self.authenticated:
-            logger.warning(f"Cannot fetch {endpoint}: Not authenticated.")
-            return None
+        logger.warning(f"Cannot fetch {endpoint}: Not authenticated.")
+        return None
 
       try:
-          conn = http.client.HTTPSConnection(self.base_url)
-          conn.request("GET", endpoint, headers=self._get_auth_header())
-          res = conn.getresponse()
+        conn = http.client.HTTPSConnection(self.base_url)
+        conn.request("GET", endpoint, headers=self._get_auth_header())
+        res = conn.getresponse()
 
-          if res.status == 200:
-              data = json.loads(res.read().decode("utf-8"))
-              if "data" in data:
-                  normalized_data = list(tqdm(data["data"], desc="📥 Downloading"))
-                  normalized = pd.json_normalize(normalized_data)
-                  df = norm_exp(normalized,"flights.data")
-              else:
-                  df = pd.DataFrame(data)
-              return df
-          else:
-              logger.warning(f"Failed to fetch flights. Status code: {res.status}")
-              logger.warning(f"Response: {res.read().decode('utf-8')[:500]}")
-              return None
+        if res.status == 200:
+            data = json.loads(res.read().decode("utf-8"))
+            if "data" in data:
+                normalized_data = list(tqdm(data["data"], desc="📥 Downloading"))
+                normalized = pd.json_normalize(normalized_data)
+                df = norm_exp(normalized,"flights.data")
+            else:
+                df = pd.DataFrame(data)
+            return df
+        else:
+            logger.warning(f"Failed to fetch flights. Status code: {res.status}")
+            logger.warning(f"Response: {res.read().decode('utf-8')[:500]}")
+            return None
       except Exception as e:
           logger.warning(f"Error fetching flights: {e}")
           return None
@@ -152,137 +153,137 @@ class Airdata(AirdataBaseClass):
         df = self.AccessItems(endpoint="pilots")
         return df if df is not None else pd.DataFrame()
     
-    def get_flights(
-        self,
-        since: str = None,
-        until: str = None,
-        created_after: Optional[str] = None,
-        battery_ids: Optional[Union[str, list]] = None,
-        pilot_ids: Optional[Union[str, list]] = None,
-        location: Optional[list] = None,
-        limit: int = 100,
-        max_pages: int = 100,
-    ) -> pd.DataFrame:
-        """Retrieve paginated flight records from the Airdata API.
+    # def get_flights(
+    #     self,
+    #     since: str = None,
+    #     until: str = None,
+    #     created_after: Optional[str] = None,
+    #     battery_ids: Optional[Union[str, list]] = None,
+    #     pilot_ids: Optional[Union[str, list]] = None,
+    #     location: Optional[list] = None,
+    #     limit: int = 100,
+    #     max_pages: int = 100,
+    # ) -> pd.DataFrame:
+    #     """Retrieve paginated flight records from the Airdata API.
 
-        Fetches flight data by automatically handling offset-based pagination across
-        multiple API requests. Continues until no more results are returned or the
-        maximum page limit is reached.
+    #     Fetches flight data by automatically handling offset-based pagination across
+    #     multiple API requests. Continues until no more results are returned or the
+    #     maximum page limit is reached.
 
-        Args:
-            since (str, optional): 
-                Filter flights that started on or after this ISO 8601 timestamp
-            until (str, optional): 
-                Filter flights that started before this ISO 8601 timestamp.
-            created_after (str, optional): 
-                Include only flights created after this ISO 8601 timestamp.
-            battery_ids (str or list, optional): 
-                Filter by specific battery ID(s). Accepts either a comma-separated 
-                string or a list of strings
-            pilot_ids (str or list, optional): 
-                Filter by specific pilot ID(s).
-            location (list, optional): 
-                Geographic center point for radius-based search as 
-                ``[latitude, longitude]``.
-            limit (int, optional): 
-                Number of records per page. Must be ≤ 100. Defaults to 100.
-            max_pages (int, optional): 
-                Maximum number of pages to retrieve. Prevents excessive API usage. 
-                Defaults to 100.
+    #     Args:
+    #         since (str, optional): 
+    #             Filter flights that started on or after this ISO 8601 timestamp
+    #         until (str, optional): 
+    #             Filter flights that started before this ISO 8601 timestamp.
+    #         created_after (str, optional): 
+    #             Include only flights created after this ISO 8601 timestamp.
+    #         battery_ids (str or list, optional): 
+    #             Filter by specific battery ID(s). Accepts either a comma-separated 
+    #             string or a list of strings
+    #         pilot_ids (str or list, optional): 
+    #             Filter by specific pilot ID(s).
+    #         location (list, optional): 
+    #             Geographic center point for radius-based search as 
+    #             ``[latitude, longitude]``.
+    #         limit (int, optional): 
+    #             Number of records per page. Must be ≤ 100. Defaults to 100.
+    #         max_pages (int, optional): 
+    #             Maximum number of pages to retrieve. Prevents excessive API usage. 
+    #             Defaults to 100.
 
-        Returns:
-            pd.DataFrame: 
-                A DataFrame containing all retrieved flight records with standardized 
-                columns. Returns an empty DataFrame if:
+    #     Returns:
+    #         pd.DataFrame: 
+    #             A DataFrame containing all retrieved flight records with standardized 
+    #             columns. Returns an empty DataFrame if:
                 
-                - No flights match the query parameters
-                - API returns an error
-                - Authentication fails
+    #             - No flights match the query parameters
+    #             - API returns an error
+    #             - Authentication fails
 
-        Raises:
-            ValueError: 
-                If ``location`` is provided but doesn't contain exactly two numeric 
-                elements (latitude and longitude).
-        """
+    #     Raises:
+    #         ValueError: 
+    #             If ``location`` is provided but doesn't contain exactly two numeric 
+    #             elements (latitude and longitude).
+    #     """
 
-        if location is not None:
-            if not isinstance(location, list) or len(location) != 2 or not all(isinstance(x, (int, float)) for x in location):
-                raise ValueError("Location must be a list of exactly two numbers: [latitude, longitude]")
+    #     if location is not None:
+    #         if not isinstance(location, list) or len(location) != 2 or not all(isinstance(x, (int, float)) for x in location):
+    #             raise ValueError("Location must be a list of exactly two numbers: [latitude, longitude]")
 
-        def format_for_api(dt_str):
-            return format_iso_time(dt_str).replace("T", "+") if dt_str else None
+    #     def format_for_api(dt_str):
+    #         return format_iso_time(dt_str).replace("T", "+") if dt_str else None
 
-        formatted_since = format_for_api(since)
-        formatted_until = format_for_api(until)
-        formatted_created_after = format_for_api(created_after)
+    #     formatted_since = format_for_api(since)
+    #     formatted_until = format_for_api(until)
+    #     formatted_created_after = format_for_api(created_after)
 
-        params = {
-            "start": formatted_since,
-            "end": formatted_until,
-            "detail_level": "comprehensive",
-            "created_after": formatted_created_after,
-            "battery_ids": ",".join(battery_ids) if isinstance(battery_ids, list) else battery_ids,
-            "pilot_ids": ",".join(pilot_ids) if isinstance(pilot_ids, list) else pilot_ids,
-            "latitude": location[0] if location else None,
-            "longitude": location[1] if location else None,
-            "limit": limit,
-        }
+    #     params = {
+    #         "start": formatted_since,
+    #         "end": formatted_until,
+    #         "detail_level": "comprehensive",
+    #         "created_after": formatted_created_after,
+    #         "battery_ids": ",".join(battery_ids) if isinstance(battery_ids, list) else battery_ids,
+    #         "pilot_ids": ",".join(pilot_ids) if isinstance(pilot_ids, list) else pilot_ids,
+    #         "latitude": location[0] if location else None,
+    #         "longitude": location[1] if location else None,
+    #         "limit": limit,
+    #     }
 
-        params = {k: v for k, v in params.items() if v is not None}
+    #     params = {k: v for k, v in params.items() if v is not None}
 
-        if not self.authenticated:
-            print("Cannot fetch flights: Not authenticated.")
-            return pd.DataFrame()
+    #     if not self.authenticated:
+    #         print("Cannot fetch flights: Not authenticated.")
+    #         return pd.DataFrame()
 
-        all_data = []
-        offset = 0
-        page = 0
+    #     all_data = []
+    #     offset = 0
+    #     page = 0
 
-        with tqdm(desc="Downloading flights") as pbar:
-            while page < max_pages:
-                current_params = params.copy()
-                current_params["offset"] = offset
+    #     with tqdm(desc="Downloading flights") as pbar:
+    #         while page < max_pages:
+    #             current_params = params.copy()
+    #             current_params["offset"] = offset
 
-                query_string = "&".join([f"{k}={v}" for k, v in current_params.items()])
-                endpoint = f"/flights?{query_string}"
+    #             query_string = "&".join([f"{k}={v}" for k, v in current_params.items()])
+    #             endpoint = f"/flights?{query_string}"
 
-                try:
-                    conn = http.client.HTTPSConnection(self.base_url)
-                    conn.request("GET", endpoint, headers=self.auth_header)
-                    res = conn.getresponse()
+    #             try:
+    #                 conn = http.client.HTTPSConnection(self.base_url)
+    #                 conn.request("GET", endpoint, headers=self.auth_header)
+    #                 res = conn.getresponse()
 
-                    if res.status != 200:
-                        error_msg = res.read().decode('utf-8')[:300]
-                        print(f"HTTP {res.status}: {error_msg}")
-                        break
+    #                 if res.status != 200:
+    #                     error_msg = res.read().decode('utf-8')[:300]
+    #                     print(f"HTTP {res.status}: {error_msg}")
+    #                     break
 
-                    data = json.loads(res.read().decode("utf-8"))
-                    if not data.get("data") or len(data["data"]) == 0:
-                        break
+    #                 data = json.loads(res.read().decode("utf-8"))
+    #                 if not data.get("data") or len(data["data"]) == 0:
+    #                     break
 
-                    normalized_data = data["data"]
-                    df_page = pd.json_normalize(normalized_data)
-                    all_data.append(df_page)
-                    fetched_this_page = len(normalized_data)
+    #                 normalized_data = data["data"]
+    #                 df_page = pd.json_normalize(normalized_data)
+    #                 all_data.append(df_page)
+    #                 fetched_this_page = len(normalized_data)
 
-                    for _ in range(fetched_this_page):
-                        pbar.update(1)
+    #                 for _ in range(fetched_this_page):
+    #                     pbar.update(1)
 
-                    offset += limit
-                    page += 1
-                    time.sleep(0.1)
+    #                 offset += limit
+    #                 page += 1
+    #                 time.sleep(0.1)
 
-                except Exception as e:
-                    print(f"Error on page {page + 1} at offset {offset}: {e}")
-                    break
+    #             except Exception as e:
+    #                 print(f"Error on page {page + 1} at offset {offset}: {e}")
+    #                 break
 
-        if not all_data:
-            print("No flight data found.")
-            return pd.DataFrame()
+    #     if not all_data:
+    #         print("No flight data found.")
+    #         return pd.DataFrame()
 
-        df = pd.concat(all_data, ignore_index=True)
-        df["checktime"] = pd.to_datetime(df["time"], errors="coerce").dt.tz_localize(None)
-        return append_cols(df,cols="checktime")
+    #     df = pd.concat(all_data, ignore_index=True)
+    #     df["checktime"] = pd.to_datetime(df["time"], errors="coerce").dt.tz_localize(None)
+    #     return append_cols(df,cols="checktime")
 
     def get_flightgroups(
         self,
@@ -313,6 +314,108 @@ class Airdata(AirdataBaseClass):
         df = self.AccessGroups(endpoint=endpoint)
         return df if df is not None else pd.DataFrame()
 
+    def get_flights(
+        self,
+        since: Optional[str] = None,
+        until: Optional[str] = None,
+        created_after: Optional[str] = None,
+        battery_ids: Optional[Union[str, List[str]]] = None,
+        pilot_ids: Optional[Union[str, List[str]]] = None,
+        location: Optional[List[float]] = None,
+        limit: int = 100,
+        max_pages: int = 100,
+        delay: float = 0.1,
+        timeout: int = 15,
+    ) -> pd.DataFrame:
+        """
+        Retrieve paginated flight records from the Airdata API.
+
+        Returns an empty DataFrame if not authenticated, no data is found, or an error occurs.
+        """
+        # --- Validation ---
+        if not self.authenticated:
+            print("Not authenticated")
+            return pd.DataFrame()
+
+        if location is not None:
+            if not (isinstance(location, list) and len(location) == 2 and all(isinstance(x, (int, float)) for x in location)):
+                raise ValueError("Location must be [latitude, longitude]")
+
+        # --- Helper: format ISO time for API ---
+        def _format_time(dt_str: Optional[str]) -> Optional[str]:
+            if not dt_str:
+                return None
+            try:
+                # Normalize common formats (e.g., '2025-01-01T12:00:00Z')
+                dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
+                return dt.isoformat().replace("T", "+")
+            except ValueError:
+                raise ValueError(f"Invalid datetime format: {dt_str}")
+
+        # --- Build params ---
+        def _to_csv(val):
+            return ",".join(map(str, val)) if isinstance(val, list) else val
+
+        params = {
+            "start": _format_time(since),
+            "end": _format_time(until),
+            "created_after": _format_time(created_after),
+            "battery_ids": _to_csv(battery_ids),
+            "pilot_ids": _to_csv(pilot_ids),
+            "latitude": location[0] if location else None,
+            "longitude": location[1] if location else None,
+            "limit": limit,
+            "detail_level": "comprehensive",
+        }
+        params = {k: v for k, v in params.items() if v is not None}
+
+        # --- Fetch pages ---
+        session = requests.Session()
+        session.headers.update(self.auth_header)
+
+        all_dfs = []
+        offset = 0
+
+        with tqdm(desc="Downloading flights") as pbar:
+            for page in range(max_pages):
+                try:
+                    resp = session.get(
+                        f"https://{self.base_url}/flights",
+                        params={**params, "offset": offset},
+                        timeout=timeout,
+                    )
+                    resp.raise_for_status()
+
+                    data = resp.json().get("data", [])
+                    if not data:
+                        break
+
+                    all_dfs.append(pd.json_normalize(data))
+                    offset += len(data)  # safer than assuming `limit`
+                    pbar.update(len(data))
+                    time.sleep(delay)
+
+                except requests.RequestException as e:
+                    print(f"Request failed at page {page + 1}, offset {offset}: {e}")
+                    break
+
+        if not all_dfs:
+            return pd.DataFrame()
+
+        # --- Post-process ---
+        df = pd.concat(all_dfs, ignore_index=True)
+
+        # Add checktime if 'time' exists
+        if "time" in df.columns:
+            df["checktime"] = pd.to_datetime(df["time"], errors="coerce").dt.tz_localize(None)
+
+        # Append extra columns (if this is your utility function)
+        if hasattr(self, '_append_cols'):  # or import from module
+            return self._append_cols(df, cols=["checktime"])
+        else:
+            # If `append_cols` is a top-level function, ensure it's imported
+            # For now, just return df with checktime
+            return df
 
 
 def _flight_polyline(

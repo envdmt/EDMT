@@ -238,8 +238,18 @@ def convert_time(time_value: float, unit_from: str, unit_to: str) -> float:
     unit_from = unit_from.lower().strip()
     unit_to = unit_to.lower().strip()
 
-    unit_from = {"us": "microseconds", "μs": "microseconds", "microsec": "microseconds", "usec": "microseconds"}.get(unit_from, unit_from)
-    unit_to = {"us": "microseconds", "μs": "microseconds", "microsec": "microseconds", "usec": "microseconds"}.get(unit_to, unit_to)
+    unit_from = {
+        "us": "microseconds", 
+        "μs": "microseconds", 
+        "microsec": "microseconds", 
+        "usec": "microseconds"
+        }.get(unit_from, unit_from)
+    unit_to = {
+        "us": "microseconds", 
+        "μs": "microseconds", 
+        "microsec": "microseconds", 
+        "usec": "microseconds"
+        }.get(unit_to, unit_to)
 
     if unit_from not in time_chart:
         raise ValueError(f"Invalid 'unit_from': {unit_from}. Supported units: {', '.join(time_chart.keys())}")

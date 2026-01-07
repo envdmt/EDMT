@@ -3,7 +3,6 @@ from .utils import (
     norm_exp,
     normalize_column,
     format_iso_time,
-    norm_exp,
     append_cols,
     dict_expand
 )

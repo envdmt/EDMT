@@ -1,9 +1,7 @@
 import pandas as pd
 from typing import Union
 from dateutil import parser
-from typing import Optional, List
 import logging
-
 
 
 def clean_vars(addl_kwargs={}, **kwargs):
@@ -24,7 +22,6 @@ def clean_time_cols(df,columns = []):
         time_cols = [columns]
         for col in time_cols:
             if col in df.columns and not pd.api.types.is_datetime64_ns_dtype(df[col]):
-                # convert x is not None to pd.isna(x) is False
                 df[col] = df[col].apply(lambda x: pd.to_datetime(parser.parse(x), utc=True) if not pd.isna(x) else None)
         return df
     else:
@@ -106,20 +103,19 @@ def dict_expand(data,cols):
   df_processed = data.copy()
 
   for col in cols:
-      if col in df_processed.columns:
-          try:
-              valid_data = df_processed[col].apply(lambda x: x if isinstance(x, (dict, list)) else None).dropna()
-              if not valid_data.empty:
-                  exploded = valid_data.explode(ignore_index=False)
-                  expanded = pd.json_normalize(exploded)
-                  expanded.columns = [f"{col}_{subcol}" for subcol in expanded.columns]
-                  dfs_to_join.append(expanded)
-          except Exception as e:
-            #   logging.warning(f"Error expanding column '{col}': {e}. Skipping column.")
-              return None
-      else:
-          logging.debug(f"Column '{col}' not found in DataFrame for expansion.")
-          return None
+    if col in df_processed.columns:
+        try:
+            valid_data = df_processed[col].apply(lambda x: x if isinstance(x, (dict, list)) else None).dropna()
+            if not valid_data.empty:
+                exploded = valid_data.explode(ignore_index=False)
+                expanded = pd.json_normalize(exploded)
+                expanded.columns = [f"{col}_{subcol}" for subcol in expanded.columns]
+                dfs_to_join.append(expanded)
+        except Exception as e:
+            return None
+    else:
+        logging.debug(f"Column '{col}' not found in DataFrame for expansion.")
+        return None
 
   if dfs_to_join:
       expanded_df = pd.concat(dfs_to_join, axis=1)
