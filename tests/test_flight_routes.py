@@ -2,11 +2,9 @@ import pytest
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import LineString
-import requests
 from unittest.mock import patch, MagicMock
 from edmt.models import get_flight_routes, _flight_polyline
-from edmt.base import AirdataCSV
-
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Sample valid CSV content
 VALID_CSV_CONTENT = """longitude,latitude,time(millisecond)
@@ -105,7 +103,7 @@ def test_get_flight_routes_empty_input():
 
 
 def test_get_flight_routes_filter_ids(sample_metadata_df):
-    with patch("your_module._flight_polyline") as mock_polyline:
+    with patch("edmt.models._flight_polyline") as mock_polyline:
         mock_polyline.side_effect = mock_flight_polyline_success
         gdf = get_flight_routes(sample_metadata_df, filter_ids=["flight_1", "flight_3"])
     
@@ -127,7 +125,7 @@ def test_get_flight_routes_custom_columns(mock_polyline, sample_metadata_df):
     mock_polyline.side_effect = mock_flight_polyline_success
 
     # Just ensure it calls _flight_polyline with correct kwargs
-    with patch("ThreadPoolExecutor") as mock_executor:
+    with patch("from concurrent.futures import ThreadPoolExecutor") as mock_executor:
         mock_future = MagicMock()
         mock_future.result.return_value = mock_flight_polyline_success(sample_metadata_df.iloc[0])
         mock_executor.return_value.__enter__.return_value.submit.return_value = mock_future
@@ -195,7 +193,7 @@ def test_get_flight_routes_passes_kwargs_correctly(sample_metadata_df):
         called_kwargs.append(kwargs)
         return mock_flight_polyline_success(args[0])
 
-    with patch("your_module._flight_polyline", side_effect=capture_kwargs):
+    with patch("edmt.models._flight_polyline", side_effect=capture_kwargs):
         get_flight_routes(
             sample_metadata_df,
             lon_col="my_lon",
