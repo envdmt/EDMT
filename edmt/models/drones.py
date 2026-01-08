@@ -401,8 +401,8 @@ def _flight_polyline(
         meta.update({
             "id": flight_id,
             "geometry": line,
-            "flight_distance_m": total_dist,
-            "flight_time_max_ms": pts[time_col].max()
+            "airline_distance_m": total_dist,
+            "airline_time": pts[time_col].max()
         })
         return meta
 
