@@ -237,7 +237,7 @@ class Airdata(AirdataBaseClass):
                 elements (latitude and longitude).
         """
         if not self.authenticated:
-            print("Cannot fetch flights: Not authenticated.")
+            logger.error("Cannot fetch flights: Not authenticated.")
             return pd.DataFrame()
 
         if location is not None:
@@ -276,7 +276,7 @@ class Airdata(AirdataBaseClass):
 
                     if res.status != 200:
                         error_msg = res.read().decode('utf-8')[:300]
-                        print(f"HTTP {res.status}: {error_msg}")
+                        logger.error(f"HTTP {res.status}: {error_msg}")
                         break
 
                     data = json.loads(res.read().decode("utf-8"))
@@ -297,11 +297,11 @@ class Airdata(AirdataBaseClass):
                     time.sleep(0.1)
 
                 except Exception as e:
-                    print(f"Error on page {page + 1} at offset {offset}: {e}")
+                    logger.error(f"Error on page {page + 1} at offset {offset}: {e}")
                     break
 
         if not all_data:
-            print("No flight data found.")
+            logger.info("No flight data found.")
             return pd.DataFrame()
 
         df = pd.concat(all_data, ignore_index=True)
@@ -530,6 +530,10 @@ def airPoint(
         ValueError: If ``longitude`` and ``latitude`` columns are not present in
         the extracted telemetry data.
     """
+
+    if len(df) > 500:
+        logger.info("Large dataset detected. Use get_flight_routes. to get better performance and convert to Line Geometries.")
+        return gpd.GeoDataFrame()
 
     if link_col not in df.columns:
         raise ValueError(f"Column '{link_col}' not found in DataFrame.")
