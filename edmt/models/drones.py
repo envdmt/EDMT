@@ -532,7 +532,7 @@ def airPoint(
     """
 
     if len(df) > 500:
-        logger.info("Large dataset detected. Use get_flight_routes. to get better performance and convert to Line Geometries.")
+        print("Large dataset detected. Use get_flight_routes. to get better performance and convert to Line Geometries.")
         return gpd.GeoDataFrame()
 
     if link_col not in df.columns:
