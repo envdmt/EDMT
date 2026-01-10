@@ -2,9 +2,8 @@ import pytest
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import LineString
-from unittest.mock import patch, MagicMock
-from edmt.models import get_flight_routes, _flight_polyline
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from unittest.mock import patch
+from edmt.models import *
 
 # Sample valid CSV content
 VALID_CSV_CONTENT = """longitude,latitude,time(millisecond)
