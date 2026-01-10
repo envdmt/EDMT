@@ -1,9 +1,9 @@
 from .base import (
     AirdataBaseClass,
-    AirdataCSV
+    ExtractCSV
 )
 
 __all__ = [
     "AirdataBaseClass",
-    "AirdataCSV"
+    "ExtractCSV"
 ]

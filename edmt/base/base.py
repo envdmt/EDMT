@@ -62,7 +62,7 @@ class AirdataBaseClass:
                 raise
 
 
-def AirdataCSV(
+def ExtractCSV(
     row, 
     col : str,
     max_retries : int = 3, 
