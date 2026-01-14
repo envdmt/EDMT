@@ -23,6 +23,7 @@ from tqdm.auto import tqdm
 from typing import List, Union, Optional
 import http.client
 from pyproj import Geod
+from os import environ
 geod = Geod(ellps="WGS84")
 
 
