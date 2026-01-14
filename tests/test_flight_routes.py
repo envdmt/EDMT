@@ -3,6 +3,7 @@ import pandas as pd
 import geopandas as gpd
 from shapely.geometry import LineString
 from unittest.mock import patch, MagicMock
+import duckdb
 
 from edmt.models import get_flight_routes, _flight_polyline
 
