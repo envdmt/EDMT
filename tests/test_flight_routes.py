@@ -2,23 +2,16 @@ import pytest
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import LineString
-from unittest.mock import patch
-from edmt.models import *
+from unittest.mock import patch, MagicMock
 
-# Sample valid CSV content
-VALID_CSV_CONTENT = """longitude,latitude,time(millisecond)
-34.0, -1.0, 1000
-34.1, -1.1, 2000
-34.2, -1.2, 3000
-"""
+from edmt.models import get_flight_routes, _flight_polyline
 
-# CSV missing required columns
+
 INVALID_CSV_MISSING_COLS = """altitude,speed,time
 100,10,1000
 120,12,2000
 """
 
-# CSV with only one valid point (after filtering zeros)
 CSV_ONE_VALID_POINT = """longitude,latitude,time(millisecond)
 0.0,0.0,1000
 34.0,-1.0,2000
@@ -39,57 +32,59 @@ def sample_metadata_df():
     })
 
 
-# Mock successful CSV download and processing
-def mock_flight_polyline_success(row, **kwargs):
-    # Simulate successful return from _flight_polyline
-    coords = [(34.0 + i*0.1, -1.0 - i*0.1) for i in range(3)]
-    line = LineString(coords)
+def mock_flight_polyline_success(*args, **kwargs):
+    row = args[0]
+    coords = [(34.0, -1.0), (34.1, -1.1), (34.2, -1.2)]
     return {
         "id": row["id"],
         "pilot": row["pilot"],
-        "geometry": line,
+        "geometry": LineString(coords),
         "flight_distance_m": 15700.0,
         "flight_time_max_ms": 3000.0
     }
 
 
-def mock_flight_polyline_none(row, **kwargs):
-    return None
-
-
 @patch("edmt.models._flight_polyline")
 def test_get_flight_routes_all_fail(mock_polyline, sample_metadata_df):
     mock_polyline.return_value = None
+
     gdf = get_flight_routes(sample_metadata_df)
+
     assert isinstance(gdf, gpd.GeoDataFrame)
-    assert len(gdf) == 0
+    assert gdf.empty
 
 
 def test_get_flight_routes_empty_input():
     df = pd.DataFrame(columns=["id", "csvLink"])
     gdf = get_flight_routes(df)
+
     assert isinstance(gdf, gpd.GeoDataFrame)
-    assert len(gdf) == 0
+    assert gdf.empty
 
 
-
-# Test invalid CSV handling in _flight_polyline (via AirdataCSV returning None)
-@patch("edmt.base.AirdataCSV")
+@patch("edmt.base.ExtractCSV")
 def test_flight_polyline_csv_missing_columns(mock_airdata, sample_metadata_df):
-    invalid_df = pd.read_csv(pd.io.common.StringIO(INVALID_CSV_MISSING_COLS))
-    mock_airdata.return_value = invalid_df
+    df = pd.read_csv(pd.io.common.StringIO(INVALID_CSV_MISSING_COLS))
+
+    mock_instance = MagicMock()
+    mock_instance.df = df
+    mock_airdata.return_value = mock_instance
 
     row = sample_metadata_df.iloc[0]
     result = _flight_polyline(row)
+
     assert result is None
 
 
-@patch("edmt.base.AirdataCSV")
+@patch("edmt.base.ExtractCSV")
 def test_flight_polyline_insufficient_points(mock_airdata, sample_metadata_df):
-    df_one_point = pd.read_csv(pd.io.common.StringIO(CSV_ONE_VALID_POINT))
-    mock_airdata.return_value = df_one_point
+    df = pd.read_csv(pd.io.common.StringIO(CSV_ONE_VALID_POINT))
+
+    mock_instance = MagicMock()
+    mock_instance.df = df
+    mock_airdata.return_value = mock_instance
 
     row = sample_metadata_df.iloc[0]
     result = _flight_polyline(row)
-    assert result is None
 
+    assert result is None
