@@ -14,7 +14,7 @@ from edmt.analysis import (
     to_celsius
 )
 
-def get_lst_layer(
+def get_lst_image(
     start_date: str,
     end_date: str,
     satellite: str = "MODIS",
