@@ -359,7 +359,6 @@ def _flight_polyline(
             - `None` if the URL is missing/invalid, required columns are absent, 
               fewer than two valid points remain after cleaning, or an unhandled 
               exception occurs during processing.
-
     """
     try:
         url = row[link_col]

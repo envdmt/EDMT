@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "edmt"
-version = "1.0.2dev"
+version = "1.0.2"
 description = "Environmental Data Management Toolbox"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -19,7 +19,6 @@ classifiers = [
 
 dependencies = [
   "duckdb",
-  "contextily>=1.4.0",
   "contourpy>=1.2.1",
   "fiona==1.9.6",
   "folium>=0.18.0",

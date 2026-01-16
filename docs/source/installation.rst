@@ -1,5 +1,5 @@
-Usage Example
-=============
+Installation
+============
 
 This page demonstrates how to use the EDMT Python module with a simple example.
 

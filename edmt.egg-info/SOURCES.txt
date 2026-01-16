@@ -23,7 +23,6 @@ edmt/plotting/__init__.py
 tests/test_analysis.py
 tests/test_base.py
 tests/test_contrib.py
-tests/test_flight_routes.py
 tests/test_mapping.py
 tests/test_models.py
 tests/test_plotting.py

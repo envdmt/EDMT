@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: edmt
-Version: 1.0.2.dev0
+Version: 1.0.2
 Summary: Environmental Data Management Toolbox
 Author-email: "Odero, Kuloba & musasia" <francisodero10@gmail.com>
 License: MIT License
@@ -31,7 +31,7 @@ Classifier: Operating System :: OS Independent
 Requires-Python: >=3.9
 Description-Content-Type: text/markdown
 License-File: LICENSE
-Requires-Dist: contextily>=1.4.0
+Requires-Dist: duckdb
 Requires-Dist: contourpy>=1.2.1
 Requires-Dist: fiona==1.9.6
 Requires-Dist: folium>=0.18.0
@@ -42,7 +42,6 @@ Requires-Dist: seaborn>=0.13.2
 Requires-Dist: tqdm>=4
 Requires-Dist: pillow>=11.3.0
 Requires-Dist: requests
-Requires-Dist: duckdb
 Dynamic: license-file
 
 <h1 align="center">EDMT — Environmental Data Management Toolbox</h1>
