@@ -1,6 +1,10 @@
 duckdb
 contourpy>=1.2.1
-earthengine-api==1.7.4
+earthengine-api<0.1.400,>=0.1.324
+google-api-core<2.15,>=2.11
+google-auth<2.25,>=2.20
+google-auth-httplib2<0.2,>=0.1.0
+google-api-python-client<2.95,>=2.86
 fiona==1.9.6
 folium>=0.18.0
 geopandas>=0.12.2

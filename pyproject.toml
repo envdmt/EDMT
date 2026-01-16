@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "edmt"
-version = "1.0.2"
+version = "1.0.2dev"
 description = "Environmental Data Management Toolbox"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -20,7 +20,7 @@ classifiers = [
 dependencies = [
   "duckdb",
   "contourpy>=1.2.1",
-  
+
   "earthengine-api>=0.1.324,<0.1.400",
   "google-api-core>=2.11,<2.15",
   "google-auth>=2.20,<2.25",

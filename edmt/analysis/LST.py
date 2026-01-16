@@ -242,7 +242,7 @@ def compute_lst_timeseries(
     satellite: str = "MODIS",
     frequency: str = "monthly",
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
-    scale: int = 1000,
+    scale: Optional[int] = None,
 ) -> pd.DataFrame:
     """
     Compute a time series of mean Land Surface Temperature (LST) over a region of interest 
@@ -288,14 +288,17 @@ def compute_lst_timeseries(
     if roi_gdf is None:
         raise ValueError("Provide roi_gdf (Region of Interest)")
 
+    ensure_ee_initialized()
+
     geometry = gdf_to_ee_geometry(roi_gdf)
 
-    # Get collection + conversion factors
     collection, factors = get_satellite_collection(satellite, start_date, end_date)
     collection = collection.map(lambda img: to_celsius(img, factors))
 
-    # Generate time steps
-    step_days = {"weekly": 7, "monthly": 30, "yearly": 365}[frequency.lower()]
+    freq = frequency.lower()
+    step_days = {"weekly": 7, "monthly": 30, "yearly": 365}.get(freq)
+    if step_days is None:
+        raise ValueError("frequency must be one of: weekly, monthly, yearly")
 
     dates = ee.List.sequence(
         ee.Date(start_date).millis(),
@@ -303,12 +306,17 @@ def compute_lst_timeseries(
         step_days * 24 * 60 * 60 * 1000,
     )
 
-    # Compute LST per period
     features = ee.FeatureCollection(
-        dates.map(lambda d: compute_period_feature(ee.Date(d), collection, geometry, scale, frequency))
+        dates.map(lambda d: compute_period_feature(
+            ee.Date(d),
+            collection,
+            geometry,
+            freq,
+            satellite,
+            scale=scale
+        ))
     )
 
-    # Convert to pandas DataFrame
     features_info = features.getInfo()["features"]
     rows = [
         {
