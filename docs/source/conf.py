@@ -1,64 +1,33 @@
-# Configuration file for the Sphinx documentation builder.
-#
-# For the full list of built-in configuration values, see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html 
+import os
+import sys
+sys.path.insert(0, os.path.abspath('../../')) 
 
-# -- Project information -----------------------------------------------------
+import logging
+logging.basicConfig()
+logging.getLogger('nbsphinx').setLevel(logging.DEBUG)
+
 project = 'EDMT'
-copyright = '2025, Odero, Kuloba, Musasia'
-author = 'Odero, Kuloba, Musasia'
-release = '1.0.1.dev0'
+copyright = '2026, EDMT'
+author = 'Odero,Kuloba & Musasia'
+release = '1.0.1'
 
-# -- General configuration ---------------------------------------------------
-
-extensions = [
-    'sphinx.ext.autosummary',
-    'sphinx.ext.autodoc',
-    'sphinx.ext.viewcode',
-    'sphinx.ext.napoleon', 
-    'sphinx_togglebutton', 
-    'sphinx.ext.todo',  
-    'nbsphinx', 
+# General configuration
+extensions = [        
+    'autoapi.extension',
 ]
 
+# Path to your source code
+autoapi_dirs = ['../../edmt']
 templates_path = ['_templates']
-exclude_patterns = [
-    '_build',
-    'Thumbs.db',
-    '.DS_Store',
-    '**/.venv',            
-    '**/__pycache__',      
-    '**.ipynb_checkpoints'
-]
+autoapi_template_dir = '_templates/autoapi'
+exclude_patterns = []
 
-# -- Options for HTML output -------------------------------------------------
-html_theme = "pydata_sphinx_theme"
-html_theme_path = ["."]
+language = 'Python'
+
+# Options for HTML output
+html_theme = 'furo'
 html_static_path = ['_static']
-html_logo = '_static/edmt.jpeg'
 
-nbsphinx_pygments_lexer = 'python3'
-
-# -- Extension settings ------------------------------------------------------
-
-# Napoleon settings (for Google/NumPy style docstrings)
-napoleon_google_docstring = True
-napoleon_numpy_docstring = True
-napoleon_include_init_with_doc = True
-napoleon_include_private_with_doc = False
-napoleon_use_param = True
-
-autosummary_generate = True 
-autodoc_default_options = {
-    'members': True,
-    'undoc-members': True,
-    'private-members': False,
-    'special-members': False,
-    'inherited-members': False,
-    'show-inheritance': True,
-}
-
-togglebutton_hint = "Click to expand"
-togglebutton_hint_hide = "Click to collapse"
-
-todo_include_todos = True
+# Optional: Include private members
+autoapi_options = ['members', 'undoc-members', 'private-members']
+autoapi_keep_files = True

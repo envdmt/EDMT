@@ -7,7 +7,6 @@ from edmt import (
     models, 
     plotting
     )
-
 import importlib.metadata
 
 ASCII = r"""
@@ -21,6 +20,7 @@ __initialized = False
 
 # Package version
 __version__ = importlib.metadata.version("edmt")
+
 
 def init(silent=False, force=False):
     """
@@ -40,7 +40,7 @@ def init(silent=False, force=False):
         return
     
     import pandas as pd
-
+    
     pd.set_option("display.max_columns", None)
     pd.options.plotting.backend = "plotly"
     pd.options.mode.copy_on_write = True
@@ -65,6 +65,7 @@ def init(silent=False, force=False):
     if not silent:
         print(ASCII)
         print("EDMT initialized successfully.")
+
 
 __all__ = [
     "analysis", 

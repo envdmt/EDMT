@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "edmt"
-version = "1.0.1"
+version = "1.0.2"
 description = "Environmental Data Management Toolbox"
 readme = "README.md"
 requires-python = ">=3.9"
-license = "MIT"
+license = {file = "LICENSE"} 
 authors = [
   {name = "Odero, Kuloba & musasia", email = "francisodero10@gmail.com"},
 ]
@@ -18,7 +18,7 @@ classifiers = [
 ]
 
 dependencies = [
-  "contextily>=1.4.0",
+  "duckdb",
   "contourpy>=1.2.1",
   "fiona==1.9.6",
   "folium>=0.18.0",
@@ -28,20 +28,14 @@ dependencies = [
   "seaborn>=0.13.2",
   "tqdm>=4",
   "pillow>=11.3.0",
-  "requests",
-  "aiohttp",
-  "PyPDF2"
+  "requests"
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/envdmt/EDMT/"
+Homepage = "https://github.com/envdmt/EDMT/"
 
 [project.scripts]
 edmt = "edmt.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["edmt*"]
-
-
-[tool.poetry]
-packages = [{ include = "edmt", from = "src" }]

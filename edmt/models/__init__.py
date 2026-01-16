@@ -1,16 +1,18 @@
 from .drones import (
     Airdata,
+    _flight_polyline,
+    get_flight_routes,
     airPoint,
-    df_to_gdf,
     airLine,
     airSegment
 )
 
+
 __all__ = [
-    "Airtable",
     "Airdata",
+    "_flight_polyline",
+    "get_flight_routes",
     "airPoint",
-    "df_to_gdf",
     "airLine",
     "airSegment"
 ]

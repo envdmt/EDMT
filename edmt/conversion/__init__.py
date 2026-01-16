@@ -15,6 +15,5 @@ __all__ = [
     'to_gdf',
     'convert_distance',
     'convert_time',
-    'convert_speed',
-    'create_dataframe'
+    'convert_speed'
     ]

@@ -1,4 +1,4 @@
-contextily>=1.4.0
+duckdb
 contourpy>=1.2.1
 fiona==1.9.6
 folium>=0.18.0
@@ -9,5 +9,3 @@ seaborn>=0.13.2
 tqdm>=4
 pillow>=11.3.0
 requests
-aiohttp
-PyPDF2
