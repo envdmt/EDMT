@@ -56,6 +56,7 @@ def init(silent=False, force=False):
     warnings.filterwarnings(action="ignore", category=ShapelyDeprecationWarning)
     warnings.filterwarnings(action="ignore", category=FutureWarning)
     warnings.filterwarnings("ignore", message=".*initial implementation of Parquet.*")
+    warnings.filterwarnings("ignore", category=FutureWarning, module="google.api_core")
 
     import plotly.io as pio  # type: ignore[import-untyped]
 

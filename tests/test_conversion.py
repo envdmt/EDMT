@@ -6,7 +6,14 @@ import uuid
 from unittest.mock import patch
 
 # Import your module
-from edmt.conversion import *
+from edmt.conversion import (
+    convert_time,
+    convert_speed,
+    convert_distance,
+    generate_uuid,
+    get_utm_epsg,
+    to_gdf
+)
 
 # --------------------------
 # Test: convert_time
