@@ -20,6 +20,7 @@ classifiers = [
 dependencies = [
   "duckdb",
   "contourpy>=1.2.1",
+  "earthengine-api==1.7.4",
   "fiona==1.9.6",
   "folium>=0.18.0",
   "geopandas>=0.12.2",

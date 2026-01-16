@@ -10,6 +10,7 @@ Submodules
 .. toctree::
    :maxdepth: 1
 
+   /autoapi/edmt/analysis/LST/index
    /autoapi/edmt/analysis/analysis/index
 
 

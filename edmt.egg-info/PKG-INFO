@@ -33,6 +33,7 @@ Description-Content-Type: text/markdown
 License-File: LICENSE
 Requires-Dist: duckdb
 Requires-Dist: contourpy>=1.2.1
+Requires-Dist: earthengine-api==1.7.4
 Requires-Dist: fiona==1.9.6
 Requires-Dist: folium>=0.18.0
 Requires-Dist: geopandas>=0.12.2
