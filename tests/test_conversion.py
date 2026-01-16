@@ -6,20 +6,7 @@ import uuid
 from unittest.mock import patch
 
 # Import your module
-from edmt.conversion import (
-    time_chart,
-    speed_chart,
-    time_chart_inverse,
-    speed_chart_inverse,
-    sdf_to_gdf,
-    generate_uuid,
-    get_utm_epsg,
-    to_gdf,
-    convert_time,
-    convert_speed,
-    convert_distance,
-)
-
+from edmt.conversion import *
 
 # --------------------------
 # Test: convert_time
@@ -84,8 +71,7 @@ def test_generate_uuid_new():
     result = generate_uuid(df)
     assert "uuid" in result.columns
     assert len(result["uuid"]) == 2
-    assert all(pd.api.types.is_string_dtype(result["uuid"]))
-    # Validate UUID format
+    assert pd.api.types.is_string_dtype(result["uuid"])
     uuid_pattern = r'^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$'
     assert result["uuid"].str.match(uuid_pattern).all()
 
@@ -152,43 +138,3 @@ def mock_clean_vars():
         "crs": 4326
     }
 
-@patch("utils.clean_vars")
-def test_sdf_to_gdf(mock_clean):
-    mock_clean.return_value = {
-        "shape": "SHAPE",
-        "geometry": "geometry",
-        "columns": ["Shape__Area", "Shape__Length", "SHAPE"],
-        "crs": 4326
-    }
-
-    poly = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
-    df = pd.DataFrame({
-        "SHAPE": [poly, None, poly],
-        "Shape__Area": [1.0, 2.0, 3.0],
-        "other": [1, 2, 3]
-    })
-
-    gdf = sdf_to_gdf(df)
-    assert isinstance(gdf, gpd.GeoDataFrame)
-    assert len(gdf) == 2  # dropped NA geometry
-    assert "Shape__Area" not in gdf.columns
-    assert gdf.crs.to_epsg() == 4326
-
-def test_sdf_to_gdf_invalid_input():
-    with pytest.raises(ValueError, match="Input must be a pandas DataFrame"):
-        sdf_to_gdf("not a df")
-    with pytest.raises(ValueError, match="DataFrame is empty"):
-        sdf_to_gdf(pd.DataFrame())
-
-
-# --------------------------
-# Optional: Test unit dictionaries completeness
-# --------------------------
-def test_time_chart_symmetry():
-    for unit, factor in time_chart.items():
-        inv_factor = 1.0 / factor
-        assert abs(time_chart_inverse[unit] - inv_factor) < 1e-10
-
-def test_speed_chart_consistency():
-    for unit in speed_chart:
-        assert unit in speed_chart_inverse

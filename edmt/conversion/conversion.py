@@ -126,51 +126,62 @@ def sdf_to_gdf(sdf, crs=None):
     )
 
     tmp = sdf.copy()
-    tmp = tmp[~tmp[params.get("shape")].isna()]
+    tmp = tmp[~tmp[params["shape"]].isna()]
 
-    gdf = gpd.GeoDataFrame(tmp, geometry=tmp[params.get("shape")], crs=params.get("crs", 4326))
+    gdf = gpd.GeoDataFrame(tmp, geometry=tmp[params["shape"]], crs=params["crs"])
     gdf['geometry'] = gdf.geometry.apply(make_valid)
     gdf.drop(columns=params.get("columns"), errors='ignore', inplace=True)
 
     return gdf
 
 
-def generate_uuid(df, index=False):
+def _is_valid_uuid(val) -> bool:
+    if pd.isna(val):
+        return False
+    try:
+        uuid.UUID(str(val))
+        return True
+    except Exception:
+        return False
+
+
+def generate_uuid(df: pd.DataFrame, index: bool = False) -> pd.DataFrame:
     """
-    Adds a 'uuid' column to the DataFrame if no existing UUID-like column exists.
+    Ensures a valid UUID string column named 'uuid' exists in the DataFrame.
+
+    - Creates a 'uuid' column if missing
+    - Replaces invalid or missing UUID values
+    - Preserves valid UUIDs
+    - Optionally sets 'uuid' as index while keeping the column
 
     Args:
-        df (pd.DataFrame): The DataFrame to add UUIDs to.
-        index (bool): Whether to set 'uuid' as the DataFrame index.
+        df (pd.DataFrame): Input DataFrame
+        index (bool): Whether to set 'uuid' as the index
 
     Returns:
-        pd.DataFrame: DataFrame with UUIDs added if needed.
+        pd.DataFrame
 
     Raises:
-        ValueError: If input is not a DataFrame or is empty.
-
+        ValueError: If input is not a DataFrame or is empty
     """
     if not isinstance(df, pd.DataFrame):
         raise ValueError("Input must be a pandas DataFrame.")
     if df.empty:
         raise ValueError("DataFrame is empty.")
 
-    uuid_pattern = r'^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$'
-
-    for col in df.columns:
-        if pd.api.types.is_string_dtype(df[col]) and df[col].str.match(uuid_pattern).all():
-            if index:
-                return df.set_index(col).reset_index()
-            else:
-                return df
-
-    if 'uuid' not in df.columns:
-        df['uuid'] = [str(uuid.uuid4()).lower() for _ in range(len(df))]
+    df = df.copy()
+    if "uuid" not in df.columns:
+        df["uuid"] = [str(uuid.uuid4()) for _ in range(len(df))]
     else:
-        df['uuid'] = df['uuid'].apply(lambda x: x if pd.notnull(x) else str(uuid.uuid4()).lower())
+        df["uuid"] = [
+            str(val) if _is_valid_uuid(val) else str(uuid.uuid4())
+            for val in df["uuid"]
+        ]
+
+    df["uuid"] = df["uuid"].astype(str)
 
     if index:
-        df = df.set_index('uuid').reset_index()
+        df = df.set_index("uuid", drop=False)
 
     return df
 
