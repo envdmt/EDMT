@@ -1,0 +1,194 @@
+import pytest
+import pandas as pd
+import geopandas as gpd
+from shapely.geometry import Point, Polygon
+import uuid
+from unittest.mock import patch
+
+# Import your module
+from edmt.conversion import (
+    time_chart,
+    speed_chart,
+    time_chart_inverse,
+    speed_chart_inverse,
+    sdf_to_gdf,
+    generate_uuid,
+    get_utm_epsg,
+    to_gdf,
+    convert_time,
+    convert_speed,
+    convert_distance,
+)
+
+
+# --------------------------
+# Test: convert_time
+# --------------------------
+def test_convert_time():
+    assert convert_time(60, "seconds", "minutes") == 1.0
+    assert convert_time(1, "hour", "seconds") == 3600.0
+    assert convert_time(1000, "ms", "s") == 1.0
+    assert convert_time(1, "microsecond", "s") == 0.0
+    assert convert_time(2629800, "seconds", "month") == 1.0
+
+def test_convert_time_invalid_unit():
+    with pytest.raises(ValueError, match="Invalid 'unit_from'"):
+        convert_time(10, "blargh", "seconds")
+    with pytest.raises(ValueError, match="Invalid 'unit_to'"):
+        convert_time(10, "seconds", "xyz")
+
+def test_convert_time_negative_value():
+    with pytest.raises(ValueError, match="'time_value' must be a non-negative number"):
+        convert_time(-5, "s", "min")
+
+
+# --------------------------
+# Test: convert_speed
+# --------------------------
+def test_convert_speed():
+    assert convert_speed(10, "m/s", "km/h") == 36.0
+    assert convert_speed(1, "km/h", "mph") == pytest.approx(0.621, rel=1e-3)
+    assert convert_speed(1, "knot", "km/h") == pytest.approx(1.852, rel=1e-3)
+
+def test_convert_speed_invalid_unit():
+    with pytest.raises(ValueError):
+        convert_speed(10, "furlongs/fortnight", "km/h")
+
+
+# --------------------------
+# Test: convert_distance
+# --------------------------
+def test_convert_distance_metric():
+    assert convert_distance(1000, "m", "km") == 1.0
+    assert convert_distance(1, "km", "m") == 1000.0
+    assert convert_distance(10, "cm", "mm") == 100.0
+
+def test_convert_distance_imperial():
+    assert convert_distance(1, "mi", "ft") == pytest.approx(5280.0, rel=1e-3)
+    assert convert_distance(12, "in", "ft") == 1.0
+
+def test_convert_distance_mixed():
+    assert convert_distance(1, "mi", "m") == pytest.approx(1609.344, rel=1e-3)
+    assert convert_distance(100, "m", "yd") == pytest.approx(109.361, rel=1e-3)
+
+def test_convert_distance_invalid_unit():
+    with pytest.raises(ValueError, match="Invalid 'from_type'"):
+        convert_distance(10, "lightyears", "km")
+
+
+# --------------------------
+# Test: generate_uuid
+# --------------------------
+def test_generate_uuid_new():
+    df = pd.DataFrame({"a": [1, 2]})
+    result = generate_uuid(df)
+    assert "uuid" in result.columns
+    assert len(result["uuid"]) == 2
+    assert all(pd.api.types.is_string_dtype(result["uuid"]))
+    # Validate UUID format
+    uuid_pattern = r'^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$'
+    assert result["uuid"].str.match(uuid_pattern).all()
+
+def test_generate_uuid_existing_valid():
+    valid_uuid = str(uuid.uuid4())
+    df = pd.DataFrame({"uuid": [valid_uuid], "a": [1]})
+    result = generate_uuid(df)
+    assert result["uuid"].iloc[0] == valid_uuid
+
+def test_generate_uuid_existing_invalid():
+    df = pd.DataFrame({"uuid": ["not-a-uuid"], "a": [1]})
+    result = generate_uuid(df)
+    # Should replace invalid with new UUID
+    uuid_pattern = r'^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$'
+    assert result["uuid"].str.match(uuid_pattern).all()
+
+def test_generate_uuid_set_index():
+    df = pd.DataFrame({"a": [1, 2]})
+    result = generate_uuid(df, index=True)
+    assert result.index.name == "uuid"
+    assert "uuid" in result.columns  # because of reset_index()
+
+
+# --------------------------
+# Test: get_utm_epsg
+# --------------------------
+def test_get_utm_epsg():
+    assert get_utm_epsg(0) == "32631"   # Zone 31N
+    assert get_utm_epsg(-179) == "32701"  # Zone 1S
+    assert get_utm_epsg(179) == "32660"   # Zone 60N
+
+def test_get_utm_epsg_none():
+    with pytest.raises(KeyError, match="Select column with longitude values"):
+        get_utm_epsg()
+
+
+# --------------------------
+# Test: to_gdf
+# --------------------------
+def test_to_gdf_dict_style():
+    df = pd.DataFrame({
+        "location": [[10.0, 20.0], [30.0, 40.0]]
+    })
+    gdf = to_gdf(df)
+    assert isinstance(gdf, gpd.GeoDataFrame)
+    assert gdf.crs.to_epsg() == 4326
+    assert list(gdf.geometry) == [Point(10, 20), Point(30, 40)]
+
+def test_to_gdf_column_style():
+    # This version assumes "location" contains [lon, lat]
+    # If you later support separate 'longitude'/'latitude' cols, adjust accordingly
+    pass  # Current implementation only handles list-in-column
+
+
+# --------------------------
+# Test: sdf_to_gdf
+# --------------------------
+@pytest.fixture
+def mock_clean_vars():
+    return {
+        "shape": "SHAPE",
+        "geometry": "geometry",
+        "columns": ["Shape__Area", "Shape__Length", "SHAPE"],
+        "crs": 4326
+    }
+
+@patch("utils.clean_vars")
+def test_sdf_to_gdf(mock_clean):
+    mock_clean.return_value = {
+        "shape": "SHAPE",
+        "geometry": "geometry",
+        "columns": ["Shape__Area", "Shape__Length", "SHAPE"],
+        "crs": 4326
+    }
+
+    poly = Polygon([(0, 0), (1, 0), (1, 1), (0, 1)])
+    df = pd.DataFrame({
+        "SHAPE": [poly, None, poly],
+        "Shape__Area": [1.0, 2.0, 3.0],
+        "other": [1, 2, 3]
+    })
+
+    gdf = sdf_to_gdf(df)
+    assert isinstance(gdf, gpd.GeoDataFrame)
+    assert len(gdf) == 2  # dropped NA geometry
+    assert "Shape__Area" not in gdf.columns
+    assert gdf.crs.to_epsg() == 4326
+
+def test_sdf_to_gdf_invalid_input():
+    with pytest.raises(ValueError, match="Input must be a pandas DataFrame"):
+        sdf_to_gdf("not a df")
+    with pytest.raises(ValueError, match="DataFrame is empty"):
+        sdf_to_gdf(pd.DataFrame())
+
+
+# --------------------------
+# Optional: Test unit dictionaries completeness
+# --------------------------
+def test_time_chart_symmetry():
+    for unit, factor in time_chart.items():
+        inv_factor = 1.0 / factor
+        assert abs(time_chart_inverse[unit] - inv_factor) < 1e-10
+
+def test_speed_chart_consistency():
+    for unit in speed_chart:
+        assert unit in speed_chart_inverse
