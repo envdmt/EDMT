@@ -1,0 +1,8 @@
+04. EDMT
+========
+
+This notebook demonstrates how to use the core EDMT library for data processing and analysis.
+
+.. nbsphinx_download_links::
+
+.. nbsphinx:: notebooks/edmt.ipynb

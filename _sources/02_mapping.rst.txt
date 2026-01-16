@@ -1,0 +1,6 @@
+02. Mapping
+=================
+
+.. nbsphinx_download_links::
+
+.. nbsphinx:: notebooks/mapping.ipynb

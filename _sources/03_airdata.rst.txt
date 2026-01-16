@@ -1,0 +1,6 @@
+03. Airdata
+=================
+
+.. nbsphinx_download_links::
+
+.. nbsphinx:: notebooks/Airdata.ipynb
