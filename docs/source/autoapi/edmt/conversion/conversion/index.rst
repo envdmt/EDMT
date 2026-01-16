@@ -45,20 +45,26 @@ Module Contents
 
 
 
-.. py:function:: generate_uuid(df, index=False)
+.. py:function:: _is_valid_uuid(val) -> bool
 
-   Adds a 'uuid' column to the DataFrame if no existing UUID-like column exists.
+.. py:function:: generate_uuid(df: pandas.DataFrame, index: bool = False) -> pandas.DataFrame
+
+   Ensures a valid UUID string column named 'uuid' exists in the DataFrame.
+
+   - Creates a 'uuid' column if missing
+   - Replaces invalid or missing UUID values
+   - Preserves valid UUIDs
+   - Optionally sets 'uuid' as index while keeping the column
 
    Args:
-       df (pd.DataFrame): The DataFrame to add UUIDs to.
-       index (bool): Whether to set 'uuid' as the DataFrame index.
+       df (pd.DataFrame): Input DataFrame
+       index (bool): Whether to set 'uuid' as the index
 
    Returns:
-       pd.DataFrame: DataFrame with UUIDs added if needed.
+       pd.DataFrame
 
    Raises:
-       ValueError: If input is not a DataFrame or is empty.
-
+       ValueError: If input is not a DataFrame or is empty
 
 
 .. py:function:: get_utm_epsg(longitude=None)

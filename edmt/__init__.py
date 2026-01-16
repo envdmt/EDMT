@@ -40,7 +40,7 @@ def init(silent=False, force=False):
         return
     
     import pandas as pd
-
+    
     pd.set_option("display.max_columns", None)
     pd.options.plotting.backend = "plotly"
     pd.options.mode.copy_on_write = True
