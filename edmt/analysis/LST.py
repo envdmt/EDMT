@@ -1,55 +1,10 @@
+import ee
 import pandas as pd
 from typing import Optional
 import geopandas as gpd
-import shapely
-import ee
-
-def ensure_ee_initialized():
-    """
-    Initialize Google Earth Engine if not already initialized.
-    """
-    if not ee.data._initialized:
-        ee.Initialize()
-
-
-def gdf_to_ee_geometry(
-    gdf: gpd.GeoDataFrame
-) -> ee.Geometry:
-    """
-    Convert a GeoDataFrame containing Polygon or MultiPolygon geometries to an Earth Engine Geometry.
-
-    The input GeoDataFrame is reprojected to WGS84 (EPSG:4326) if necessary, and all geometries 
-    are dissolved into a single geometry using unary union before conversion.
-
-    Parameters
-    ----------
-    gdf : geopandas.GeoDataFrame
-        A GeoDataFrame containing one or more Polygon or MultiPolygon features. 
-        Must have a valid coordinate reference system (CRS).
-
-    Returns
-    -------
-    ee.Geometry
-        An Earth Engine Geometry object representing the union of all input geometries, 
-        in WGS84 (longitude/latitude).
-
-    Raises
-    ------
-    ValueError
-        If the GeoDataFrame is empty or lacks a CRS.
-    """
-    if gdf.empty:
-        raise ValueError("GeoDataFrame is empty")
-
-    if gdf.crs is None:
-        raise ValueError("GeoDataFrame must have a CRS")
-
-    # Ensure WGS84 for Earth Engine
-    gdf = gdf.to_crs(epsg=4326)
-
-    geom = gdf.union_all()
-    geojson = shapely.geometry.mapping(geom)
-    return ee.Geometry(geojson)
+from edmt.analysis import (
+    compute_period
+)
 
 
 def get_satellite_collection(
@@ -62,7 +17,7 @@ def get_satellite_collection(
     Parameters
     ----------
     satellite : str
-        Name of the satellite sensor. Supported options: "MODIS", "LANDSAT", "GCOM", or "ECOSTRESS".
+        Name of the satellite sensor. Supported options: "MODIS", "LANDSAT", "GCOM".
     start_date : str
         Start date for filtering the collection in 'YYYY-MM-DD' format.
     end_date : str
@@ -107,48 +62,10 @@ def get_satellite_collection(
         )
         factors = {"multiply": 0.02, "add": 0.0, "band": "LST_AVE"}
 
-    elif satellite == "ECOSTRESS":
-        collection = (
-            ee.ImageCollection("NASA/ECOSTRESS/L2T_LSTE/V2")
-            .select("LST")
-            .filterDate(start_date, end_date)
-        )
-        factors = {"multiply": 1.0, "add": 0.0, "band": "LST"}
-
     else:
         raise ValueError(f"Unsupported satellite: {satellite}")
 
     return collection, factors
-
-
-def to_celsius(
-    img: ee.Image,factors: dict
-) -> ee.Image:
-    """
-    Convert a raw land surface temperature (LST) image from digital numbers to degrees Celsius.
-
-    The conversion applies satellite-specific scaling factors to transform raw pixel values 
-    to Kelvin, then subtracts 273.15 to obtain Celsius.
-
-    Parameters
-    ----------
-    img : ee.Image
-        An Earth Engine image containing raw LST band values (e.g., "LST_Day_1km", "ST_B10").
-    factors : dict
-        A dictionary containing scaling parameters with keys:
-        - "multiply" (float): Multiplicative scaling factor.
-        - "add" (float): Additive offset.
-        These are applied as: scaled_value = img * multiply + add.
-
-    Returns
-    -------
-    ee.Image
-        An image with LST values in degrees Celsius, preserving the original band name 
-        and copying essential metadata (e.g., 'system:time_start').
-    """
-    return img.multiply(factors["multiply"]).add(factors["add"]).subtract(273.15).copyProperties(
-        img, ["system:time_start"]
-    )
 
 
 def compute_period_feature(
@@ -175,13 +92,12 @@ def compute_period_feature(
     frequency : str
         Temporal aggregation frequency. Must be one of: "weekly", "monthly", or "yearly".
     satellite : str
-        Name of the satellite ("MODIS", "LANDSAT", "GCOM", "ECOSTRESS") to select default scale.
+        Name of the satellite ("MODIS", "LANDSAT", "GCOM") to select default scale.
     scale : int, optional
         Spatial resolution (meters). If None, a default per satellite is used:
             MODIS: 1000
             LANDSAT: 30
             GCOM: 4638.3
-            ECOSTRESS: 70
 
     Returns
     -------
@@ -195,36 +111,18 @@ def compute_period_feature(
         default_scales = {
             "MODIS": 1000,
             "LANDSAT": 30,
-            "GCOM": 4638.3,
-            "ECOSTRESS": 70
+            "GCOM": 4638.3
         }
         if satellite not in default_scales:
             raise ValueError(f"Unknown satellite for default scale: {satellite}")
         scale = default_scales[satellite]
 
-    start = ee.Date(start)
-    if frequency == "weekly":
-        end = start.advance(1, "week")
-    elif frequency == "monthly":
-        end = start.advance(1, "month")
-    elif frequency == "yearly":
-        end = start.advance(1, "year")
-    else:
-        raise ValueError(f"Invalid frequency: {frequency}")
-
-    img = collection.filterDate(start, end).mean()
-
-    stats = img.reduceRegion(
-        reducer=ee.Reducer.mean(),
+    lst_mean_val = compute_period(
+        frequency=frequency,
+        start=start,
+        collection=collection,
         geometry=geometry,
         scale=scale,
-        maxPixels=1e13,
-    )
-
-    lst_mean_val = ee.Algorithms.If(
-        stats.size().gt(0),
-        stats.values().get(0),
-        None
     )
 
     return ee.Feature(

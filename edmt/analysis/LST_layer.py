@@ -1,24 +1,23 @@
 import ee
-from typing import Optional, Literal
-from .LST import (
-    ensure_ee_initialized,
-    get_satellite_collection,
-    to_celsius
-)
-
-import ee
+import geopandas as gpd
 from typing import Optional, Literal
 from edmt.analysis import (
     ensure_ee_initialized,
-    get_satellite_collection,
-    to_celsius
+    gdf_to_ee_geometry,
+    to_celsius,
+    Reducer,
+    compute_per_period,
 )
+from .LST import (
+    get_satellite_collection,
+)
+
 
 def get_lst_image(
     start_date: str,
     end_date: str,
     satellite: str = "MODIS",
-    roi: Optional[ee.Geometry] = None,
+    roi_gdf: Optional[gpd.GeoDataFrame] = None,
     reducer: Literal["mean", "median", "min", "max"] = "mean",
 ) -> ee.Image:
     """
@@ -37,8 +36,9 @@ def get_lst_image(
         End date of the time window in 'YYYY-MM-DD' format.
     satellite : str, optional
         Satellite data source. Supported options: "MODIS", "LANDSAT", or "GCOM" (default: "MODIS").
-    roi : ee.Geometry, optional
-        Region of interest to clip the output image. If None, the full global extent is returned.
+    roi_gdf : geopandas.GeoDataFrame, optional
+        Region of interest as a GeoDataFrame (Polygon/MultiPolygon). If provided, will be
+        converted internally using gdf_to_ee_geometry() and used for filterBounds + clip.
     reducer : {"mean", "median", "min", "max"}, optional
         Temporal aggregation method to combine images across the time period (default: "mean").
 
@@ -56,22 +56,18 @@ def get_lst_image(
     """
     ensure_ee_initialized()
 
+    roi: Optional[ee.Geometry] = None
+    if roi_gdf is not None:
+        roi = gdf_to_ee_geometry(roi_gdf)
+
     collection, factors = get_satellite_collection(satellite, start_date, end_date)
+    
+    if roi is not None:
+        collection = collection.filterBounds(roi)
+
     collection_c = collection.map(lambda img: to_celsius(img, factors))
 
-    reducer = reducer.lower()
-    if reducer == "mean":
-        img = collection_c.mean()
-    elif reducer == "median":
-        img = collection_c.median()
-    elif reducer == "min":
-        img = collection_c.min()
-    elif reducer == "max":
-        img = collection_c.max()
-    else:
-        raise ValueError("reducer must be one of: mean, median, min, max")
-
-    img = img.rename("LST_C")
+    img = Reducer(collection_c, reducer=reducer).rename("LST_C")
 
     if roi is not None:
         img = img.clip(roi)
@@ -84,8 +80,7 @@ def get_lst_period_collection(
     end_date: str,
     satellite: str = "MODIS",
     frequency: Literal["weekly", "monthly", "yearly"] = "monthly",
-    roi: Optional[ee.Geometry] = None,
-    scale: Optional[int] = None,
+    roi_gdf: Optional[gpd.GeoDataFrame] = None,
 ) -> ee.ImageCollection:
     """
     Generate an Earth Engine ImageCollection of Land Surface Temperature (LST) composites 
@@ -104,10 +99,10 @@ def get_lst_period_collection(
         Satellite data source. Supported options: "MODIS", "LANDSAT", or "GCOM" (default: "MODIS").
     frequency : {"weekly", "monthly", "yearly"}, optional
         Temporal aggregation interval for compositing (default: "monthly").
-    roi : ee.Geometry, optional
-        Region of interest to clip each composite image. If None, images retain their full extent.
-    scale : int, optional
-        *Reserved for future use.* Currently not applied in processing.
+    roi_gdf : geopandas.GeoDataFrame, optional
+        Region of interest as a GeoDataFrame (Polygon/MultiPolygon). If provided, will be
+        converted internally using gdf_to_ee_geometry() and used for filterBounds + clip.
+    
 
     Returns
     -------
@@ -126,6 +121,10 @@ def get_lst_period_collection(
 
     ensure_ee_initialized()
 
+    roi: Optional[ee.Geometry] = None
+    if roi_gdf is not None:
+        roi = gdf_to_ee_geometry(roi_gdf)
+
     collection, factors = get_satellite_collection(satellite, start_date, end_date)
     collection_c = collection.map(lambda img: to_celsius(img, factors))
 
@@ -140,25 +139,17 @@ def get_lst_period_collection(
         step_days * 24 * 60 * 60 * 1000,
     )
 
-    def per_period(d):
-        d = ee.Date(d)
-        if freq == "weekly":
-            end = d.advance(1, "week")
-        elif freq == "monthly":
-            end = d.advance(1, "month")
-        else:
-            end = d.advance(1, "year")
-
-        img = collection_c.filterDate(d, end).mean().rename("LST_C")
-        img = img.set("system:time_start", d.millis())
-        img = img.set("period_start", d.format("YYYY-MM-dd"))
-        img = img.set("satellite", satellite.upper())
-
-        if roi is not None:
-            img = img.clip(roi)
-
-        return img
-
-    return ee.ImageCollection(dates.map(per_period))
+    return ee.ImageCollection(
+        dates.map(
+            lambda d: compute_per_period(
+                ee.Date(d),
+                frequency,
+                collection_c,
+                satellite,
+                band_name="LST_C",
+                roi=roi,
+            )
+        )
+    )
 
 

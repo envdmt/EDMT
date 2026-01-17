@@ -1,0 +1,126 @@
+import ee
+import geopandas as gpd
+from typing import Optional, Literal
+from edmt.analysis import (
+    ensure_ee_initialized,
+    gdf_to_ee_geometry,
+    Reducer,
+    compute_per_period
+)
+
+from .NDVI import (
+    get_ndvi_collection
+)
+
+
+def get_ndvi_image(
+    start_date: str,
+    end_date: str,
+    satellite: str = "MODIS",
+    roi_gdf: Optional[gpd.GeoDataFrame] = None,
+    reducer: Literal["mean", "median", "min", "max"] = "mean",
+) -> ee.Image:
+    """
+    Generate a single composite NDVI image from satellite data over a specified time period, 
+    suitable for visualization or mapping.
+
+    The function retrieves preprocessed NDVI data from a chosen satellite platform, applies 
+    a temporal reducer (e.g., mean, median), and optionally clips the result to a region of interest.
+
+    Parameters
+    ----------
+    start_date : str
+        Start date of the compositing period in 'YYYY-MM-DD' format.
+    end_date : str
+        End date of the compositing period in 'YYYY-MM-DD' format.
+    satellite : str, optional
+        Satellite data source. Supported options: 
+        - "MODIS" (MOD13Q1)
+        - "LANDSAT" (Landsat 8 & 9 Collection 2 Level 2 SR)
+        - "SENTINEL", "SENTINEL2", or "S2" (Sentinel-2 SR Harmonized)
+        (default: "MODIS").
+    roi_gdf : geopandas.GeoDataFrame, optional
+        Region of interest as a GeoDataFrame containing Polygon or MultiPolygon geometries. 
+        If provided, the output image is clipped to this region.
+    reducer : {"mean", "median", "min", "max"}, optional
+        Temporal aggregation method to combine NDVI images across the time window (default: "mean").
+
+    Returns
+    -------
+    ee.Image
+        A single-band Earth Engine image with band name "NDVI" and values in the range [-1, 1]. 
+        Suitable for display with `Map.addLayer(...)` in Earth Engine environments.
+
+    Notes
+    -----
+    - Internally uses `get_ndvi_collection`, which applies sensor-specific scaling and cloud masking.
+    - If `roi_gdf` is provided, the collection is filtered to the ROI before reduction for efficiency.
+    - The output retains no temporal dimension—it is a static composite representing the selected statistic.
+    """
+    ensure_ee_initialized()
+
+    roi: Optional[ee.Geometry] = None
+    if roi_gdf is not None:
+        roi = gdf_to_ee_geometry(roi_gdf)
+
+    collection = get_ndvi_collection(satellite, start_date, end_date, roi=roi)
+
+    img = Reducer(collection, reducer=reducer).rename("NDVI")
+
+    if roi is not None:
+        img = img.clip(roi)
+
+    return img
+
+
+def get_ndvi_period_collection(
+    start_date: str,
+    end_date: str,
+    satellite: str = "MODIS",
+    frequency: Literal["weekly", "monthly", "yearly"] = "monthly",
+    roi_gdf: Optional[gpd.GeoDataFrame] = None,
+    period_reducer: Literal["mean", "median", "min", "max"] = "mean",
+) -> ee.ImageCollection:
+    """
+    Generate an ImageCollection of NDVI composites aggregated over regular periods.
+
+    Each image:
+    - has band name "NDVI"
+    - has system:time_start set to the period start
+    - has properties: period_start, satellite
+    - is optionally clipped to ROI
+    """
+    ensure_ee_initialized()
+
+    roi: Optional[ee.Geometry] = None
+    if roi_gdf is not None:
+        roi = gdf_to_ee_geometry(roi_gdf)
+
+    collection = get_ndvi_collection(satellite, start_date, end_date, roi=roi)
+
+    freq = frequency.lower()
+    if freq not in {"weekly", "monthly", "yearly"}:
+        raise ValueError("frequency must be one of: weekly, monthly, yearly")
+
+    step_days = {"weekly": 7, "monthly": 30, "yearly": 365}[freq]
+    dates = ee.List.sequence(
+        ee.Date(start_date).millis(),
+        ee.Date(end_date).millis(),
+        step_days * 24 * 60 * 60 * 1000,
+    )
+
+    return ee.ImageCollection(
+        dates.map(
+            lambda d: compute_per_period(
+                ee.Date(d),
+                frequency,
+                collection,
+                satellite,
+                roi,
+                name="NDVI",
+            )
+        )
+    )
+
+
+    

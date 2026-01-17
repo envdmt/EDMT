@@ -5,12 +5,12 @@ google-api-core<2.15,>=2.11
 google-auth<2.25,>=2.20
 google-auth-httplib2<0.2,>=0.1.0
 google-api-python-client<2.95,>=2.86
-fiona==1.9.6
+pillow<11,>=10.4
+geopandas<1.1,>=0.12.2
+mapclassify<2.10,>=2.8
+fiona>=1.9.6
 folium>=0.18.0
-geopandas>=0.12.2
-mapclassify>=2.8.0
 plotly>=5.24.1
 seaborn>=0.13.2
 tqdm>=4
-pillow>=11.3.0
 requests

@@ -20,21 +20,19 @@ classifiers = [
 dependencies = [
   "duckdb",
   "contourpy>=1.2.1",
-
   "earthengine-api>=0.1.324,<0.1.400",
   "google-api-core>=2.11,<2.15",
   "google-auth>=2.20,<2.25",
   "google-auth-httplib2>=0.1.0,<0.2",
   "google-api-python-client>=2.86,<2.95",
-
-  "fiona==1.9.6",
+  "pillow>=10.4,<11",
+  "geopandas>=0.12.2,<1.1",
+  "mapclassify>=2.8,<2.10",
+  "fiona>=1.9.6",
   "folium>=0.18.0",
-  "geopandas>=0.12.2",
-  "mapclassify>=2.8.0",
   "plotly>=5.24.1",
   "seaborn>=0.13.2",
   "tqdm>=4",
-  "pillow>=11.3.0",
   "requests"
 ]
 
