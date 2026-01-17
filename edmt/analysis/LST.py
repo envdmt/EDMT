@@ -3,7 +3,10 @@ import pandas as pd
 from typing import Optional
 import geopandas as gpd
 from edmt.analysis import (
-    compute_period
+    to_celsius,
+    gdf_to_ee_geometry,
+    compute_period,
+    ensure_ee_initialized
 )
 
 
