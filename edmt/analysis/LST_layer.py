@@ -146,7 +146,6 @@ def get_lst_period_collection(
                 frequency,
                 collection_c,
                 satellite,
-                band_name="LST_C",
                 roi=roi,
             )
         )
