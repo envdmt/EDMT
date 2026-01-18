@@ -139,10 +139,12 @@ def compute_period(
         raise ValueError(f"Invalid frequency: {frequency}")
 
     img = collection.filterDate(start, end).mean()
+    proj = img.projection()
+    geom_in_img_crs = geometry.transform(proj, 1)
 
     stats = img.reduceRegion(
         reducer=ee.Reducer.mean(),
-        geometry=geometry,
+        geometry=geom_in_img_crs,
         scale=scale,
         maxPixels=1e13,
     )
