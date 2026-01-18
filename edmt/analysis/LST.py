@@ -226,6 +226,7 @@ def compute_lst_timeseries(
     return pd.DataFrame([
         {
             "date": f["properties"]["date"],
+            "satellite": satellite.upper(),
             "lst_mean": f["properties"].get("lst_mean"),
             "lst_median": f["properties"].get("lst_median"),
             "lst_min": f["properties"].get("lst_min"),
@@ -239,3 +240,4 @@ def compute_lst_timeseries(
 
 
 
+LST_mean
