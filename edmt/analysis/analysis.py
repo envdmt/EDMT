@@ -142,8 +142,15 @@ def compute_period(
     proj = img.projection()
     geom_in_img_crs = geometry.transform(proj, 1)
 
+    reducer = (
+        ee.Reducer.mean()
+        .combine(ee.Reducer.median(), sharedInputs=True)
+        .combine(ee.Reducer.min(), sharedInputs=True)
+        .combine(ee.Reducer.max(), sharedInputs=True)
+    )
+
     stats = img.reduceRegion(
-        reducer=ee.Reducer.mean(),
+        reducer=reducer,
         geometry=geom_in_img_crs,
         scale=scale,
         maxPixels=1e13,
@@ -155,7 +162,7 @@ def compute_period(
         None
     )
 
-    return ee.Number(val)
+    return ee.Dictionary(stats)
 
 
 def Reducer(
