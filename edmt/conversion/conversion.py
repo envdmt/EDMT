@@ -98,6 +98,23 @@ distance_chart = {
 }
 
 
+temp_units: tuple[str, ...] = ("C", "F", "K")
+
+temp_unit_aliases: dict[str, str] = {
+    "c": "C",
+    "°c": "C",
+    "celsius": "C",
+
+    "f": "F",
+    "°f": "F",
+    "fahrenheit": "F",
+
+    "k": "K",
+    "°k": "K",
+    "kelvin": "K",
+}
+
+
 def sdf_to_gdf(sdf, crs=None):
     """
     Converts a spatial DataFrame to a GeoDataFrame with optional CRS assignment.
@@ -338,4 +355,93 @@ def convert_distance(value: float, from_type: str, to_type: str) -> float:
     return round(converted, 3)
 
 
+def _norm_temp_unit(unit: str) -> str:
+    if not isinstance(unit, str) or not unit.strip():
+        raise ValueError("Temperature unit must be a non-empty string.")
+    u = unit.strip().lower()
+    return temp_unit_aliases.get(u, unit.strip().upper())
 
+
+def _to_celsius(value: float, unit_from: str) -> float:
+    u = _norm_temp_unit(unit_from)
+    if u == "C":
+        return float(value)
+    if u == "F":
+        return (float(value) - 32.0) * (5.0 / 9.0)
+    if u == "K":
+        if float(value) < 0.0:
+            raise ValueError("Kelvin cannot be below 0.")
+        return float(value) - 273.15
+    raise ValueError(f"Unsupported temperature unit: {unit_from!r}")
+
+
+def _from_celsius(c: float, unit_to: str) -> float:
+    u = _norm_temp_unit(unit_to)
+    if u == "C":
+        return float(c)
+    if u == "F":
+        return float(c) * (9.0 / 5.0) + 32.0
+    if u == "K":
+        k = float(c) + 273.15
+        if k < 0.0:
+            raise ValueError("Resulting Kelvin cannot be below 0.")
+        return k
+    raise ValueError(f"Unsupported temperature unit: {unit_to!r}")
+
+
+def convert_temperature(value: float, unit_from: str, unit_to: str) -> float:
+    """
+    Converts temperature between different scales.
+
+    Args:
+        value (float): Input temperature value.
+        unit_from (str): Original unit. Supported: C, F, K (also °C, °F, °K).
+        unit_to (str): Target unit. Supported: C, F, K (also °C, °F, °K).
+
+    Returns:
+        float: Converted temperature value (rounded to 3 decimals).
+
+    Raises:
+        ValueError: If unit is unsupported or Kelvin is invalid (< 0).
+
+    """
+    u_from = _norm_temp_unit(unit_from)
+    u_to = _norm_temp_unit(unit_to)
+
+    if u_from not in temp_units or u_to not in temp_units:
+        msg = (
+            f"Incorrect 'unit_from' or 'unit_to' value: {unit_from!r}, {unit_to!r}\n"
+            f"Valid values are: {', '.join(temp_units)}"
+        )
+        raise ValueError(msg)
+
+    c = _to_celsius(float(value), u_from)
+    out = _from_celsius(c, u_to)
+    return round(out, 3)
+
+
+def format_temperature(value: float, unit: str, decimals: int = 1, symbol: bool = True) -> str:
+    """
+    Formats a temperature value with unit, e.g. '23.5 °C' or '296.6 K'.
+
+    Args:
+        value (float): Temperature value.
+        unit (str): Unit to display (C, F, K).
+        decimals (int): Decimal places.
+        symbol (bool): If True, uses °C/°F, and K without degree symbol.
+
+    Returns:
+        str: Formatted temperature string.
+    """
+    u = _norm_temp_unit(unit)
+    if u not in temp_units:
+        raise ValueError(f"Unsupported temperature unit: {unit!r}. Valid: {', '.join(temp_units)}")
+
+    val_str = f"{float(value):.{int(decimals)}f}"
+
+    if not symbol:
+        return f"{val_str} {u}"
+
+    if u in ("C", "F"):
+        return f"{val_str} °{u}"
+    return f"{val_str} K"
