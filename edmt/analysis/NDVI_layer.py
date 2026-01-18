@@ -82,13 +82,53 @@ def get_ndvi_period_collection(
     period_reducer: Literal["mean", "median", "min", "max"] = "mean",
 ) -> ee.ImageCollection:
     """
-    Generate an ImageCollection of NDVI composites aggregated over regular periods.
+    Generate an Earth Engine ImageCollection of NDVI composites aggregated over regular time periods 
+    (weekly, monthly, or yearly).
 
-    Each image:
-    - has band name "NDVI"
-    - has system:time_start set to the period start
-    - has properties: period_start, satellite
-    - is optionally clipped to ROI
+    Each image in the collection represents the statistical summary (e.g., mean, median) of NDVI 
+    over one period, includes metadata about the period start, and is optionally clipped to a region 
+    of interest.
+
+    Parameters
+    ----------
+    start_date : str
+        Start date of the overall time window in 'YYYY-MM-DD' format.
+    end_date : str
+        End date of the overall time window in 'YYYY-MM-DD' format.
+    satellite : str, optional
+        Satellite data source. Supported options: 
+        - "MODIS" (MOD13Q1)
+        - "LANDSAT" (Landsat 8 & 9 Collection 2 Level 2 SR)
+        - "SENTINEL", "SENTINEL2", or "S2" (Sentinel-2 SR Harmonized)
+        (default: "MODIS").
+    frequency : {"weekly", "monthly", "yearly"}, optional
+        Temporal aggregation interval for compositing (default: "monthly").
+    roi_gdf : geopandas.GeoDataFrame, optional
+        Region of interest as a GeoDataFrame containing Polygon or MultiPolygon geometries. 
+        If provided, the collection is filtered to this region and output images are clipped to it.
+    period_reducer : {"mean", "median", "min", "max"}, optional
+        Statistical reducer applied to NDVI values within each period (default: "mean").
+
+    Returns
+    -------
+    ee.ImageCollection
+        An ImageCollection where each image:
+        - Contains one band named `"NDVI"` with values in the range [-1, 1].
+        - Has the property `"system:time_start"` set to the period start (in milliseconds since Unix epoch).
+        - Includes additional properties: `"period_start"` (formatted as "YYYY-MM-dd") and `"satellite"`.
+
+    Raises
+    ------
+    ValueError
+        If `frequency` is not one of the supported options.
+
+    Notes
+    -----
+    - Internally uses `get_ndvi_collection`, which applies sensor-specific reflectance scaling 
+      and cloud masking (where available).
+    - Time steps are approximated using fixed day counts (7, 30, or 365 days), which may not align 
+      exactly with calendar months or years.
+    - Requires an initialized Earth Engine session (`ee.Initialize()`).
     """
     ensure_ee_initialized()
 
@@ -116,8 +156,7 @@ def get_ndvi_period_collection(
                 frequency,
                 collection,
                 satellite,
-                roi,
-                name="NDVI",
+                roi
             )
         )
     )
