@@ -257,7 +257,7 @@ def compute_lst_timeseries(
             p["unit"] = factors.get("unit", "°C")
             rows.append(p)
 
-    return pd.DataFrame(rows)
+    return pd.DataFrame(rows).set_index(["date", "satellite"])
 
 
 
