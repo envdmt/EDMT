@@ -120,7 +120,7 @@ def compute_period_feature(
             raise ValueError(f"Unknown satellite for default scale: {satellite}")
         scale = default_scales[satellite]
 
-    lst_mean_val = compute_period(
+    stats = compute_period(
         frequency=frequency,
         start=start,
         collection=collection,
@@ -132,7 +132,10 @@ def compute_period_feature(
         None,
         {
             "date": start.format("YYYY-MM-dd"),
-            "lst_mean": lst_mean_val,
+            "lst_mean": stats.get("LST_mean"),
+            "lst_median": stats.get("LST_median"),
+            "lst_min": stats.get("LST_min"),
+            "lst_max": stats.get("LST_max"),
         },
     )
 
@@ -219,17 +222,20 @@ def compute_lst_timeseries(
     )
 
     features_info = features.getInfo()["features"]
-    rows = [
+
+    return pd.DataFrame([
         {
             "date": f["properties"]["date"],
             "lst_mean": f["properties"].get("lst_mean"),
-            "satellite": satellite.upper(),
-            "unit": "°C",
+            "lst_median": f["properties"].get("lst_median"),
+            "lst_min": f["properties"].get("lst_min"),
+            "lst_max": f["properties"].get("lst_max"),
+            "unit": factors["unit"],
         }
         for f in features_info
         if f["properties"].get("lst_mean") is not None
-    ]
+    ])
 
-    return pd.DataFrame(rows)
+
 
 
