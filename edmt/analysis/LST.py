@@ -77,38 +77,51 @@ def compute_period_feature(
     geometry: ee.Geometry, 
     frequency: str,
     satellite: str,
-    scale: int = None
+    scale: Optional[int] = None
 ) -> ee.Feature:
     """
-    Compute the mean land surface temperature (LST) over a specified time period 
-    (weekly, monthly, or yearly) for a given region, using a default scale per satellite
-    if not provided.
+    Compute spatial summary statistics (mean, median, min, max) of a single-band image over a time period 
+    and return them as an Earth Engine Feature with metadata.
+
+    This function aggregates imagery over a temporal window (weekly, monthly, or yearly), computes multiple 
+    spatial statistics over a region of interest, and packages the results into a feature suitable for 
+    time series export or charting.
 
     Parameters
     ----------
     start : ee.Date
-        The start date of the aggregation period.
+        Start date of the aggregation period.
     collection : ee.ImageCollection
-        An ImageCollection containing LST images (assumed to be in Kelvin or already scaled).
+        A single-band ImageCollection (e.g., LST in Kelvin or Celsius) to process.
     geometry : ee.Geometry
-        The region of interest over which to compute the spatial mean.
-    frequency : str
-        Temporal aggregation frequency. Must be one of: "weekly", "monthly", or "yearly".
+        Region of interest over which to compute spatial statistics.
+    frequency : {"weekly", "monthly", "yearly"}
+        Temporal interval defining the period length.
     satellite : str
-        Name of the satellite ("MODIS", "LANDSAT", "GCOM") to select default scale.
+        Satellite name used to infer default spatial resolution if `scale` is not provided. 
+        Supported: "MODIS", "LANDSAT", "GCOM".
     scale : int, optional
-        Spatial resolution (meters). If None, a default per satellite is used:
-            MODIS: 1000
-            LANDSAT: 30
-            GCOM: 4638.3
+        Spatial resolution (in meters) for the reduction. If omitted, a sensor-specific default is used:
+        - MODIS: 1000 m
+        - Landsat: 30 m
+        - GCOM: ~4638 m
 
     Returns
     -------
     ee.Feature
-        A feature with no geometry and properties:
-        - "date": Start date of the period as "YYYY-MM-dd".
-        - "lst_mean": Mean LST value over the geometry. Null if no valid pixels.
+        A feature with no geometry and properties including:
+        - "date": Period start formatted as "YYYY-MM-dd"
+        - "satellite": Uppercase satellite name
+        - "{band}_mean", "{band}_median", "{band}_min", "{band}_max": Computed statistics  
+          (e.g., "LST_Day_1km_mean" → "LST_Day_1km_mean"; band name preserved from input)
+
+    Raises
+    ------
+    ValueError
+        If `frequency` is invalid or if `satellite` is unknown and `scale` is not provided.
+    
     """
+    
     if scale is None:
         satellite = satellite.upper()
         default_scales = {
@@ -127,17 +140,27 @@ def compute_period_feature(
         geometry=geometry,
         scale=scale,
     )
+    
+    keys = ee.List(stats.keys())
 
-    return ee.Feature(
-        None,
-        {
-            "date": start.format("YYYY-MM-dd"),
-            "lst_mean": stats.get("LST_mean"),
-            "lst_median": stats.get("LST_median"),
-            "lst_min": stats.get("LST_min"),
-            "lst_max": stats.get("LST_max"),
-        },
-    )
+    def _make_prop(k):
+        k = ee.String(k)
+        out_name = (
+            k.replace("_mean", "_mean")
+             .replace("_median", "_median")
+             .replace("_min", "_min")
+             .replace("_max", "_max")
+        )
+        return ee.Dictionary().set(out_name, stats.get(k))
+
+    props = ee.Dictionary(keys.iterate(lambda k, acc: ee.Dictionary(acc).combine(_make_prop(k), True), ee.Dictionary()))
+
+    props = props.set("date", ee.Date(start).format("YYYY-MM-dd"))
+    props = props.set("satellite", satellite.upper())
+
+    return ee.Feature(None, props)
+
+
 
 
 def compute_lst_timeseries(
@@ -149,12 +172,12 @@ def compute_lst_timeseries(
     scale: Optional[int] = None,
 ) -> pd.DataFrame:
     """
-    Compute a time series of mean Land Surface Temperature (LST) over a region of interest 
-    using Google Earth Engine (GEE) satellite data.
+    Compute a time series of Land Surface Temperature (LST) statistics over a region of interest 
+    using Google Earth Engine.
 
-    The function retrieves LST data from a specified satellite sensor, converts it to degrees 
-    Celsius, aggregates it over regular time intervals (weekly, monthly, or yearly), and returns 
-    the results as a pandas DataFrame.
+    This function retrieves LST data from a specified satellite, converts it to degrees Celsius, 
+    aggregates it over regular time intervals (weekly, monthly, or yearly), and computes multiple 
+    spatial statistics (mean, median, min, max) for each period.
 
     Parameters
     ----------
@@ -164,31 +187,35 @@ def compute_lst_timeseries(
         End date of the time series in 'YYYY-MM-DD' format.
     satellite : str, optional
         Satellite data source. Supported options: "MODIS", "LANDSAT", or "GCOM" (default: "MODIS").
-    frequency : str, optional
-        Temporal aggregation frequency. Must be one of: "weekly", "monthly", or "yearly" 
-        (default: "monthly").
+    frequency : {"weekly", "monthly", "yearly"}, optional
+        Temporal aggregation interval (default: "monthly").
     roi_gdf : geopandas.GeoDataFrame, optional
-        Region of interest as a GeoDataFrame containing a single Polygon or MultiPolygon geometry. 
+        Region of interest as a GeoDataFrame containing Polygon or MultiPolygon geometries. 
         Must be provided; otherwise, a ValueError is raised.
     scale : int, optional
-        Spatial resolution (in meters) for the reduction operation (default: 1000).
+        Spatial resolution (in meters) for reduction. If omitted, a sensor-specific default is used:
+        - MODIS: 1000 m
+        - Landsat: 30 m
+        - GCOM: ~4638 m
 
     Returns
     -------
     pd.DataFrame
-        A DataFrame with columns:
-        - "date": Start date of each period as "YYYY-MM-dd".
-        - "lst_mean": Mean LST in degrees Celsius for that period.
-        - "satellite": Name of the satellite used.
-        - "unit": Always "°C".
-        Rows with no valid LST data (e.g., due to cloud cover or missing imagery) are excluded.
+        A DataFrame where each row corresponds to one time period, with columns including:
+        - "date": Period start as "YYYY-MM-dd"
+        - "satellite": Uppercase satellite name
+        - "{band}_mean", "{band}_median", "{band}_min", "{band}_max": LST statistics in °C  
+          (e.g., "LST_Day_1km_mean")
+        - "unit": Always "°C"
+        Periods with no valid data (all stats null) are excluded.
 
     Raises
     ------
     ValueError
-        If `roi_gdf` is not provided.
+        If `roi_gdf` is not provided or if `frequency` is invalid.
 
     """
+
     if roi_gdf is None:
         raise ValueError("Provide roi_gdf (Region of Interest)")
 
@@ -223,19 +250,14 @@ def compute_lst_timeseries(
 
     features_info = features.getInfo()["features"]
 
-    return pd.DataFrame([
-        {
-            "date": f["properties"]["date"],
-            "satellite": satellite.upper(),
-            "lst_mean": f["properties"].get("lst_mean"),
-            "lst_median": f["properties"].get("lst_median"),
-            "lst_min": f["properties"].get("lst_min"),
-            "lst_max": f["properties"].get("lst_max"),
-            "unit": factors["unit"],
-        }
-        for f in features_info
-        if f["properties"].get("lst_mean") is not None
-    ])
+    rows = []
+    for f in features_info:
+        p = f["properties"]
+        if any(v is not None for k, v in p.items() if k.endswith("_mean")):
+            p["unit"] = factors.get("unit", "°C")
+            rows.append(p)
+
+    return pd.DataFrame(rows)
 
 
 

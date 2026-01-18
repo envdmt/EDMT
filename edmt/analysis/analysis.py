@@ -77,8 +77,11 @@ def to_celsius(
         An image with LST values in degrees Celsius, preserving the original band name 
         and copying essential metadata (e.g., 'system:time_start').
     """
-    return img.multiply(factors["multiply"]).add(factors["add"]).subtract(273.15).copyProperties(
-        img, ["system:time_start"]
+    return (
+        img.multiply(factors["multiply"])
+           .add(factors["add"])
+           .subtract(273.15)
+           .copyProperties(img, ["system:time_start"])
     )
 
 
@@ -88,12 +91,13 @@ def compute_period(
     collection: ee.ImageCollection, 
     geometry: ee.Geometry, 
     scale: Optional[int] = None
-) -> ee.Number:
+) -> ee.Dictionary:
     """
-    Compute the spatial mean of a single-band image over a specified time period and region.
+    Compute multiple summary statistics (mean, median, min, max) of a single-band image 
+    over a specified time period and spatial region.
 
-    Aggregates images in the collection over a temporal window (weekly, monthly, or yearly), 
-    computes the mean image, then reduces it to a single scalar value over the given geometry.
+    The function aggregates images in the collection over a temporal window (weekly, monthly, or yearly), 
+    computes a mean composite, then extracts spatial statistics over the given geometry.
 
     Parameters
     ----------
@@ -102,30 +106,27 @@ def compute_period(
     start : ee.Date
         Start date of the period.
     collection : ee.ImageCollection
-        A single-band ImageCollection (e.g., LST, NDVI) to aggregate and reduce.
+        A single-band ImageCollection (e.g., LST or NDVI) to aggregate and reduce.
     geometry : ee.Geometry
-        Region of interest for spatial averaging.
+        Region of interest for spatial reduction.
     scale : int, optional
         Spatial resolution (in meters) at which to perform the reduction. If omitted, 
-        Earth Engine will use the native resolution of the input data.
+        Earth Engine uses the native projection and scale of the input image.
 
     Returns
     -------
-    ee.Number
-        The mean pixel value over the geometry during the period. Returns `null` (as an ee.Number) 
-        if no valid pixels are available.
+    ee.Dictionary
+        A dictionary containing the following keys:
+        - "mean": arithmetic mean of pixel values
+        - "median": median pixel value
+        - "min": minimum pixel value
+        - "max": maximum pixel value
+        Values are `null` if no valid pixels intersect the geometry.
 
     Raises
     ------
     ValueError
         If `frequency` is not one of "weekly", "monthly", or "yearly".
-
-    Notes
-    -----
-    - Uses `ee.Reducer.mean()` with `maxPixels=1e13` to accommodate large geometries.
-    - The input collection must contain only one band; behavior is undefined otherwise.
-    - This function returns an Earth Engine object (`ee.Number`), not a Python float—use `.getInfo()` 
-      to retrieve the value client-side.
     """
 
     start = ee.Date(start)
@@ -154,12 +155,6 @@ def compute_period(
         geometry=geom_in_img_crs,
         scale=scale,
         maxPixels=1e13,
-    )
-
-    val = ee.Algorithms.If(
-        stats.size().gt(0),
-        stats.values().get(0),
-        None
     )
 
     return ee.Dictionary(stats)
