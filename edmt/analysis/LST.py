@@ -240,4 +240,3 @@ def compute_lst_timeseries(
 
 
 
-LST_mean
