@@ -303,7 +303,7 @@ def _ndvi_from_nir_red(img: ee.Image, nir: str, red: str) -> ee.Image:
     - Pixels with zero or negative denominators (e.g., water, shadows) are automatically masked by 
       `normalizedDifference`.
     """
-    ndvi = img.normalizedDifference([nir, red]).rename("NDVI")
+    ndvi = nir.subtract(red).divide(nir.add(red)).rename("NDVI")
     return ndvi.copyProperties(img, ["system:time_start"])
 
 

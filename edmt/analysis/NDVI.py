@@ -107,7 +107,7 @@ def get_ndvi_collection(
         params = {"band": "NDVI", "unit": "NDVI"}
         return ic, params
 
-    raise ValueError(f"Unsupported satellite for NDVI: {satellite}. Use MODIS, Landsat 8 & 9, SENTINEL")
+    raise ValueError(f"Unsupported satellite for NDVI: {satellite}. Use MODIS, Landsat 8 & 9, ('SENTINEL', 'SENTINEL2', 'S2')")
 
 
 def compute_period_feature_ndvi(
