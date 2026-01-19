@@ -207,7 +207,7 @@ def compute_period_feature(
     return ee.Feature(None, props)
 
 
-def compute_lst_timeseries_(
+def compute_lst_timeseries(
     start_date: str,
     end_date: str,
     satellite: str = "MODIS",
