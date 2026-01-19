@@ -62,7 +62,7 @@ def get_satellite_collection(
     if satellite == "MODIS":
         collection = (
             ee.ImageCollection("MODIS/061/MOD11A1")
-            .select(["LST_Day_1km", "LST_Night_1km"])
+            .select("LST_Day_1km")
             .filterDate(start_date, end_date)
         )
         factors = {"multiply": 0.02, "add": 0.0, "band": "LST_Day_1km"}
