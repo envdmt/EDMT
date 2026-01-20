@@ -1,11 +1,11 @@
 from .analysis import (
-    ensure_ee_initialized,
+    ee_initialized,
     gdf_to_ee_geometry,
     to_celsius,
     compute_period,
     Reducer,
-    _mask_s2_sr_clouds,
-    _mask_landsat_c2_l2_clouds,
+    _mask_s2_clouds,
+    _mask_landsat_clouds,
     _ndvi_from_nir_red,
     compute_per_period
 )
@@ -18,7 +18,7 @@ from .LST import (
 
 from .LST_layer import (
     get_lst_image,
-    get_lst_period_collection
+    get_lst_collection
 )
 
 from .NDVI import (
@@ -29,7 +29,7 @@ from .NDVI import (
 )
 
 __all__ = [
-    "ensure_ee_initialized",
+    "ee_initialized",
     "gdf_to_ee_geometry",
     "get_satellite_collection",
     "to_celsius",
@@ -37,9 +37,9 @@ __all__ = [
     "compute_period_feature",
     "compute_lst_timeseries",
     "get_lst_image",
-    "get_lst_period_collection",
-    "_mask_s2_sr_clouds",
-    "_mask_landsat_c2_l2_clouds",
+    "get_lst_collection",
+    "_mask_s2_clouds",
+    "_mask_landsat_clouds",
     "get_ndvi_collection",
     "compute_period_feature_ndvi",
     "compute_ndvi_timeseries",

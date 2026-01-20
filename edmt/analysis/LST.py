@@ -6,7 +6,7 @@ from edmt.analysis import (
     to_celsius,
     gdf_to_ee_geometry,
     compute_period,
-    ensure_ee_initialized
+    ee_initialized
 )
 
 def get_satellite_collection(
@@ -269,7 +269,7 @@ def compute_lst_timeseries(
     if roi_gdf is None:
         raise ValueError("Provide roi_gdf (Region of Interest)")
 
-    ensure_ee_initialized()
+    ee_initialized()
 
     geometry = gdf_to_ee_geometry(roi_gdf)
 
@@ -308,8 +308,6 @@ def compute_lst_timeseries(
             rows.append(p)
 
     return pd.DataFrame(rows)
-
-
 
 
 

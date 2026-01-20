@@ -9,7 +9,7 @@ edmt.analysis.analysis
 Module Contents
 ---------------
 
-.. py:function:: ensure_ee_initialized()
+.. py:function:: ee_initialized()
 
    Initialize Google Earth Engine if not already initialized.
 
@@ -63,12 +63,13 @@ Module Contents
        and copying essential metadata (e.g., 'system:time_start').
 
 
-.. py:function:: compute_period(frequency: str, start: ee.Date, collection: ee.ImageCollection, geometry: ee.Geometry, scale: Optional[int] = None) -> ee.Number
+.. py:function:: compute_period(frequency: str, start: ee.Date, collection: ee.ImageCollection, geometry: ee.Geometry, scale: Optional[int] = None) -> ee.Dictionary
 
-   Compute the spatial mean of a single-band image over a specified time period and region.
+   Compute multiple summary statistics (mean, median, min, max) of a single-band image 
+   over a specified time period and spatial region.
 
-   Aggregates images in the collection over a temporal window (weekly, monthly, or yearly), 
-   computes the mean image, then reduces it to a single scalar value over the given geometry.
+   The function aggregates images in the collection over a temporal window (weekly, monthly, or yearly), 
+   computes a mean composite, then extracts spatial statistics over the given geometry.
 
    Parameters
    ----------
@@ -77,30 +78,27 @@ Module Contents
    start : ee.Date
        Start date of the period.
    collection : ee.ImageCollection
-       A single-band ImageCollection (e.g., LST, NDVI) to aggregate and reduce.
+       A single-band ImageCollection (e.g., LST or NDVI) to aggregate and reduce.
    geometry : ee.Geometry
-       Region of interest for spatial averaging.
+       Region of interest for spatial reduction.
    scale : int, optional
        Spatial resolution (in meters) at which to perform the reduction. If omitted, 
-       Earth Engine will use the native resolution of the input data.
+       Earth Engine uses the native projection and scale of the input image.
 
    Returns
    -------
-   ee.Number
-       The mean pixel value over the geometry during the period. Returns `null` (as an ee.Number) 
-       if no valid pixels are available.
+   ee.Dictionary
+       A dictionary containing the following keys:
+       - "mean": arithmetic mean of pixel values
+       - "median": median pixel value
+       - "min": minimum pixel value
+       - "max": maximum pixel value
+       Values are `null` if no valid pixels intersect the geometry.
 
    Raises
    ------
    ValueError
        If `frequency` is not one of "weekly", "monthly", or "yearly".
-
-   Notes
-   -----
-   - Uses `ee.Reducer.mean()` with `maxPixels=1e13` to accommodate large geometries.
-   - The input collection must contain only one band; behavior is undefined otherwise.
-   - This function returns an Earth Engine object (`ee.Number`), not a Python float—use `.getInfo()` 
-     to retrieve the value client-side.
 
 
 .. py:function:: Reducer(collection: ee.ImageCollection, reducer: Literal['mean', 'median', 'min', 'max'] = 'mean') -> ee.Image
@@ -134,7 +132,7 @@ Module Contents
    - No spatial clipping or masking is applied—only temporal aggregation.
 
 
-.. py:function:: _mask_s2_sr_clouds(img: ee.Image) -> ee.Image
+.. py:function:: _mask_s2_clouds(img: ee.Image) -> ee.Image
 
    Apply a cloud and cirrus mask to a Sentinel-2 Surface Reflectance (SR) image using the QA60 band.
 
@@ -156,7 +154,7 @@ Module Contents
        The input image with cloud and cirrus pixels masked out (set to no-data).
 
 
-.. py:function:: _mask_landsat_c2_l2_clouds(img: ee.Image) -> ee.Image
+.. py:function:: _mask_landsat_clouds(img: ee.Image) -> ee.Image
 
    Apply a comprehensive cloud, shadow, and cirrus mask to a Landsat Collection 2 Level 2 image 
    using the QA_PIXEL band.

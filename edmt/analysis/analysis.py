@@ -4,7 +4,7 @@ import geopandas as gpd
 import shapely
 
 
-def ensure_ee_initialized():
+def ee_initialized():
     """
     Initialize Google Earth Engine if not already initialized.
     """
@@ -206,7 +206,7 @@ def Reducer(
     raise ValueError("reducer must be one of: mean, median, min, max")
 
 
-def _mask_s2_sr_clouds(
+def _mask_s2_clouds(
     img: ee.Image
 ) -> ee.Image:
     """
@@ -237,7 +237,7 @@ def _mask_s2_sr_clouds(
     return img.updateMask(mask)
 
 
-def _mask_landsat_c2_l2_clouds(
+def _mask_landsat_clouds(
     img: ee.Image
 ) -> ee.Image:
     """

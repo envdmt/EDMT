@@ -75,7 +75,7 @@ def get_lst_image(
     return img
 
 
-def get_lst_period_collection(
+def get_lst_collection(
     start_date: str,
     end_date: str,
     satellite: str = "MODIS",
