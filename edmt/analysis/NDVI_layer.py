@@ -24,7 +24,7 @@ def get_ndvi_image(
     Generate a single composite NDVI image from satellite data over a specified time period, 
     suitable for visualization or mapping.
 
-    The function retrieves preprocessed NDVI data from a chosen satellite platform, applies 
+    The function retrieves preprocessed NDVI data from a chosen satellite product, applies 
     a temporal reducer (e.g., mean, median), and optionally clips the result to a region of interest.
 
     Parameters
@@ -34,10 +34,11 @@ def get_ndvi_image(
     end_date : str
         End date of the compositing period in 'YYYY-MM-DD' format.
     satellite : str, optional
-        Satellite data source. Supported options: 
-        - "MODIS" (MOD13Q1)
-        - "LANDSAT" (Landsat 8 & 9 Collection 2 Level 2 SR)
-        - "SENTINEL", "SENTINEL2", or "S2" (Sentinel-2 SR Harmonized)
+        Satellite or product name. Supported options:
+        - "LANDSAT", "LANDSAT_8DAY", "LANDSAT8DAY": 8-day Landsat NDVI composites
+        - "MODIS": MOD13Q1 (16-day, 250m)
+        - "SENTINEL", "SENTINEL2", "S2": Sentinel-2 Harmonized
+        - "VIIRS", "NOAA_VIIRS", "NOAA": NOAA CDR VIIRS NDVI
         (default: "MODIS").
     roi_gdf : geopandas.GeoDataFrame, optional
         Region of interest as a GeoDataFrame containing Polygon or MultiPolygon geometries. 
@@ -48,14 +49,8 @@ def get_ndvi_image(
     Returns
     -------
     ee.Image
-        A single-band Earth Engine image with band name "NDVI" and values in the range [-1, 1]. 
-        Suitable for display with `Map.addLayer(...)` in Earth Engine environments.
-
-    Notes
-    -----
-    - Internally uses `get_ndvi_collection`, which applies sensor-specific scaling and cloud masking.
-    - If `roi_gdf` is provided, the collection is filtered to the ROI before reduction for efficiency.
-    - The output retains no temporal dimension—it is a static composite representing the selected statistic.
+        A single-band Earth Engine image with band name "NDVI" and values in the range [-1, 1].
+        
     """
     ee_initialized()
 
@@ -63,7 +58,7 @@ def get_ndvi_image(
     if roi_gdf is not None:
         roi = gdf_to_ee_geometry(roi_gdf)
 
-    collection = get_ndvi_collection(satellite, start_date, end_date)
+    collection, _ = get_ndvi_collection(satellite, start_date, end_date)
 
     img = Reducer(collection, reducer=reducer).rename("NDVI")
 
@@ -73,21 +68,19 @@ def get_ndvi_image(
     return img
 
 
-def get_ndvi_collection(
+def get_ndvi_image_collection(
     start_date: str,
     end_date: str,
     satellite: str = "MODIS",
     frequency: Literal["weekly", "monthly", "yearly"] = "monthly",
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
-    period_reducer: Literal["mean", "median", "min", "max"] = "mean",
 ) -> ee.ImageCollection:
     """
     Generate an Earth Engine ImageCollection of NDVI composites aggregated over regular time periods 
     (weekly, monthly, or yearly).
 
-    Each image in the collection represents the statistical summary (e.g., mean, median) of NDVI 
-    over one period, includes metadata about the period start, and is optionally clipped to a region 
-    of interest.
+    Each image in the collection represents the mean NDVI over one period, includes metadata about 
+    the period start, and is optionally clipped to a region of interest.
 
     Parameters
     ----------
@@ -96,18 +89,17 @@ def get_ndvi_collection(
     end_date : str
         End date of the overall time window in 'YYYY-MM-DD' format.
     satellite : str, optional
-        Satellite data source. Supported options: 
-        - "MODIS" (MOD13Q1)
-        - "LANDSAT" (Landsat 8 & 9 Collection 2 Level 2 SR)
-        - "SENTINEL", "SENTINEL2", or "S2" (Sentinel-2 SR Harmonized)
+        Satellite or product name. Supported options:
+        - "LANDSAT", "LANDSAT_8DAY", "LANDSAT8DAY": 8-day Landsat NDVI composites
+        - "MODIS": MOD13Q1 (16-day, 250m)
+        - "SENTINEL", "SENTINEL2", "S2": Sentinel-2 Harmonized
+        - "VIIRS", "NOAA_VIIRS", "NOAA": NOAA CDR VIIRS NDVI
         (default: "MODIS").
     frequency : {"weekly", "monthly", "yearly"}, optional
         Temporal aggregation interval for compositing (default: "monthly").
     roi_gdf : geopandas.GeoDataFrame, optional
         Region of interest as a GeoDataFrame containing Polygon or MultiPolygon geometries. 
-        If provided, the collection is filtered to this region and output images are clipped to it.
-    period_reducer : {"mean", "median", "min", "max"}, optional
-        Statistical reducer applied to NDVI values within each period (default: "mean").
+        If provided, output images are clipped to this region.
 
     Returns
     -------
@@ -122,15 +114,8 @@ def get_ndvi_collection(
     ValueError
         If `frequency` is not one of the supported options.
 
-    Notes
-    -----
-    - Internally uses `get_ndvi_collection`, which applies sensor-specific reflectance scaling 
-      and cloud masking (where available).
-    - Time steps are approximated using fixed day counts (7, 30, or 365 days), which may not align 
-      exactly with calendar months or years.
-    - Requires an initialized Earth Engine session (`ee.Initialize()`).
     """
-    
+
     ee_initialized()
 
 
@@ -138,7 +123,7 @@ def get_ndvi_collection(
     if roi_gdf is not None:
         roi = gdf_to_ee_geometry(roi_gdf)
 
-    collection = get_ndvi_collection(satellite, start_date, end_date, roi=roi)
+    collection, _ = get_ndvi_collection(satellite, start_date, end_date)
 
     freq = frequency.lower()
     if freq not in {"weekly", "monthly", "yearly"}:
@@ -164,4 +149,4 @@ def get_ndvi_collection(
     )
 
 
-    
+

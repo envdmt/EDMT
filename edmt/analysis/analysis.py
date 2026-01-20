@@ -369,3 +369,7 @@ def compute_per_period(
         img = img.clip(roi)
 
     return img
+
+
+
+
