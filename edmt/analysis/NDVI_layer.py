@@ -73,7 +73,7 @@ def get_ndvi_image(
     return img
 
 
-def get_ndvi_period_collection(
+def get_ndvi_collection(
     start_date: str,
     end_date: str,
     satellite: str = "MODIS",
