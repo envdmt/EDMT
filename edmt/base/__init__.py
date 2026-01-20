@@ -1,4 +1,4 @@
-from _edmt import list_functions
+from ._edmt import list_functions
 from .base import (
     AirdataBaseClass,
     ExtractCSV

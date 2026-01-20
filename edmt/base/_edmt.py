@@ -1,9 +1,5 @@
 import inspect
 import pkgutil
-import edmt
-
-import inspect
-import pkgutil
 from types import ModuleType
 
 def list_functions(module_name: str = "edmt") -> None:
