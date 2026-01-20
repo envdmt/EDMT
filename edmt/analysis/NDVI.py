@@ -91,8 +91,7 @@ def get_ndvi_collection(
       def _to_ndvi(img: ee.Image) -> ee.Image:
           red = img.select("B4").divide(10000.0)
           nir = img.select("B8").divide(10000.0)
-
-          ndvi = _ndvi_from_nir_red(img, nir, red).rename("NDVI")
+          ndvi = _ndvi_from_nir_red(img, nir, red)
           return ndvi.copyProperties(img, ["system:time_start"])
 
       ic = ic.map(_to_ndvi)
