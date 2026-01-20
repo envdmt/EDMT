@@ -57,7 +57,7 @@ def get_ndvi_image(
     - If `roi_gdf` is provided, the collection is filtered to the ROI before reduction for efficiency.
     - The output retains no temporal dimension—it is a static composite representing the selected statistic.
     """
-    ensure_ee_initialized()
+    ee_initialized()
 
     roi: Optional[ee.Geometry] = None
     if roi_gdf is not None:
