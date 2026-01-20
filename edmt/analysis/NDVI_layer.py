@@ -63,7 +63,7 @@ def get_ndvi_image(
     if roi_gdf is not None:
         roi = gdf_to_ee_geometry(roi_gdf)
 
-    collection = get_ndvi_collection(satellite, start_date, end_date, roi=roi)
+    collection = get_ndvi_collection(satellite, start_date, end_date)
 
     img = Reducer(collection, reducer=reducer).rename("NDVI")
 
