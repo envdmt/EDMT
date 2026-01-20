@@ -125,7 +125,7 @@ def get_lst_image_collection(
     if roi_gdf is not None:
         roi = gdf_to_ee_geometry(roi_gdf)
 
-    collection, factors = get_satellite_collection(satellite, start_date, end_date)
+    collection, factors = get_lst_collection(satellite, start_date, end_date)
     collection_c = collection.map(lambda img: to_celsius(img, factors))
 
     freq = frequency.lower()
