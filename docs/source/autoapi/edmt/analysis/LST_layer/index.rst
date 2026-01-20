@@ -45,7 +45,7 @@ Module Contents
 
 
 
-.. py:function:: get_lst_collection(start_date: str, end_date: str, satellite: str = 'MODIS', frequency: Literal['weekly', 'monthly', 'yearly'] = 'monthly', roi_gdf: Optional[geopandas.GeoDataFrame] = None) -> ee.ImageCollection
+.. py:function:: get_lst_image_collection(start_date: str, end_date: str, satellite: str = 'MODIS', frequency: Literal['weekly', 'monthly', 'yearly'] = 'monthly', roi_gdf: Optional[geopandas.GeoDataFrame] = None) -> ee.ImageCollection
 
    Generate an Earth Engine ImageCollection of Land Surface Temperature (LST) composites 
    aggregated over regular time periods (weekly, monthly, or yearly), in degrees Celsius.

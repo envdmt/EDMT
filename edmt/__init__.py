@@ -5,8 +5,9 @@ from edmt import (
     conversion, 
     mapping, 
     models, 
-    plotting
+    plotting,
     )
+from _edmt import list_functions
 import importlib.metadata
 
 ASCII = r"""
@@ -77,6 +78,5 @@ __all__ = [
     "mapping", 
     "models", 
     "plotting",
-    "plans"
-    ]
-
+    "list_functions",
+]

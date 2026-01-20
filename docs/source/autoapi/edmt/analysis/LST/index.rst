@@ -9,7 +9,7 @@ edmt.analysis.LST
 Module Contents
 ---------------
 
-.. py:function:: get_satellite_collection(satellite: str, start_date: str, end_date: str) -> tuple[ee.ImageCollection, dict]
+.. py:function:: get_lst_collection(satellite: str, start_date: str, end_date: str) -> tuple[ee.ImageCollection, dict]
 
    Retrieve a Land Surface Temperature (LST) ImageCollection and associated scaling parameters 
    from a specified satellite sensor.
