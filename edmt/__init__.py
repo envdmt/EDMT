@@ -7,7 +7,7 @@ from edmt import (
     models, 
     plotting,
     )
-from _edmt import list_functions
+from ._edmt import list_functions
 import importlib.metadata
 
 ASCII = r"""
