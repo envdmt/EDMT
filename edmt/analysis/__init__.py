@@ -11,14 +11,14 @@ from .analysis import (
 )
 
 from .LST import (
-    get_satellite_collection,
+    get_lst_collection,
     compute_period_feature,
     compute_lst_timeseries
 )
 
 from .LST_layer import (
     get_lst_image,
-    get_lst_collection
+    get_lst_image_collection
 )
 
 from .NDVI import (
@@ -30,13 +30,12 @@ from .NDVI import (
 
 from .NDVI_layer import (
     get_ndvi_image,
-    get_ndvi_collection
+    get_ndvi_image_collection
 )
 
 __all__ = [
     "ee_initialized",
     "gdf_to_ee_geometry",
-    "get_satellite_collection",
     "to_celsius",
     "compute_period",
     "compute_period_feature",
@@ -46,11 +45,14 @@ __all__ = [
     "Reducer",
     "_ndvi_from_nir_red",
     "compute_per_period",
-    
-    "compute_ndvi_timeseries",
-    "compute_lst_timeseries",
-    "get_lst_image",
+
     "get_lst_collection",
-    "get_ndvi_image",
     "get_ndvi_collection",
+    
+    "compute_lst_timeseries",
+    "compute_ndvi_timeseries",
+    "get_lst_image",
+    "get_lst_image_collection",
+    "get_ndvi_image",
+    "get_ndvi_image_collection",
 ]

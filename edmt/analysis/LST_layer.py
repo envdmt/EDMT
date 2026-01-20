@@ -9,7 +9,7 @@ from edmt.analysis import (
     compute_per_period,
 )
 from .LST import (
-    get_satellite_collection,
+    get_lst_collection,
 )
 
 
@@ -60,7 +60,7 @@ def get_lst_image(
     if roi_gdf is not None:
         roi = gdf_to_ee_geometry(roi_gdf)
 
-    collection, factors = get_satellite_collection(satellite, start_date, end_date)
+    collection, factors = get_lst_collection(satellite, start_date, end_date)
     
     if roi is not None:
         collection = collection.filterBounds(roi)
@@ -75,7 +75,7 @@ def get_lst_image(
     return img
 
 
-def get_lst_collection(
+def get_lst_image_collection(
     start_date: str,
     end_date: str,
     satellite: str = "MODIS",

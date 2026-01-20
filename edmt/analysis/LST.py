@@ -9,7 +9,7 @@ from edmt.analysis import (
     ee_initialized
 )
 
-def get_satellite_collection(
+def get_lst_collection(
     satellite: str, start_date: str, end_date: str
 ) -> tuple[ee.ImageCollection, dict]:
     """
@@ -273,7 +273,7 @@ def compute_lst_timeseries(
 
     geometry = gdf_to_ee_geometry(roi_gdf)
 
-    collection, factors = get_satellite_collection(satellite, start_date, end_date)
+    collection, factors = get_lst_collection(satellite, start_date, end_date)
     collection = collection.map(lambda img: to_celsius(img, factors))
 
     freq = frequency.lower()
