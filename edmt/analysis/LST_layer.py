@@ -2,7 +2,7 @@ import ee
 import geopandas as gpd
 from typing import Optional, Literal
 from edmt.analysis import (
-    ensure_ee_initialized,
+    ee_initialized,
     gdf_to_ee_geometry,
     to_celsius,
     Reducer,
@@ -119,7 +119,7 @@ def get_lst_collection(
 
     """
 
-    ensure_ee_initialized()
+    ee_initialized()
 
     roi: Optional[ee.Geometry] = None
     if roi_gdf is not None:
@@ -150,5 +150,7 @@ def get_lst_collection(
             )
         )
     )
+
+
 
 

@@ -2,7 +2,7 @@ import ee
 import geopandas as gpd
 from typing import Optional, Literal
 from edmt.analysis import (
-    ensure_ee_initialized,
+    ee_initialized,
     gdf_to_ee_geometry,
     Reducer,
     compute_per_period
@@ -130,7 +130,9 @@ def get_ndvi_period_collection(
       exactly with calendar months or years.
     - Requires an initialized Earth Engine session (`ee.Initialize()`).
     """
-    ensure_ee_initialized()
+    
+    ee_initialized()
+
 
     roi: Optional[ee.Geometry] = None
     if roi_gdf is not None:
