@@ -28,6 +28,11 @@ from .NDVI import (
 
 )
 
+from .NDVI_layer import (
+    get_ndvi_image,
+    get_ndvi_collection
+)
+
 __all__ = [
     "ee_initialized",
     "gdf_to_ee_geometry",
@@ -40,10 +45,11 @@ __all__ = [
     "get_lst_collection",
     "_mask_s2_clouds",
     "_mask_landsat_clouds",
-    "get_ndvi_collection",
     "compute_period_feature_ndvi",
     "compute_ndvi_timeseries",
     "Reducer",
     "_ndvi_from_nir_red",
     "compute_per_period",
+    "get_ndvi_image",
+    "get_ndvi_collection",
 ]
