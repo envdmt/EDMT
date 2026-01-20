@@ -54,7 +54,7 @@ def get_lst_image(
         If an unsupported reducer is provided.
 
     """
-    ensure_ee_initialized()
+    ee_initialized()
 
     roi: Optional[ee.Geometry] = None
     if roi_gdf is not None:
