@@ -33,12 +33,20 @@ from .NDVI_layer import (
     get_ndvi_image_collection
 )
 
+from .precipitation import (
+    get_chirps_collection,
+    compute_period_feature_chirps,
+    compute_chirps_timeseries
+)
+
+
 __all__ = [
     "ee_initialized",
     "gdf_to_ee_geometry",
     "to_celsius",
     "compute_period",
     "compute_period_feature",
+    "compute_period_feature_chirps",
     "_mask_s2_clouds",
     "_mask_landsat_clouds",
     "compute_period_feature_ndvi",
@@ -48,9 +56,11 @@ __all__ = [
 
     "get_lst_collection",
     "get_ndvi_collection",
+    "get_chirps_collection",
     
     "compute_lst_timeseries",
     "compute_ndvi_timeseries",
+    "compute_chirps_timeseries",
     "get_lst_image",
     "get_lst_image_collection",
     "get_ndvi_image",

@@ -4,7 +4,6 @@ import pandas as pd
 from typing import Optional, Tuple
 from edmt.analysis import (
     ee_initialized,
-    compute_period,
     gdf_to_ee_geometry,
     _ndvi_from_nir_red,
 )
