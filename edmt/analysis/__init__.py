@@ -36,7 +36,8 @@ from .NDVI_layer import (
 from .precipitation import (
     get_chirps_collection,
     compute_period_feature_chirps,
-    compute_chirps_timeseries
+    compute_chirps_timeseries,
+    get_chirps_image
 )
 
 
@@ -65,4 +66,5 @@ __all__ = [
     "get_lst_image_collection",
     "get_ndvi_image",
     "get_ndvi_image_collection",
+    "get_chirps_image"
 ]

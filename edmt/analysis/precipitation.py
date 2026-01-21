@@ -5,7 +5,10 @@ from typing import Optional, Tuple, Literal
 from edmt.analysis import (
     ee_initialized,
     gdf_to_ee_geometry,
+    Reducer,
 )
+
+Frequency = Literal["daily", "weekly", "monthly", "yearly"]
 
 def get_chirps_collection(
     start_date: str,
@@ -47,7 +50,7 @@ def compute_period_feature_chirps(
     start: ee.Date,
     collection: ee.ImageCollection,
     geometry: ee.Geometry,
-    frequency: Literal["daily", "weekly", "monthly", "yearly"] = "monthly",
+    frequency: Frequency = "monthly",
     scale: Optional[int] = None,
 ) -> ee.Feature:
     """
@@ -153,7 +156,7 @@ def compute_period_feature_chirps(
 def compute_chirps_timeseries(
     start_date: str,
     end_date: str,
-    frequency: str = "monthly",
+    frequency: Frequency = "monthly",
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
     scale: Optional[int] = None,
 ) -> pd.DataFrame:
@@ -253,6 +256,82 @@ def compute_chirps_timeseries(
     return pd.DataFrame(rows)
 
 
+def get_chirps_image(
+    start_date: str,
+    end_date: str,
+    frequency: Frequency = "monthly",
+    roi_gdf: Optional[gpd.GeoDataFrame] = None,
+    reducer: Literal["sum", "mean", "median", "min", "max"] = "sum",
+) -> ee.Image:
+    """
+    Generate a single composite precipitation image from the CHIRPS daily dataset over a specified time period.
 
+    This function retrieves CHIRPS daily rainfall data, aggregates it using a specified reducer 
+    (e.g., sum, mean), and optionally clips the result to a region of interest. The output is suitable 
+    for visualization or further analysis in Earth Engine.
 
+    Parameters
+    ----------
+    start_date : str
+        Start date of the aggregation period in 'YYYY-MM-DD' format.
+    end_date : str
+        End date of the aggregation period in 'YYYY-MM-DD' format.
+    frequency : {"daily", "weekly", "monthly", "yearly"}, optional
+        Temporal interval type (used only for metadata labeling; does not affect computation).
+    roi_gdf : geopandas.GeoDataFrame, optional
+        Region of interest as a GeoDataFrame containing Polygon or MultiPolygon geometries. 
+        If provided, the collection is filtered to this region and the output is clipped to it.
+    reducer : {"sum", "mean", "median", "min", "max"}, optional
+        Temporal aggregation method:
+        - "sum": Total precipitation over the period (unit: mm)
+        - Other reducers: Average or extreme daily rate (unit: mm/day)
+        (default: "sum")
 
+    Returns
+    -------
+    ee.Image
+        A single-band image with band name `"precipitation_mm"` and the following properties:
+        - "start": Input start date
+        - "end": Input end date
+        - "frequency": Aggregation frequency label
+        - "reducer": Reducer used
+        - "unit": "mm" if reducer is "sum", otherwise "mm/day"
+
+    Notes
+    -----
+    - When `reducer="sum"`, the result represents **total accumulated rainfall** (in mm) over the period.
+    - For other reducers (e.g., "mean"), the result represents a **statistic of daily rainfall rates** (in mm/day).
+    - If `roi_gdf` is provided, the collection is pre-filtered with `filterBounds` for efficiency.
+    - The output band is always renamed to `"precipitation_mm"` for consistency, regardless of unit.
+    - Requires an initialized Earth Engine session (`ee.Initialize()`).
+    """
+    ee_initialized()
+
+    roi: Optional[ee.Geometry] = None
+    if roi_gdf is not None:
+        roi = gdf_to_ee_geometry(roi_gdf)
+
+    collection, _params = get_chirps_collection(start_date, end_date)
+
+    if roi is not None:
+        collection = collection.filterBounds(roi)
+
+    collection = collection.select(["precipitation"], ["precipitation"])
+
+    img = collection.sum().rename("precipitation_mm")
+    unit = "mm"
+
+    if roi is not None:
+        img = img.clip(roi)
+
+    img = img.set(
+        {
+            "start": start_date,
+            "end": end_date,
+            "frequency": frequency,
+            "reducer": reducer,
+            "unit": unit,
+        }
+    )
+
+    return img
