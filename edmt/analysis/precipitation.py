@@ -1,7 +1,7 @@
 import ee 
 import geopandas as gpd
 import pandas as pd
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Literal
 from edmt.analysis import (
     ee_initialized,
     gdf_to_ee_geometry,
