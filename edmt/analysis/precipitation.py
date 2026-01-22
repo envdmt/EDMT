@@ -229,7 +229,7 @@ def compute_chirps_timeseries(
 
     fc = ee.FeatureCollection(
         dates.map(
-            lambda d: compute_per_period_chirps(
+            lambda d: compute_period_chirps(
                 ee.Date(d),
                 collection,
                 geometry,
