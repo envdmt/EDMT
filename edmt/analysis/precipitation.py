@@ -480,7 +480,7 @@ def get_chirps_image_collection(
         img_coll = img_coll.map(
             lambda img: img.set(
                 {
-                    "month_name": ee.Date(img.get("system:time_start")).format("MMMM"),
+                    "month": ee.Date(img.get("system:time_start")).format("MMMM"),
                 }
             )
         )

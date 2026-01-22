@@ -139,7 +139,7 @@ def get_lst_image_collection(
         step_days * 24 * 60 * 60 * 1000,
     )
 
-    return ee.ImageCollection(
+    img_coll = ee.ImageCollection(
         dates.map(
             lambda d: compute_per_period(
                 ee.Date(d),
@@ -150,6 +150,17 @@ def get_lst_image_collection(
             )
         )
     )
+
+    if freq == "monthly":
+            img_coll = img_coll.map(
+                lambda img: img.set(
+                    {
+                        "month_name": ee.Date(img.get("system:time_start")).format("MMMM"),
+                    }
+                )
+            )
+
+    return img_coll.sort("system:time_start")
 
 
 
