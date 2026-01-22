@@ -252,6 +252,9 @@ def compute_chirps_timeseries(
                 "unit": params.get("unit", "mm"),
             }
         )
+    if freq == "monthly":
+        for row in rows:
+            row["month_name"] = pd.to_datetime(row["date"]).strftime("%B")
 
     return pd.DataFrame(rows)
 
