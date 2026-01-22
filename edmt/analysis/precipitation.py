@@ -263,7 +263,6 @@ def compute_chirps_timeseries(
 def get_chirps_image(
     start_date: str,
     end_date: str,
-    frequency: Frequency = "monthly",
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
     reducer: Literal["sum", "mean", "median", "min", "max"] = "sum",
 ) -> ee.Image:
@@ -332,7 +331,6 @@ def get_chirps_image(
         {
             "start": start_date,
             "end": end_date,
-            "frequency": frequency,
             "reducer": reducer,
             "unit": unit,
         }
