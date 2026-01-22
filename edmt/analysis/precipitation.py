@@ -397,7 +397,7 @@ def compute_chirps_imgcoll(
     period_ic = collection.filterDate(start, end).select(["precipitation"], ["precipitation"])
     n_images = period_ic.size()
 
-    img = period_ic.sum().rename("precipitation_mm")
+    img = period_ic.mean().rename("precipitation_mm")
 
     img = img.set(
         {
@@ -468,9 +468,11 @@ def get_chirps_image_collection(
         step_days * 24 * 60 * 60 * 1000,
     )
 
-    return ee.ImageCollection(
+    img_coll = ee.ImageCollection(
         dates.map(lambda d: compute_chirps_imgcoll(ee.Date(d), freq, collection, roi))
     )
+
+    return img_coll.sort("system:time_start")
 
 
 
