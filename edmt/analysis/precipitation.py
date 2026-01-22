@@ -46,7 +46,7 @@ def get_chirps_collection(
     return ic, {"band": "precipitation", "unit": "mm"}
 
 
-def compute_period_feature_chirps(
+def compute_period_chirps(
     start: ee.Date,
     collection: ee.ImageCollection,
     geometry: ee.Geometry,
@@ -229,7 +229,7 @@ def compute_chirps_timeseries(
 
     fc = ee.FeatureCollection(
         dates.map(
-            lambda d: compute_period_feature_chirps(
+            lambda d: compute_per_period_chirps(
                 ee.Date(d),
                 collection,
                 geometry,
@@ -335,3 +335,144 @@ def get_chirps_image(
     )
 
     return img
+
+
+def compute_chirps_imgcoll(
+    start: ee.Date,
+    frequency: Literal["daily", "weekly", "monthly", "yearly"],
+    collection: ee.ImageCollection,
+    roi: Optional[ee.Geometry] = None,
+) -> ee.Image:
+    """
+    Generate a single composite precipitation image from CHIRPS daily data over a specified time period.
+
+    This helper function aggregates daily CHIRPS precipitation images within a temporal window 
+    (daily, weekly, monthly, or yearly) by summing them to produce total accumulated rainfall (in mm), 
+    and attaches metadata for time series applications.
+
+    Parameters
+    ----------
+    start : ee.Date
+        Start date of the aggregation period.
+    frequency : {"daily", "weekly", "monthly", "yearly"}
+        Temporal interval defining the period length. Determines the end date via Earth Engine’s 
+        calendar-aware `advance()` method.
+    collection : ee.ImageCollection
+        CHIRPS daily precipitation ImageCollection with a "precipitation" band in mm/day.
+    roi : ee.Geometry, optional
+        Region of interest for clipping the output image. If provided, the result is spatially bounded.
+
+    Returns
+    -------
+    ee.Image
+        A single-band image with band name `"precipitation_mm"` representing total precipitation (mm) 
+        over the period, and the following properties:
+        - `"system:time_start"`: Period start in milliseconds since Unix epoch
+        - `"period_start"`: Formatted as "YYYY-MM-dd"
+        - `"period_end"`: End of the period (exclusive) as "YYYY-MM-dd"
+        - `"frequency"`: Aggregation frequency used
+        - `"unit"`: Always "mm" (total accumulation)
+        - `"dataset"`: Source dataset identifier
+        - `"n_images"`: Number of daily images included in the sum
+
+    Raises
+    ------
+    ValueError
+        If `frequency` is not one of the supported options.
+
+    """
+    start = ee.Date(start)
+
+    if frequency == "daily":
+        end = start.advance(1, "day")
+    elif frequency == "weekly":
+        end = start.advance(1, "week")
+    elif frequency == "monthly":
+        end = start.advance(1, "month")
+    elif frequency == "yearly":
+        end = start.advance(1, "year")
+    else:
+        raise ValueError("frequency must be one of: daily, weekly, monthly, yearly")
+
+    period_ic = collection.filterDate(start, end).select(["precipitation"], ["precipitation"])
+    n_images = period_ic.size()
+
+    img = period_ic.sum().rename("precipitation_mm")
+
+    img = img.set(
+        {
+            "system:time_start": start.millis(),
+            "period_start": start.format("YYYY-MM-dd"),
+            "period_end": end.format("YYYY-MM-dd"),
+            "frequency": frequency,
+            "unit": "mm",
+            "dataset": "UCSB-CHG/CHIRPS/DAILY",
+            "n_images": n_images,
+        }
+    )
+
+    if roi is not None:
+        img = img.clip(roi)
+
+    return img
+
+
+def get_chirps_image_collection(
+    start_date: str,
+    end_date: str,
+    frequency: Frequency = "monthly",
+    roi_gdf: Optional[gpd.GeoDataFrame] = None,
+) -> ee.ImageCollection:
+    """
+    Generate an Earth Engine ImageCollection of CHIRPS precipitation composites aggregated over
+    regular time periods (daily, weekly, monthly, yearly).
+
+    Each image represents TOTAL precipitation for the period (mm), with:
+      - band: "precipitation_mm"
+      - system:time_start set to period start
+      - properties: period_start, period_end, frequency, unit, n_images
+
+    Parameters
+    ----------
+    start_date, end_date : str
+        Overall time window in 'YYYY-MM-DD'.
+    frequency : {"daily","weekly","monthly","yearly"}
+        Temporal aggregation interval (default: "monthly").
+    roi_gdf : GeoDataFrame, optional
+        ROI to filterBounds + clip composites.
+
+    Returns
+    -------
+    ee.ImageCollection
+        Period composites of CHIRPS precipitation totals (mm).
+    """
+    ee_initialized()
+
+    roi: Optional[ee.Geometry] = None
+    if roi_gdf is not None:
+        roi = gdf_to_ee_geometry(roi_gdf)
+
+    collection, _ = get_chirps_collection(start_date, end_date)
+
+    if roi is not None:
+        collection = collection.filterBounds(roi)
+
+    freq = frequency.lower()
+    if freq not in {"daily", "weekly", "monthly", "yearly"}:
+        raise ValueError("frequency must be one of: daily, weekly, monthly, yearly")
+
+    step_days = {"daily": 1, "weekly": 7, "monthly": 30, "yearly": 365}[freq]
+    dates = ee.List.sequence(
+        ee.Date(start_date).millis(),
+        ee.Date(end_date).millis(),
+        step_days * 24 * 60 * 60 * 1000,
+    )
+
+    return ee.ImageCollection(
+        dates.map(lambda d: compute_chirps_imgcoll(ee.Date(d), freq, collection, roi))
+    )
+
+
+
+
+
