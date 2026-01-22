@@ -192,6 +192,7 @@ def compute_chirps_timeseries(
         - "n_images": Number of daily CHIRPS images used in the sum
         - "satellite": Always "CHIRPS"
         - "unit": Always "mm"
+        - "month": (if frequency is "monthly") Name of the month corresponding to the period
 
     Raises
     ------

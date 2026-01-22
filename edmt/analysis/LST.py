@@ -306,6 +306,10 @@ def compute_lst_timeseries(
         if p.get("mean") is not None: 
             p["unit"] = factors.get("unit", "°C")
             rows.append(p)
+            
+    if freq == "monthly":
+        for row in rows:
+            row["month"] = pd.to_datetime(row["date"]).strftime("%B")
 
     return pd.DataFrame(rows)
 

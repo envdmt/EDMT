@@ -326,6 +326,10 @@ def compute_ndvi_timeseries(
             "satellite": satellite.upper(),
             "unit": params.get("unit", "NDVI"),
         })
+    
+    if freq == "monthly":
+        for row in rows:
+            row["month"] = pd.to_datetime(row["date"]).strftime("%B")
 
     return pd.DataFrame(rows)
 
