@@ -472,6 +472,15 @@ def get_chirps_image_collection(
         dates.map(lambda d: compute_chirps_imgcoll(ee.Date(d), freq, collection, roi))
     )
 
+    if freq == "monthly":
+        img_coll = img_coll.map(
+            lambda img: img.set(
+                {
+                    "month_name": ee.Date(img.get("system:time_start")).format("MMMM"),
+                }
+            )
+        )
+
     return img_coll.sort("system:time_start")
 
 
