@@ -1,7 +1,10 @@
 from typing import Optional
 import geopandas as gpd
 import pandas as pd
-from edmt.workflow.builder import compute_timeseries, Frequency
+from .builder import (
+    compute_timeseries, 
+    Frequency
+)
 
 def compute_lst_timeseries(
     start_date: str,
