@@ -573,22 +573,6 @@ def _build_chirps(start_date: str, end_date: str) -> Tuple[ee.ImageCollection, D
 # Compute period feature
 # ----------------------------
 
-def _reduce_mean(
-    img: ee.Image, 
-    band: str,
-    geometry: ee.Geometry,
-    scale: int
-) -> ee.Dictionary:
-    proj = img.select(band).projection()
-    geom_in_img_crs = geometry.transform(proj, 1)
-    return img.select(band).reduceRegion(
-        reducer=ee.Reducer.mean(),
-        geometry=geom_in_img_crs,
-        scale=scale,
-        maxPixels=1e13,
-        bestEffort=True,
-    )
-
 
 
 def _compute(
@@ -600,6 +584,21 @@ def _compute(
     meta: Dict[str, Any],
 ) -> ee.Feature:
     n = period_ic.size()
+
+    def _reduce_mean(
+        img: ee.Image, 
+        band: str,
+    ) -> ee.Dictionary:
+        proj = img.select(band).projection()
+        geom_in_img_crs = geometry.transform(proj, 1)
+        return img.select(band).reduceRegion(
+            reducer=ee.Reducer.mean(),
+            geometry=geom_in_img_crs,
+            scale=scale,
+            maxPixels=1e13,
+            bestEffort=True,
+        )
+
 
     if prod == "CHIRPS":
         band = meta.get("band", "precipitation")
