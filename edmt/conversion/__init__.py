@@ -5,7 +5,8 @@ from .conversion import (
     to_gdf,
     convert_distance,
     convert_time,
-    convert_speed
+    convert_speed,
+    convert_temperature
 )
 
 __all__ = [
@@ -15,5 +16,6 @@ __all__ = [
     'to_gdf',
     'convert_distance',
     'convert_time',
-    'convert_speed'
+    'convert_speed',
+    'convert_temperature'
     ]

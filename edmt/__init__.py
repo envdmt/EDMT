@@ -6,6 +6,7 @@ from edmt import (
     mapping, 
     models, 
     plotting,
+    workflow
     )
 from ._edmt import list_functions
 import importlib.metadata
@@ -79,4 +80,5 @@ __all__ = [
     "models", 
     "plotting",
     "list_functions",
+    "workflow"
 ]
