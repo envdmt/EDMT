@@ -4,7 +4,8 @@ from edmt import (
     contrib, 
     conversion, 
     mapping, 
-    models, 
+    models,
+    processing, 
     plotting
     )
 import importlib.metadata
@@ -76,6 +77,6 @@ __all__ = [
     "mapping", 
     "models", 
     "plotting",
-    "plans"
+    "processing"
     ]
 
