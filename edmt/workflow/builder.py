@@ -1,9 +1,9 @@
+from __future__ import annotations
 import ee
 import geopandas as gpd
 import pandas as pd
 import shapely
 from typing import Any, Dict, Literal, Optional, Tuple
-from __future__ import annotations
 
 
 Frequency = Literal["daily", "weekly", "monthly", "yearly"]

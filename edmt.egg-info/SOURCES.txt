@@ -2,6 +2,7 @@ LICENSE
 README.md
 pyproject.toml
 edmt/__init__.py
+edmt/_edmt.py
 edmt.egg-info/PKG-INFO
 edmt.egg-info/SOURCES.txt
 edmt.egg-info/dependency_links.txt
@@ -14,6 +15,7 @@ edmt/analysis/NDVI.py
 edmt/analysis/NDVI_layer.py
 edmt/analysis/__init__.py
 edmt/analysis/analysis.py
+edmt/analysis/precipitation.py
 edmt/base/__init__.py
 edmt/base/base.py
 edmt/contrib/__init__.py
@@ -24,6 +26,10 @@ edmt/mapping/__init__.py
 edmt/models/__init__.py
 edmt/models/drones.py
 edmt/plotting/__init__.py
+edmt/workflow/__init__.py
+edmt/workflow/builder.py
+edmt/workflow/connector.py
+edmt/workflow/workflow.py
 tests/test_analysis.py
 tests/test_base.py
 tests/test_conversion.py
