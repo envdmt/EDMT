@@ -1,8 +1,10 @@
 from typing import Optional
 import geopandas as gpd
 import pandas as pd
+from .connector import (
+    compute_timeseries
+)
 from .builder import (
-    compute_timeseries, 
     Frequency
 )
 
