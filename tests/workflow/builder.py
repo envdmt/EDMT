@@ -1,17 +1,17 @@
 from __future__ import annotations
-
-from typing import Optional, Dict, Any, Tuple, Literal
 import ee
-import pandas as pd
 import geopandas as gpd
+import pandas as pd
 import shapely
+from typing import Any, Dict, Literal, Optional, Tuple
 
 
-# ----------------------------
-# Main helpers
-# ----------------------------
+Frequency = Literal["daily", "weekly", "monthly", "yearly"]
 
 def ee_initialized():
+    """
+    Initialize Google Earth Engine if not already initialized.
+    """
     if not ee.data._initialized:
         ee.Initialize()
 
@@ -19,6 +19,29 @@ def ee_initialized():
 def gdf_to_ee_geometry(
     gdf: gpd.GeoDataFrame
 ) -> ee.Geometry:
+    """
+    Convert a GeoDataFrame containing Polygon or MultiPolygon geometries to an Earth Engine Geometry.
+
+    The input GeoDataFrame is reprojected to WGS84 (EPSG:4326) if necessary, and all geometries
+    are dissolved into a single geometry using unary union before conversion.
+
+    Parameters
+    ----------
+    gdf : geopandas.GeoDataFrame
+        A GeoDataFrame containing one or more Polygon or MultiPolygon features.
+        Must have a valid coordinate reference system (CRS).
+
+    Returns
+    -------
+    ee.Geometry
+        An Earth Engine Geometry object representing the union of all input geometries,
+        in WGS84 (longitude/latitude).
+
+    Raises
+    ------
+    ValueError
+        If the GeoDataFrame is empty or lacks a CRS.
+    """
     if gdf.empty:
         raise ValueError("GeoDataFrame is empty")
 
@@ -34,9 +57,6 @@ def gdf_to_ee_geometry(
 
 
 
-# --------------------------------------------------------
-# Index helpers : get_satellite_collection
-# --------------------------------------------------------
 def _norm(x: Optional[str]) -> str:
     return (x or "").strip().upper().replace("-", "_").replace(" ", "_")
 
@@ -56,13 +76,6 @@ def _evi_from_nir_red_blue(nir: ee.Image, red: ee.Image, blue: ee.Image) -> ee.I
     return num.divide(den).rename("EVI")
 
 
-
-# --------------------------------------------------------
-# Index Helpers : Compute_period_feature*
-# --------------------------------------------------------
-Frequency = Literal["daily", "weekly", "monthly", "yearly"]
-
-
 def _advance_end(start: ee.Date, frequency: str) -> ee.Date:
     f = frequency.lower()
     if f == "daily":
@@ -76,41 +89,31 @@ def _advance_end(start: ee.Date, frequency: str) -> ee.Date:
     raise ValueError(f"Invalid frequency: {frequency}")
 
 
+def _empty(
+    prod: str,
+    start: ee.Date,
+) -> ee.Feature:
+    base = {
+        "date": start.format("YYYY-MM-dd"),
+        "product": prod,
+        "n_images": 0,
+    }
+
+    if prod == "CHIRPS":
+        base["precipitation_mm"] = None
+    elif prod in ("NDVI", "EVI"):
+        base[prod.lower()] = None
+    elif prod == "LST":
+        base.update({"mean": None, "median": None, "min": None, "max": None})
+    else:
+        base["value"] = None
+    return ee.Feature(None, base)
 
 
-# --------------------------------------------------------
-# Index Helpers : Timeseries builder
-# --------------------------------------------------------
-
-def _dates_for_frequency(start_date: str, end_date: str, frequency: str) -> ee.List:
-    freq = frequency.lower()
-    unit = {"daily": "day", "weekly": "week", "monthly": "month", "yearly": "year"}.get(freq)
-    if unit is None:
-        raise ValueError("frequency must be one of: daily, weekly, monthly, yearly")
-
-    start_ee = ee.Date(start_date)
-    end_ee = ee.Date(end_date)
-    n = end_ee.difference(start_ee, unit).floor()
-    return ee.List.sequence(0, n).map(lambda i: start_ee.advance(ee.Number(i), unit))
-
-
-def _timeseries_to_df(fc: ee.FeatureCollection) -> pd.DataFrame:
-    feats = fc.getInfo()["features"]
-    rows = [f["properties"] for f in feats]
-    return pd.DataFrame(rows)
-
-
-
-
-
-
-
-# --------------------------------------------------------
-# Builders
-# --------------------------------------------------------
 
 # ----------------------------
-# Builders (return (ic, meta))
+# Builders (return (ic, meta)) 
+# (public entry function)
 # ----------------------------
 def _build_lst(satellite: str, start_date: str, end_date: str) -> Tuple[ee.ImageCollection, Dict[str, Any]]:
     sat = _norm(satellite)
@@ -126,6 +129,7 @@ def _build_lst(satellite: str, start_date: str, end_date: str) -> Tuple[ee.Image
             "product": "LST",
             "band": "LST_Day_1km",
             "unit": "K",
+            # "unit": "°C",
             "multiply": 0.02,
             "add": 0.0,
             "scale_m": 1000,
@@ -286,6 +290,93 @@ def _build_ndvi(satellite: str, start_date: str, end_date: str) -> Tuple[ee.Imag
 
 
 
+def _build_lst(satellite: str, start_date: str, end_date: str) -> Tuple[ee.ImageCollection, Dict[str, Any]]:
+    sat = _norm(satellite)
+
+    if sat in ("LANDSAT", "LANDSAT_8DAY", "LANDSAT8DAY"):
+        ic = (
+            ee.ImageCollection("LANDSAT/COMPOSITES/C02/T1_L2_8DAY_NDVI")
+            .filterDate(start_date, end_date)
+            .select(["NDVI"], ["NDVI"])
+            .map(_copy_time)
+        )
+        return ic, {
+            "product": "NDVI",
+            "bands": ["NDVI"],
+            "unit": "NDVI",
+            "scale_m": 30,
+            "start_date" : start_date,
+            "end_date" : end_date,
+            "satellite" : sat
+            }
+
+    if sat == "MODIS":
+        ic = (
+            ee.ImageCollection("MODIS/061/MOD13Q1")
+            .filterDate(start_date, end_date)
+            .select(["NDVI"], ["NDVI"])
+            .map(lambda img: img.multiply(0.0001).rename("NDVI").copyProperties(img, ["system:time_start"]))
+        )
+        return ic, {
+            "product": "NDVI",
+            "bands": ["NDVI"],
+            "unit": "NDVI",
+            "scale_m": 250,
+            "start_date" : start_date,
+            "end_date" : end_date,
+            "satellite" : sat
+            }
+
+    if sat in ("SENTINEL", "SENTINEL2", "S2"):
+        base = (
+            ee.ImageCollection("COPERNICUS/S2_HARMONIZED")
+            .filterDate(start_date, end_date)
+            .filter(ee.Filter.lte("CLOUDY_PIXEL_PERCENTAGE", 60))
+        )
+
+        def _to_ndvi(img: ee.Image) -> ee.Image:
+            red = img.select("B4").divide(10000.0)
+            nir = img.select("B8").divide(10000.0)
+            ndvi = _ndvi_from_nir_red(nir, red)
+            return ndvi.copyProperties(img, ["system:time_start"])
+
+        ic = base.map(_to_ndvi)
+        return ic, {
+            "product": "NDVI",
+            "bands": ["NDVI"],
+            "unit": "NDVI",
+            "scale_m": 10,
+            "start_date" : start_date,
+            "end_date" : end_date,
+            "satellite" : sat
+            }
+
+    if sat in ("VIIRS", "NOAA_VIIRS", "NOAA"):
+        ic = (
+            ee.ImageCollection("NOAA/CDR/VIIRS/NDVI/V1")
+            .filterDate(start_date, end_date)
+            .select(["NDVI"], ["NDVI"])
+            .map(lambda img: (
+                img.updateMask(img.neq(-9998))
+                   .multiply(0.0001)
+                   .rename("NDVI")
+                   .copyProperties(img, ["system:time_start"])
+            ))
+        )
+        return ic, {
+            "product": "NDVI",
+            "bands": ["NDVI"],
+            "unit": "NDVI",
+            "scale_m": 500,
+            "start_date" : start_date,
+            "end_date" : end_date,
+            "satellite" : sat
+            }
+
+    raise ValueError(f"Unsupported satellite for NDVI: {satellite}. Use LANDSAT8DAY, MODIS, S2, or VIIRS.")
+
+
+
 def _build_evi(satellite: str, start_date: str, end_date: str) -> Tuple[ee.ImageCollection, Dict[str, Any]]:
     sat = _norm(satellite)
 
@@ -348,7 +439,7 @@ def _build_evi(satellite: str, start_date: str, end_date: str) -> Tuple[ee.Image
             blue = _sr(img, "SR_B2")
             red  = _sr(img, "SR_B4")
             nir  = _sr(img, "SR_B5")
-            evi = _evi_from_nir_red_blue(nir, red, blue) 
+            evi = _evi_from_nir_red_blue(nir, red, blue)  # returns band named "EVI"
             return evi.copyProperties(img, ["system:time_start"])
 
         ic = base.map(_to_evi)
@@ -478,31 +569,9 @@ def _build_chirps(start_date: str, end_date: str) -> Tuple[ee.ImageCollection, D
         }
 
 
-
-
-# --------------------------------------------------------
-# Reduce stastistics helpers
-# --------------------------------------------------------
-
-def _empty(
-    prod: str,
-    start: ee.Date,
-) -> ee.Feature:
-    base = {
-        "date": start.format("YYYY-MM-dd"),
-        "product": prod,
-        "n_images": 0,
-    }
-
-    if prod == "CHIRPS":
-        base["precipitation_mm"] = None
-    elif prod in ("NDVI", "EVI"):
-        base[prod.lower()] = None
-    elif prod == "LST":
-        base.update({"mean": None, "median": None, "min": None, "max": None})
-    else:
-        base["value"] = None
-    return ee.Feature(None, base)
+# ----------------------------
+# Compute period feature
+# ----------------------------
 
 
 
@@ -516,7 +585,10 @@ def _compute(
 ) -> ee.Feature:
     n = period_ic.size()
 
-    def _reduce_mean(img: ee.Image, band: str) -> ee.Dictionary:
+    def _reduce_mean(
+        img: ee.Image, 
+        band: str,
+    ) -> ee.Dictionary:
         proj = img.select(band).projection()
         geom_in_img_crs = geometry.transform(proj, 1)
         return img.select(band).reduceRegion(
@@ -526,6 +598,7 @@ def _compute(
             maxPixels=1e13,
             bestEffort=True,
         )
+
 
     if prod == "CHIRPS":
         band = meta.get("band", "precipitation")
@@ -540,7 +613,7 @@ def _compute(
             "n_images": n,
             "unit": meta.get("unit", "mm"),
         })
-
+    
     if prod in ("NDVI", "EVI"):
         band = prod 
         img = period_ic.select(band).mean().rename(band)
@@ -552,6 +625,7 @@ def _compute(
             "product": prod,
             prod.lower(): stats.get(band),
             "n_images": n,
+            "unit": meta.get("unit", prod),
             "satellite": meta.get("satellite"),
         })
 
@@ -627,47 +701,27 @@ def _compute(
     raise ValueError(f"Unsupported product in _compute: {prod}")
 
 
+# ----------------------------
+# compute timeseries
+# ----------------------------
+
+def _dates_for_frequency(start_date: str, end_date: str, frequency: str) -> ee.List:
+    freq = frequency.lower()
+    unit = {"daily": "day", "weekly": "week", "monthly": "month", "yearly": "year"}.get(freq)
+    if unit is None:
+        raise ValueError("frequency must be one of: daily, weekly, monthly, yearly")
+
+    start_ee = ee.Date(start_date)
+    end_ee = ee.Date(end_date)
+    n = end_ee.difference(start_ee, unit).floor()
+    return ee.List.sequence(0, n).map(lambda i: start_ee.advance(ee.Number(i), unit))
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+def _timeseries_to_df(fc: ee.FeatureCollection) -> pd.DataFrame:
+    feats = fc.getInfo()["features"]
+    rows = [f["properties"] for f in feats]
+    return pd.DataFrame(rows)
 
 
 

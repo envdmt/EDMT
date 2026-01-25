@@ -1,28 +1,28 @@
-import ee
 import geopandas as gpd
 import pandas as pd
-from typing import Tuple, Dict, Any, Optional
+from typing import Any, Dict, Optional, Tuple
+import ee
 from .builder import (
     ee_initialized,
     gdf_to_ee_geometry,
     _norm,
-    _build_chirps,
     _build_lst,
     _build_ndvi,
     _build_evi,
     _build_ndvi_evi,
+    _build_chirps,
+    _advance_end,
     _compute,
     _empty,
-    _advance_end,
     _dates_for_frequency,
-    _timeseries_to_df,
+    _timeseries_to_df
 )
-
 
 
 # ----------------------------
 # ONE public entry function
 # ----------------------------
+
 def get_satellite_collection(
     product: str,
     start_date: str,
@@ -72,9 +72,9 @@ def get_satellite_collection(
 
 
 
-# ------------------------------------
-# ONE Compute period feature function
-# ------------------------------------
+# ----------------------------
+# Compute period feature
+# ----------------------------
 
 def compute_period_feature(
     product: str,
@@ -110,11 +110,9 @@ def compute_period_feature(
 
 
 
-# ------------------------------------
-# ONE Ccompute_timeseries function
-# ------------------------------------
-
-
+# ----------------------------
+# compute timeseries
+# ----------------------------
 def compute_timeseries(
     product: str,
     start_date: str,
@@ -124,7 +122,7 @@ def compute_timeseries(
     satellite: Optional[str] = None,
     scale: Optional[int] = None,
 ) -> pd.DataFrame:
-    ee_initialized()  # your helper
+    ee_initialized() 
     if roi_gdf is None:
         raise ValueError("Provide roi_gdf (Region of Interest)")
 
@@ -183,14 +181,11 @@ def compute_timeseries(
         if cols:
             df = df[df[cols].notna().any(axis=1)]
 
+
     if frequency.lower() == "monthly" and "date" in df.columns:
         df["month"] = pd.to_datetime(df["date"]).dt.strftime("%B")
 
     return df.reset_index(drop=True)
-
-
-
-
 
 
 

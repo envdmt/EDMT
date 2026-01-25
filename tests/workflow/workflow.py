@@ -66,24 +66,6 @@ def compute_evi_timeseries(
     )
 
 
-def compute_ndvi_evi_timeseries(
-    start_date: str,
-    end_date: str,
-    satellite: str = "MODIS",
-    frequency: str = "monthly",
-    roi_gdf: Optional[gpd.GeoDataFrame] = None,
-    scale: Optional[int] = None,
-) -> pd.DataFrame:
-    return compute_timeseries(
-        product="NDVI_EVI",
-        start_date=start_date,
-        end_date=end_date,
-        frequency=frequency,
-        roi_gdf=roi_gdf,
-        satellite=satellite,
-        scale=scale,
-    )
-
 def compute_chirps_timeseries(
     start_date: str,
     end_date: str,
@@ -100,5 +82,3 @@ def compute_chirps_timeseries(
         satellite=None,
         scale=scale,
     )
-
-
