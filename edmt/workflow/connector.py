@@ -17,6 +17,7 @@ from .builder import (
     _dates_for_frequency,
     _timeseries_to_df,
     _compute_img,
+    ReducerName,
 )
 
 
