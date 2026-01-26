@@ -16,6 +16,7 @@ from .builder import (
     _advance_end,
     _dates_for_frequency,
     _timeseries_to_df,
+    _compute_img,
 )
 
 
@@ -114,7 +115,6 @@ def compute_period_feature(
 # ONE Ccompute_timeseries function
 # ------------------------------------
 
-
 def compute_timeseries(
     product: str,
     start_date: str,
@@ -190,6 +190,49 @@ def compute_timeseries(
 
 
 
+# ------------------------------------
+# ONE get_product_image function
+# ------------------------------------
+def get_product_image(
+    product: str,
+    start_date: str,
+    end_date: str,
+    satellite: Optional[str] = None,
+    roi_gdf: Optional[gpd.GeoDataFrame] = None,
+    reducer: ReducerName = "mean",
+) -> ee.Image:
+    """
+    Returns a single composite image for product in the date window.
+
+    - LST: returns °C (expects meta has multiply/add or unit K/°C)
+    - NDVI/EVI: returns index [-1,1]
+    - CHIRPS: for reducer='sum' returns total mm; otherwise daily statistic
+    """
+    ee_initialized()
+
+    roi = gdf_to_ee_geometry(roi_gdf) if roi_gdf is not None else None
+
+    ic, meta = get_satellite_collection(product, start_date, end_date, satellite=satellite)
+
+    if roi is not None and str(meta.get("satellite", "")).upper() == "MODIS":
+        first = ee.Image(ic.first())
+        b0 = (meta.get("bands") or [meta.get("band")])[0]
+        proj = first.select(b0).projection()
+        roi = roi.transform(proj, 1)
+
+    if roi is not None:
+        ic = ic.filterBounds(roi)
+
+    prod = str(meta.get("product", product)).upper()
+    bands = meta.get("bands") or ([meta.get("band")] if meta.get("band") else [])
+    if not bands:
+        raise ValueError("meta must include 'bands' or 'band'")
+
+    r = reducer.lower()
+
+    img = _compute_img(product, start_date, end_date, ic, meta, roi, r)
+
+    return img
 
 
 

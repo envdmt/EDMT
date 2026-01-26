@@ -1,8 +1,11 @@
 from typing import Optional
 import geopandas as gpd
 import pandas as pd
+import ee
+from typing import Literal
 from .connector import (
-    compute_timeseries
+    compute_timeseries,
+    get_product_image,
 )
 from .builder import (
     Frequency
@@ -84,6 +87,7 @@ def compute_ndvi_evi_timeseries(
         scale=scale,
     )
 
+
 def compute_chirps_timeseries(
     start_date: str,
     end_date: str,
@@ -100,5 +104,65 @@ def compute_chirps_timeseries(
         satellite=None,
         scale=scale,
     )
+
+
+def get_lst_image(
+    start_date: str,
+    end_date: str,
+    satellite: str,
+    roi_gdf: Optional[gpd.GeoDataFrame] = None,
+    reducer: Literal["mean", "median", "min", "max"] = "mean",
+) -> ee.Image:
+  return get_product_image(
+      "LST",
+      start_date,
+      end_date,
+      satellite=satellite,
+      roi_gdf=roi_gdf,
+      reducer=reducer
+      )
+
+
+def get_ndvi_image(
+    start_date: str,
+    end_date: str,
+    satellite: str,
+    roi_gdf: Optional[gpd.GeoDataFrame] = None,
+    reducer: Literal["mean", "median", "min", "max"] = "mean",
+) -> ee.Image:
+
+      return get_product_image("NDVI", start_date, end_date, satellite=satellite, roi_gdf=roi_gdf, reducer=reducer)
+
+
+def get_evi_image(
+    start_date: str,
+    end_date: str,
+    satellite: str,
+    roi_gdf: Optional[gpd.GeoDataFrame] = None,
+    reducer: Literal["mean", "median", "min", "max"] = "mean",
+) -> ee.Image:
+    return get_product_image("EVI", start_date, end_date, satellite=satellite, roi_gdf=roi_gdf, reducer=reducer)
+
+
+def get_chirps_image(
+    start_date: str,
+    end_date: str,
+    roi_gdf: Optional[gpd.GeoDataFrame] = None,
+    reducer: Literal["mean", "median", "min", "max"] = "mean",
+) -> ee.Image:
+    return get_product_image("CHIRPS", start_date, end_date, satellite=None, roi_gdf=roi_gdf, reducer=reducer)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

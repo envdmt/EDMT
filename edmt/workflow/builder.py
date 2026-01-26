@@ -102,9 +102,6 @@ def _timeseries_to_df(fc: ee.FeatureCollection) -> pd.DataFrame:
 
 
 
-
-
-
 # --------------------------------------------------------
 # Builders
 # --------------------------------------------------------
@@ -629,14 +626,150 @@ def _compute(
 
 
 
+# --------------------------------------------------------
+# Builder : Image Collection getter
+# --------------------------------------------------------
+
+# ----------------------------
+# Helpers : Image Collection 
+# ----------------------------
+
+ReducerName = Literal["mean", "median", "min", "max", "sum"]
 
 
+# ----------------------------
+# Builders (return (image))
+# ----------------------------
+def _compute_img(
+    product: str,
+    start_date: str,
+    end_date: str,
+    ic: ee.ImageCollection,
+    meta: Dict[str, Any],
+    roi: Optional[ee.Geometry] = None,
+    reducer: ReducerName = "mean",
+) -> ee.Image:
+    """
+    Build a single composite ee.Image for a product using (ic, meta) from get_satellite_collection().
 
+    - CHIRPS: reducer='sum' => total mm over period; else statistic of daily mm/day
+    - NDVI/EVI: statistic over index band
+    - NDVI_EVI: statistic over both bands (NDVI & EVI)
+    - LST: statistic over band then convert to °C using meta (DN->K->C or K->C)
+    """
+    prod = product.upper()
+    r = reducer.lower()
 
+    bands = meta.get("bands") or ([meta.get("band")] if meta.get("band") else [])
+    if not bands and prod != "CHIRPS":
+        raise ValueError("meta must include 'bands' or 'band'")
 
+    if roi is not None:
+        first = ee.Image(ic.first())
+        b0 = None
+        if prod == "CHIRPS":
+            b0 = meta.get("band", "precipitation")
+        elif prod == "NDVI_EVI":
+            b0 = "NDVI"
+        else:
+            b0 = prod if prod in ("NDVI", "EVI") else (meta.get("band") or bands[0])
 
+        proj = first.select(b0).projection()
+        roi = roi.transform(proj, 1)
+        ic = ic.filterBounds(roi)
 
+    if prod == "CHIRPS":
+        band = meta.get("band", "precipitation")
 
+        if r == "sum":
+            img = ic.select(band).sum().rename("precipitation_mm")
+            unit = "mm"
+        elif r in ("mean", "median", "min", "max"):
+            img = getattr(ic.select(band), r)().rename("precipitation_mm")
+            unit = "mm/day"
+        else:
+            raise ValueError("CHIRPS reducer must be one of: sum, mean, median, min, max")
+
+        if roi is not None:
+            img = img.clip(roi)
+
+        return img.set({
+            "product": "CHIRPS",
+            "start": start_date,
+            "end": end_date,
+            "reducer": r,
+            "unit": unit,
+        })
+
+    if prod in ("NDVI", "EVI"):
+        if r not in ("mean", "median", "min", "max"):
+            raise ValueError("NDVI/EVI reducer must be one of: mean, median, min, max")
+
+        band = prod
+        img = getattr(ic.select(band), r)().rename(band)
+
+        if roi is not None:
+            img = img.clip(roi)
+
+        return img.set({
+            "product": prod,
+            "satellite": meta.get("satellite"),
+            "start": start_date,
+            "end": end_date,
+            "reducer": r,
+            "unit": meta.get("unit", prod),
+        })
+
+    
+    if prod == "NDVI_EVI":
+        if r not in ("mean", "median", "min", "max"):
+            raise ValueError("NDVI_EVI reducer must be one of: mean, median, min, max")
+
+        img = getattr(ic.select(["NDVI", "EVI"]), r)().rename(["NDVI", "EVI"])
+
+        if roi is not None:
+            img = img.clip(roi)
+
+        return img.set({
+            "product": "NDVI_EVI",
+            "satellite": meta.get("satellite"),
+            "start": start_date,
+            "end": end_date,
+            "reducer": r,
+            "unit": meta.get("unit", "index"),
+        })
+
+    
+    if prod == "LST":
+        if r not in ("mean", "median", "min", "max"):
+            raise ValueError("LST reducer must be one of: mean, median, min, max")
+
+        band = meta.get("band") or bands[0]
+        img = getattr(ic.select(band), r)().rename(band)
+
+        unit = str(meta.get("unit", "K")).upper()
+        if ("multiply" in meta) or ("add" in meta):
+            m = ee.Number(meta.get("multiply", 1.0))
+            a = ee.Number(meta.get("add", 0.0))
+            img = img.multiply(m).add(a).subtract(273.15)  
+        elif unit == "K":
+            img = img.subtract(273.15)                
+        img = img.rename("LST_C")
+
+        if roi is not None:
+            img = img.clip(roi)
+
+        return img.set({
+            "product": "LST",
+            "satellite": meta.get("satellite"),
+            "band": band,
+            "start": start_date,
+            "end": end_date,
+            "reducer": r,
+            "unit": "°C",
+        })
+
+    raise ValueError(f"Unsupported product for image composite: {product}")
 
 
 
