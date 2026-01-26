@@ -268,7 +268,7 @@ def get_product_image_collection(
     if meta.get("product") in ("NDVI", "EVI") and str(meta.get("satellite", "")).upper() == "MODIS":
       first = ee.Image(ic.first())
       proj = first.select(meta["bands"][0]).projection()
-      geometry = geometry.transform(proj, 1)
+      geometry = roi.transform(proj, 1)
       ic = ic.filterBounds(geometry)
 
     dates = ee.List.sequence(
