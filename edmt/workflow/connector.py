@@ -3,6 +3,8 @@ import geopandas as gpd
 import pandas as pd
 from typing import Tuple, Dict, Any, Optional
 from .builder import (
+    ReducerName,
+    Frequency,
     ee_initialized,
     gdf_to_ee_geometry,
     _norm,
@@ -17,7 +19,8 @@ from .builder import (
     _dates_for_frequency,
     _timeseries_to_df,
     _compute_img,
-    ReducerName,
+    _period_dates,
+    _build_period_img,
 )
 
 
@@ -235,6 +238,71 @@ def get_product_image(
 
     return img
 
+
+def get_product_image_collection(
+    product: str,
+    start_date: str,
+    end_date: str,
+    frequency: Frequency = "monthly",
+    satellite: Optional[str] = None,
+    roi_gdf: Optional[gpd.GeoDataFrame] = None,
+    reducer: ReducerName = "mean",
+) -> ee.ImageCollection:
+    ee_initialized()
+
+    roi = gdf_to_ee_geometry(roi_gdf) if roi_gdf is not None else None
+
+    ic, meta = get_satellite_collection(product, start_date, end_date, satellite=satellite)
+    prod = str(meta.get("product", product)).upper()
+
+    freq, step_days = _period_dates(start_date, end_date, frequency)
+    r = reducer.lower()
+
+    if prod == "CHIRPS":
+        if r not in ("sum", "mean", "median", "min", "max"):
+            raise ValueError("CHIRPS reducer must be one of: sum, mean, median, min, max")
+    else:
+        if r not in ("mean", "median", "min", "max"):
+            raise ValueError(f"{prod} reducer must be one of: mean, median, min, max")
+
+    if meta.get("product") in ("NDVI", "EVI") and str(meta.get("satellite", "")).upper() == "MODIS":
+      first = ee.Image(ic.first())
+      proj = first.select(meta["bands"][0]).projection()
+      geometry = geometry.transform(proj, 1)
+      ic = ic.filterBounds(geometry)
+
+    dates = ee.List.sequence(
+        ee.Date(start_date).millis(),
+        ee.Date(end_date).millis(),
+        step_days * 24 * 60 * 60 * 1000,
+    )
+
+    def _one_period(d):
+        start = ee.Date(d)
+        end = _advance_end(start, freq)
+        period_ic = ic.filterDate(start, end)
+
+        meta2 = ee.Dictionary(meta).set("frequency", freq)
+
+        img = _build_period_img(
+            prod=prod,
+            r=r,
+            start=start,
+            end=end,
+            period_ic=period_ic,
+            meta={**meta, "frequency": freq},
+            roi=roi,
+        )
+        return img
+
+    img_coll = ee.ImageCollection(dates.map(_one_period)).sort("system:time_start")
+
+    if freq == "monthly":
+        img_coll = img_coll.map(lambda img: img.set({
+            "month": ee.Date(img.get("system:time_start")).format("MMMM")
+        }))
+
+    return img_coll
 
 
 

@@ -481,10 +481,7 @@ def _build_chirps(start_date: str, end_date: str) -> Tuple[ee.ImageCollection, D
 # Reduce stastistics helpers
 # --------------------------------------------------------
 
-def _empty(
-    prod: str,
-    start: ee.Date,
-) -> ee.Feature:
+def _empty(prod: str, start: ee.Date,) -> ee.Feature:
     base = {
         "date": start.format("YYYY-MM-dd"),
         "product": prod,
@@ -503,14 +500,7 @@ def _empty(
 
 
 
-def _compute(
-    prod: str,
-    start: ee.Date,
-    period_ic: ee.ImageCollection,
-    geometry: ee.Geometry,
-    scale: int,
-    meta: Dict[str, Any],
-) -> ee.Feature:
+def _compute(prod: str,start: ee.Date,period_ic: ee.ImageCollection,geometry: ee.Geometry, scale: int,meta: Dict[str, Any],) -> ee.Feature:
     n = period_ic.size()
 
     def _reduce_mean(img: ee.Image, band: str) -> ee.Dictionary:
@@ -622,7 +612,6 @@ def _compute(
         })
 
     raise ValueError(f"Unsupported product in _compute: {prod}")
-
 
 
 
@@ -773,14 +762,93 @@ def _compute_img(
 
 
 
+ReducerName = Literal["mean", "median", "min", "max", "sum"]
+
+def _period_dates(start_date: str, end_date: str, frequency: str) -> Tuple[str, int]:
+    freq = frequency.lower()
+    if freq not in {"daily", "weekly", "monthly", "yearly"}:
+        raise ValueError("frequency must be one of: daily, weekly, monthly, yearly")
+    step_days = {"daily": 1, "weekly": 7, "monthly": 30, "yearly": 365}[freq]
+    return freq, step_days
 
 
+def _empty_img(start: ee.Date, end: ee.Date, freq: str, prod: str) -> ee.Image:
+    return (
+        ee.Image(0)
+        .updateMask(ee.Image(0))
+        .rename("empty")
+        .set({
+            "system:time_start": start.millis(),
+            "period_start": start.format("YYYY-MM-dd"),
+            "period_end": end.format("YYYY-MM-dd"),
+            "frequency": freq,
+            "n_images": 0,
+            "product": prod,
+        })
+    )
 
 
+def _build_period_img(
+    prod: str,
+    r: str,
+    start: ee.Date,
+    end: ee.Date,
+    period_ic: ee.ImageCollection,
+    meta: Dict[str, Any],
+    roi: Optional[ee.Geometry],
+) -> ee.Image:
+    """
+    Build one composite image for the period (server-side safe).
+    """
+    n = period_ic.size()
 
+    if prod == "CHIRPS":
+        band = meta.get("band", "precipitation")
+        if r == "sum":
+            img = period_ic.select(band).sum().rename("precipitation_mm").set({"unit": "mm"})
+        else:
+            img = getattr(period_ic.select(band), r)().rename("precipitation_mm").set({"unit": "mm/day"})
 
+    elif prod in ("NDVI", "EVI"):
+        band = prod
+        img = getattr(period_ic.select(band), r)().rename(band).set({"unit": meta.get("unit", prod)})
 
+    elif prod == "NDVI_EVI":
+        img = getattr(period_ic.select(["NDVI", "EVI"]), r)().rename(["NDVI", "EVI"]).set({"unit": meta.get("unit", "index")})
 
+    elif prod == "LST":
+        band = meta.get("band") or (meta.get("bands") or [None])[0]
+        img0 = getattr(period_ic.select(band), r)().rename(band)
+
+        unit = str(meta.get("unit", "K")).upper()
+        if ("multiply" in meta) or ("add" in meta):
+            m = ee.Number(meta.get("multiply", 1.0))
+            a = ee.Number(meta.get("add", 0.0))
+            img0 = img0.multiply(m).add(a).subtract(273.15)
+        elif unit == "K":
+            img0 = img0.subtract(273.15)
+
+        img = img0.rename("LST_C").set({"unit": "°C"})
+
+    else:
+        band = (meta.get("bands") or [meta.get("band")])[0]
+        img = getattr(period_ic.select(band), r)().rename(band).set({"unit": meta.get("unit")})
+
+    img = img.set({
+        "system:time_start": start.millis(),
+        "period_start": start.format("YYYY-MM-dd"),
+        "period_end": end.format("YYYY-MM-dd"),
+        "frequency": meta.get("frequency", None) or None,
+        "n_images": n,
+        "product": prod,
+        "satellite": meta.get("satellite"),
+        "reducer": r,
+    })
+
+    if roi is not None:
+        img = img.clip(roi)
+
+    return ee.Image(ee.Algorithms.If(n.gt(0), img, _empty_img(start, end, meta.get("frequency", ""), prod)))
 
 
 
