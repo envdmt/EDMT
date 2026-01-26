@@ -6,6 +6,7 @@ from typing import Literal
 from .connector import (
     compute_timeseries,
     get_product_image,
+    get_product_image_collection,
 )
 from .builder import (
     Frequency,
@@ -132,7 +133,14 @@ def get_ndvi_image(
     reducer: ReducerName = "mean",
 ) -> ee.Image:
 
-      return get_product_image("NDVI", start_date, end_date, satellite=satellite, roi_gdf=roi_gdf, reducer=reducer)
+      return get_product_image(
+          "NDVI", 
+          start_date, 
+          end_date, 
+          satellite=satellite, 
+          roi_gdf=roi_gdf, 
+          reducer=reducer
+          )
 
 
 def get_evi_image(
@@ -142,7 +150,14 @@ def get_evi_image(
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
     reducer: ReducerName = "mean",
 ) -> ee.Image:
-    return get_product_image("EVI", start_date, end_date, satellite=satellite, roi_gdf=roi_gdf, reducer=reducer)
+    return get_product_image(
+        "EVI", 
+        start_date, 
+        end_date, 
+        satellite=satellite, 
+        roi_gdf=roi_gdf, 
+        reducer=reducer
+        )
 
 
 def get_chirps_image(
@@ -151,10 +166,89 @@ def get_chirps_image(
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
     reducer: ReducerName = "mean",
 ) -> ee.Image:
-    return get_product_image("CHIRPS", start_date, end_date, satellite=None, roi_gdf=roi_gdf, reducer=reducer)
+    return get_product_image(
+        "CHIRPS", 
+        start_date, 
+        end_date, 
+        satellite=None, 
+        roi_gdf=roi_gdf, 
+        reducer=reducer
+        )
 
 
+def get_lst_image_collection(
+    start_date: str,
+    end_date: str,
+    satellite: str,
+    frequency: Frequency = "monthly",
+    roi_gdf: Optional[gpd.GeoDataFrame] = None,
+    reducer: ReducerName = "mean",
+) -> ee.ImageCollection:
+    return get_product_image_collection(
+        "LST", 
+        start_date, 
+        end_date, 
+        satellite=satellite, 
+        frequency=frequency,
+        roi_gdf=roi_gdf, 
+        reducer=reducer
+        )
 
+
+def get_ndvi_image_collection(
+    start_date: str,
+    end_date : str,
+    satellite: str,
+    frequency: Frequency = "monthly",
+    roi_gdf: Optional[gpd.GeoDataFrame] = None,
+    reducer: ReducerName = "mean",
+) -> ee.ImageCollection:
+    return get_product_image_collection(
+        "NDVI", 
+        start_date, 
+        end_date, 
+        satellite=satellite, 
+        frequency=frequency, 
+        roi_gdf=roi_gdf, 
+        reducer=reducer
+        )
+
+
+def get_evi_image_collection(
+    start_date: str,
+    end_date: str,
+    satellite: str,
+    frequency: Frequency = "monthly",
+    roi_gdf: Optional[gpd.GeoDataFrame] = None,
+    reducer: ReducerName = "mean",
+) -> ee.ImageCollection:
+    return get_product_image_collection(
+        "EVI", 
+        start_date, 
+        end_date, 
+        satellite=satellite, 
+        frequency=frequency, 
+        roi_gdf=roi_gdf, 
+        reducer=reducer
+        )
+
+
+def get_chirps_image_collection(
+    start_date: str,
+    end_date: str,
+    frequency: Frequency = "monthly",
+    roi_gdf: Optional[gpd.GeoDataFrame] = None,
+    reducer: ReducerName = "mean",
+) -> ee.ImageCollection:
+    return get_product_image_collection(
+        "CHIRPS", 
+        start_date, 
+        end_date, 
+        frequency=frequency, 
+        satellite=None, 
+        roi_gdf=roi_gdf, 
+        reducer=reducer
+        )
 
 
 
