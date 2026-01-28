@@ -20,9 +20,9 @@ classifiers = [
 dependencies = [
   "duckdb",
   "contourpy>=1.2.1",
-  "earthengine-api>=0.1.324,<1.7.100",
+  "earthengine-api>=0.1.324,<1.7.10",
   "google-api-core>=2.11,<2.15",
-  "google-auth>=2.20,<2.5",
+  "google-auth>=2.20,<2.48",
   "google-auth-httplib2>=0.1.0,<0.2",
   "google-api-python-client>=2.86,<2.95",
   "pillow>=10.4,<11",
