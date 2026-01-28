@@ -11,8 +11,20 @@ import shapely
 # Main helpers
 # ----------------------------
 
-def ee_initialized():
-    if not ee.data._initialized:
+def ee_initialized(project: str | None = None) -> None:
+    """
+    Initialize Earth Engine only once.
+
+    Notes:
+    - Uses the public ee.data.is_initialized() instead of private ee.data._initialized.
+    - Newer EE setups typically require a Cloud project for Initialize().
+    """
+    if ee.data.is_initialized():
+        return
+
+    if project:
+        ee.Initialize(project=project)
+    else:
         ee.Initialize()
 
 
