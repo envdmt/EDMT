@@ -22,7 +22,7 @@ dependencies = [
   "earthengine-api>=0.1.324,<1.7.10",
   "google-api-core>=1.0,<3.0.0",
   "google-auth>=1.0,<2.48",
-  "geopandas>=0.12.2,1.1.2",
+  "geopandas>=0.12.2,<1.1.2",
   "fiona>=1.9.6",
   "tqdm>=4",
   "requests"
