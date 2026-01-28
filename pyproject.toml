@@ -7,7 +7,7 @@ name = "edmt"
 version = "1.0.2dev"
 description = "Environmental Data Management Toolbox"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = {file = "LICENSE"} 
 authors = [
   {name = "Odero, Kuloba & musasia", email = "francisodero10@gmail.com"},
