@@ -11,21 +11,13 @@ on:
 
 jobs:
   build:
+
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - python-version: "3.9"
-            allow-failure: true
-          - python-version: "3.10"
-            allow-failure: false
-          - python-version: "3.11"
-            allow-failure: false
-          - python-version: "3.12"
-            allow-failure: true
-
-    continue-on-error: ${{ matrix.allow-failure }}
+        python-version: ["3.10", "3.11", "3.12"]
+        allow-failure: 3.12
 
 
     steps:
