@@ -6,15 +6,10 @@
     <img src="https://img.shields.io/pypi/v/edmt.svg" alt="PyPI version" />
   </a>
 
-  <!-- Tests (main branch) -->
-  <a href="https://github.com/envdmt/EDMT/actions/workflows/ci.yml">
-    <img src="https://github.com/envdmt/EDMT/actions/workflows/ci.yml/badge.svg?branch=main" alt="Tests Main" />
-  </a>
-
   <!-- Codecov -->
-  <a href="https://codecov.io/gh/envdmt/EDMT">
+  <!-- <a href="https://codecov.io/gh/envdmt/EDMT">
     <img src="https://codecov.io/gh/envdmt/EDMT/branch/main/graph/badge.svg" alt="codecov" />
-  </a>
+  </a> -->
 
   <!-- Docs -->
   <a href="https://envdmt.github.io/EDMT/">
