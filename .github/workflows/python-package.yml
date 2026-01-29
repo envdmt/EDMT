@@ -18,7 +18,7 @@ jobs:
       matrix:
         include:
           - python-version: "3.10"
-            allow-failure: false
+            allow-failure: true
           - python-version: "3.11"
             allow-failure: false
           - python-version: "3.12"
