@@ -1,3 +1,4 @@
+from typing import Optional
 import uuid
 import pandas as pd
 import geopandas as gpd
@@ -97,7 +98,6 @@ distance_chart = {
     "mi": 1609.344,
 }
 
-
 temp_units: tuple[str, ...] = ("C", "F", "K")
 
 temp_unit_aliases: dict[str, str] = {
@@ -113,6 +113,7 @@ temp_unit_aliases: dict[str, str] = {
     "°k": "K",
     "kelvin": "K",
 }
+
 
 
 def sdf_to_gdf(sdf, crs=None):
@@ -151,7 +152,6 @@ def sdf_to_gdf(sdf, crs=None):
 
     return gdf
 
-
 def _is_valid_uuid(val) -> bool:
     if pd.isna(val):
         return False
@@ -162,45 +162,119 @@ def _is_valid_uuid(val) -> bool:
         return False
 
 
-def generate_uuid(df: pd.DataFrame, index: bool = False) -> pd.DataFrame:
+def _find_uuid_like_column(
+    df: pd.DataFrame,
+    contains: tuple[str, ...] = ("uuid",),
+) -> Optional[str]:
     """
-    Ensures a valid UUID string column named 'uuid' exists in the DataFrame.
+    Return the first column name that looks like it contains a uuid marker.
+    E.g. 'uuid', 'UUID', 'user_uuid', 'myUuid', etc.
+    """
+    lowered = {c.lower(): c for c in df.columns}
+    for lc, original in lowered.items():
+        if any(k in lc for k in contains):
+            return original
+    return None
 
-    - Creates a 'uuid' column if missing
-    - Replaces invalid or missing UUID values
-    - Preserves valid UUIDs
-    - Optionally sets 'uuid' as index while keeping the column
 
-    Args:
-        df (pd.DataFrame): Input DataFrame
-        index (bool): Whether to set 'uuid' as the index
+def generate_uuid(
+    df: pd.DataFrame,
+    *,
+    force: bool = False,
+    index: bool = False,
+    uuid_col: str = "uuid",
+    detect_uuid_cols: bool = True,
+    detect_contains: tuple[str, ...] = ("uuid",),
+) -> pd.DataFrame:
+    """
+    Ensure a pandas DataFrame contains a column of valid UUIDs, creating or repairing as needed.
 
-    Returns:
-        pd.DataFrame
+    This function adds a new UUID column or validates/repairs an existing one. It can optionally 
+    detect existing UUID-like columns to avoid duplication and control column placement.
 
-    Raises:
-        ValueError: If input is not a DataFrame or is empty
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input DataFrame to process.
+    force : bool, optional
+        If True, always generate new UUIDs—even if a valid UUID column already exists 
+        (default: False).
+    index : bool, optional
+        If True, place the UUID column at the beginning of the DataFrame; otherwise, 
+        place it at the end (default: False).
+    uuid_col : str, optional
+        Name of the target UUID column (default: "uuid").
+    detect_uuid_cols : bool, optional
+        If True and `force=False`, scan for existing columns that appear to contain UUIDs 
+        (based on name and content) to avoid redundant generation (default: True).
+    detect_contains : tuple of str, optional
+        Substrings used to identify potential UUID columns by name when `detect_uuid_cols=True` 
+        (default: ("uuid",)).
+
+    Returns
+    -------
+    pd.DataFrame
+        A copy of the input DataFrame with a valid UUID column named `uuid_col`.
+
+    Raises
+    ------
+    ValueError
+        If input is not a DataFrame or if the DataFrame is empty.
+
+    Notes
+    -----
+    - A value is considered a valid UUID if it is a string matching the standard UUID format 
+      (e.g., "f47ac10b-58cc-4372-a567-0e02b2c3d479").
+    - When `force=False` and a UUID-like column is detected (by name and content), the function 
+      reuses it but repairs any invalid entries by replacing them with new UUIDs.
+    - The output DataFrame is always a copy; the original is not modified.
+    - Column ordering is explicitly controlled: UUID column is moved to front if `index=True`, 
+      otherwise to the back.
+
+    Examples
+    --------
+    >>> df = pd.DataFrame({"name": ["Alice", "Bob"]})
+    >>> df_with_uuid = generate_uuid(df)
+    >>> "uuid" in df_with_uuid.columns
+    True
+
+    >>> df_existing = pd.DataFrame({"uuid": ["invalid", "7af3ea7c-5a14-48c2-a3c2-b014488c0216"], "val": [1, 2]})
+    >>> fixed = generate_uuid(df_existing)
+    # First entry replaced with valid UUID; second preserved
     """
     if not isinstance(df, pd.DataFrame):
         raise ValueError("Input must be a pandas DataFrame.")
     if df.empty:
         raise ValueError("DataFrame is empty.")
 
-    df = df.copy()
-    if "uuid" not in df.columns:
-        df["uuid"] = [str(uuid.uuid4()) for _ in range(len(df))]
+    out = df.copy()
+
+    existing_uuid_like = None
+    if detect_uuid_cols:
+        existing_uuid_like = _find_uuid_like_column(out, contains=detect_contains)
+
+    should_create = force or (existing_uuid_like is None and uuid_col not in out.columns)
+
+    if should_create:
+        out[uuid_col] = [str(uuid.uuid4()) for _ in range(len(out))]
     else:
-        df["uuid"] = [
-            str(val) if _is_valid_uuid(val) else str(uuid.uuid4())
-            for val in df["uuid"]
-        ]
+        if uuid_col in out.columns:
+            out[uuid_col] = [
+                str(v) if _is_valid_uuid(v) else str(uuid.uuid4())
+                for v in out[uuid_col]
+            ]
 
-    df["uuid"] = df["uuid"].astype(str)
+    if uuid_col in out.columns:
+        out[uuid_col] = out[uuid_col].astype(str)
 
-    if index:
-        df = df.set_index("uuid", drop=False)
+        if index:
+            cols = [uuid_col] + [c for c in out.columns if c != uuid_col]
+            out = out.loc[:, cols]
+        else:
+            cols = [c for c in out.columns if c != uuid_col] + [uuid_col]
+            out = out.loc[:, cols]
 
-    return df
+    return out
 
 
 def get_utm_epsg(longitude=None):
@@ -225,26 +299,7 @@ def get_utm_epsg(longitude=None):
     return f"32{hemisphere}{zone_number:02d}"
 
 
-def to_gdf(df):
-    """
-    Converts a DataFrame with location data into a GeoDataFrame with point geometries.
-
-    Args:
-        df (pd.DataFrame): Input DataFrame with location data.
-
-    Returns:
-        gpd.GeoDataFrame: GeoDataFrame with point geometries.
-
-    """
-    longitude, latitude = (0, 1) if isinstance(df["location"].iat[0], list) else ("longitude", "latitude")
-    return gpd.GeoDataFrame(
-        df,
-        geometry=gpd.points_from_xy(df["location"].str[longitude], df["location"].str[latitude]),
-        crs=4326,
-    )
-
-
-def convert_time(time_value: float, unit_from: str, unit_to: str) -> float:
+def convert_time(value: float, unit_from: str, unit_to: str) -> float:
     """
     Converts a given time value between different units.
 
@@ -260,8 +315,8 @@ def convert_time(time_value: float, unit_from: str, unit_to: str) -> float:
         ValueError: If units are unsupported or value is invalid.
 
     """
-    if not isinstance(time_value, (int, float)) or time_value < 0:
-        raise ValueError("'time_value' must be a non-negative number.")
+    if not isinstance(value, (int, float)) or value < 0:
+        raise ValueError("'value' must be a non-negative number.")
 
     unit_from = unit_from.lower().strip()
     unit_to = unit_to.lower().strip()
@@ -284,7 +339,7 @@ def convert_time(time_value: float, unit_from: str, unit_to: str) -> float:
     if unit_to not in time_chart:
         raise ValueError(f"Invalid 'unit_to': {unit_to}. Supported units: {', '.join(time_chart.keys())}")
 
-    seconds = time_value * time_chart[unit_from]
+    seconds = value * time_chart[unit_from]
     converted = seconds / time_chart[unit_to]
 
     return round(converted, 3)
@@ -315,7 +370,7 @@ def convert_speed(speed: float, unit_from: str, unit_to: str) -> float:
     return round(speed * speed_chart[unit_from] * speed_chart_inverse[unit_to], 3)
 
 
-def convert_distance(value: float, from_type: str, to_type: str) -> float:
+def convert_distance(value: float, unit_from: str, unit_to: str) -> float:
     """
     Converts distance values between metric and imperial units.
 
@@ -331,18 +386,17 @@ def convert_distance(value: float, from_type: str, to_type: str) -> float:
         ValueError: If unit is unsupported.
 
     """
-    from_sanitized = from_type.lower().strip("s")
-    to_sanitized = to_type.lower().strip("s")
+    from_sanitized = unit_from.lower().strip("s")
+    to_sanitized = unit_to.lower().strip("s")
 
     from_sanitized = UNIT_SYMBOL.get(from_sanitized, from_sanitized)
     to_sanitized = UNIT_SYMBOL.get(to_sanitized, to_sanitized)
 
     valid_units = set(distance_chart.keys())
     if from_sanitized not in valid_units:
-        raise ValueError(f"Invalid 'from_type': {from_type!r}. Valid units: {', '.join(valid_units)}")
+        raise ValueError(f"Invalid 'from_type': {unit_from!r}. Valid units: {', '.join(valid_units)}")
     if to_sanitized not in valid_units:
-        raise ValueError(f"Invalid 'to_type': {to_type!r}. Valid units: {', '.join(valid_units)}")
-
+        raise ValueError(f"Invalid 'to_type': {unit_to!r}. Valid units: {', '.join(valid_units)}")
     if from_sanitized in METRIC_CONVERSION and to_sanitized in METRIC_CONVERSION:
         from_exp = METRIC_CONVERSION[from_sanitized]
         to_exp = METRIC_CONVERSION[to_sanitized]
