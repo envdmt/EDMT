@@ -10,7 +10,6 @@ from edmt.conversion import (
     convert_time,
     convert_speed,
     convert_distance,
-    generate_uuid,
     get_utm_epsg
 )
 
@@ -67,7 +66,6 @@ def test_convert_distance_mixed():
 def test_convert_distance_invalid_unit():
     with pytest.raises(ValueError, match="Invalid 'from_type'"):
         convert_distance(10, "lightyears", "km")
-
 
 
 
