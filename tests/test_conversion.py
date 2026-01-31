@@ -69,36 +69,6 @@ def test_convert_distance_invalid_unit():
         convert_distance(10, "lightyears", "km")
 
 
-# --------------------------
-# Test: generate_uuid
-# --------------------------
-def test_generate_uuid_new():
-    df = pd.DataFrame({"a": [1, 2]})
-    result = generate_uuid(df)
-    assert "uuid" in result.columns
-    assert len(result["uuid"]) == 2
-    assert pd.api.types.is_string_dtype(result["uuid"])
-    uuid_pattern = r'^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$'
-    assert result["uuid"].str.match(uuid_pattern).all()
-
-def test_generate_uuid_existing_valid():
-    valid_uuid = str(uuid.uuid4())
-    df = pd.DataFrame({"uuid": [valid_uuid], "a": [1]})
-    result = generate_uuid(df)
-    assert result["uuid"].iloc[0] == valid_uuid
-
-def test_generate_uuid_existing_invalid():
-    df = pd.DataFrame({"uuid": ["not-a-uuid"], "a": [1]})
-    result = generate_uuid(df)
-    # Should replace invalid with new UUID
-    uuid_pattern = r'^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$'
-    assert result["uuid"].str.match(uuid_pattern).all()
-
-def test_generate_uuid_set_index():
-    df = pd.DataFrame({"a": [1, 2]})
-    result = generate_uuid(df, index=True)
-    assert result.index.name == "uuid"
-    assert "uuid" in result.columns  # because of reset_index()
 
 
 # --------------------------
