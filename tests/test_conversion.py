@@ -11,8 +11,7 @@ from edmt.conversion import (
     convert_speed,
     convert_distance,
     generate_uuid,
-    get_utm_epsg,
-    to_gdf
+    get_utm_epsg
 )
 
 # --------------------------
@@ -113,24 +112,6 @@ def test_get_utm_epsg():
 def test_get_utm_epsg_none():
     with pytest.raises(KeyError, match="Select column with longitude values"):
         get_utm_epsg()
-
-
-# --------------------------
-# Test: to_gdf
-# --------------------------
-def test_to_gdf_dict_style():
-    df = pd.DataFrame({
-        "location": [[10.0, 20.0], [30.0, 40.0]]
-    })
-    gdf = to_gdf(df)
-    assert isinstance(gdf, gpd.GeoDataFrame)
-    assert gdf.crs.to_epsg() == 4326
-    assert list(gdf.geometry) == [Point(10, 20), Point(30, 40)]
-
-def test_to_gdf_column_style():
-    # This version assumes "location" contains [lon, lat]
-    # If you later support separate 'longitude'/'latitude' cols, adjust accordingly
-    pass  # Current implementation only handles list-in-column
 
 
 # --------------------------
