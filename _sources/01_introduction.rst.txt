@@ -1,6 +1,0 @@
-01. Introduction
-=================
-
-.. nbsphinx_download_links::
-
-.. nbsphinx:: notebooks/introduction.ipynb
