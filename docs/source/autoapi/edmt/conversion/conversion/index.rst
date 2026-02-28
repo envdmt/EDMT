@@ -55,24 +55,68 @@ Module Contents
 
 .. py:function:: _is_valid_uuid(val) -> bool
 
-.. py:function:: generate_uuid(df: pandas.DataFrame, index: bool = False) -> pandas.DataFrame
+.. py:function:: _find_uuid_like_column(df: pandas.DataFrame, contains: tuple[str, Ellipsis] = ('uuid', )) -> Optional[str]
 
-   Ensures a valid UUID string column named 'uuid' exists in the DataFrame.
+   Return the first column name that looks like it contains a uuid marker.
+   E.g. 'uuid', 'UUID', 'user_uuid', 'myUuid', etc.
 
-   - Creates a 'uuid' column if missing
-   - Replaces invalid or missing UUID values
-   - Preserves valid UUIDs
-   - Optionally sets 'uuid' as index while keeping the column
 
-   Args:
-       df (pd.DataFrame): Input DataFrame
-       index (bool): Whether to set 'uuid' as the index
+.. py:function:: generate_uuid(df: pandas.DataFrame, *, force: bool = False, index: bool = False, uuid_col: str = 'uuid', detect_uuid_cols: bool = True, detect_contains: tuple[str, Ellipsis] = ('uuid', )) -> pandas.DataFrame
 
-   Returns:
-       pd.DataFrame
+   Ensure a pandas DataFrame contains a column of valid UUIDs, creating or repairing as needed.
 
-   Raises:
-       ValueError: If input is not a DataFrame or is empty
+   This function adds a new UUID column or validates/repairs an existing one. It can optionally 
+   detect existing UUID-like columns to avoid duplication and control column placement.
+
+   Parameters
+   ----------
+   df : pd.DataFrame
+       Input DataFrame to process.
+   force : bool, optional
+       If True, always generate new UUIDs—even if a valid UUID column already exists 
+       (default: False).
+   index : bool, optional
+       If True, place the UUID column at the beginning of the DataFrame; otherwise, 
+       place it at the end (default: False).
+   uuid_col : str, optional
+       Name of the target UUID column (default: "uuid").
+   detect_uuid_cols : bool, optional
+       If True and `force=False`, scan for existing columns that appear to contain UUIDs 
+       (based on name and content) to avoid redundant generation (default: True).
+   detect_contains : tuple of str, optional
+       Substrings used to identify potential UUID columns by name when `detect_uuid_cols=True` 
+       (default: ("uuid",)).
+
+   Returns
+   -------
+   pd.DataFrame
+       A copy of the input DataFrame with a valid UUID column named `uuid_col`.
+
+   Raises
+   ------
+   ValueError
+       If input is not a DataFrame or if the DataFrame is empty.
+
+   Notes
+   -----
+   - A value is considered a valid UUID if it is a string matching the standard UUID format 
+     (e.g., "f47ac10b-58cc-4372-a567-0e02b2c3d479").
+   - When `force=False` and a UUID-like column is detected (by name and content), the function 
+     reuses it but repairs any invalid entries by replacing them with new UUIDs.
+   - The output DataFrame is always a copy; the original is not modified.
+   - Column ordering is explicitly controlled: UUID column is moved to front if `index=True`, 
+     otherwise to the back.
+
+   Examples
+   --------
+   >>> df = pd.DataFrame({"name": ["Alice", "Bob"]})
+   >>> df_with_uuid = generate_uuid(df)
+   >>> "uuid" in df_with_uuid.columns
+   True
+
+   >>> df_existing = pd.DataFrame({"uuid": ["invalid", "7af3ea7c-5a14-48c2-a3c2-b014488c0216"], "val": [1, 2]})
+   >>> fixed = generate_uuid(df_existing)
+   # First entry replaced with valid UUID; second preserved
 
 
 .. py:function:: get_utm_epsg(longitude=None)
@@ -90,19 +134,7 @@ Module Contents
 
 
 
-.. py:function:: to_gdf(df)
-
-   Converts a DataFrame with location data into a GeoDataFrame with point geometries.
-
-   Args:
-       df (pd.DataFrame): Input DataFrame with location data.
-
-   Returns:
-       gpd.GeoDataFrame: GeoDataFrame with point geometries.
-
-
-
-.. py:function:: convert_time(time_value: float, unit_from: str, unit_to: str) -> float
+.. py:function:: convert_time(value: float, unit_from: str, unit_to: str) -> float
 
    Converts a given time value between different units.
 
@@ -136,7 +168,7 @@ Module Contents
 
 
 
-.. py:function:: convert_distance(value: float, from_type: str, to_type: str) -> float
+.. py:function:: convert_distance(value: float, unit_from: str, unit_to: str) -> float
 
    Converts distance values between metric and imperial units.
 

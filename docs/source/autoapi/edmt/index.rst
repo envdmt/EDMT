@@ -10,6 +10,7 @@ Submodules
 .. toctree::
    :maxdepth: 1
 
+   /autoapi/edmt/_edmt/index
    /autoapi/edmt/analysis/index
    /autoapi/edmt/base/index
    /autoapi/edmt/contrib/index
@@ -17,6 +18,7 @@ Submodules
    /autoapi/edmt/mapping/index
    /autoapi/edmt/models/index
    /autoapi/edmt/plotting/index
+   /autoapi/edmt/workflow/index
 
 
 
