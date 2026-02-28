@@ -1,23 +1,29 @@
 <h1 align="center">EDMT — Environmental Data Management Toolbox</h1>
 
 <p align="center">
+  <!-- PyPI -->
   <a href="https://pypi.org/project/edmt/">
-    <img src="https://img.shields.io/pypi/v/edmt.svg" />
+    <img src="https://img.shields.io/pypi/v/edmt.svg" alt="PyPI version" />
   </a>
-  <!-- <a href="https://github.com/envdmt/EDMT/actions">
-    <img src="https://github.com/envdmt/EDMT/actions/workflows/tests.yml/badge.svg" />
-  </a>
+
+  <!-- Codecov -->
   <a href="https://codecov.io/gh/envdmt/EDMT">
-    <img src="https://codecov.io/gh/envdmt/EDMT/branch/main/graph/badge.svg" />
-  </a> -->
+  <img src="https://codecov.io/gh/envdmt/EDMT/branch/main/graph/badge.svg" alt="codecov" />
+</a>
+
+
+  <!-- Docs -->
   <a href="https://envdmt.github.io/EDMT/">
-    <img src="https://img.shields.io/badge/docs-online-brightgreen.svg" />
+    <img src="https://img.shields.io/badge/docs-passing-brightgreen.svg" alt="docs" />
   </a>
-  <!-- <img src="https://img.shields.io/badge/Jupyter-Lab-orange" /> -->
-  <img src="https://img.shields.io/badge/license-MIT-blue.svg" />
+
+  <!-- Jupyter -->
+  <img src="https://img.shields.io/badge/Jupyter-Lab-orange.svg" alt="Jupyter Lab" />
+
+  <!-- License -->
+  <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="license" />
 </p>
 
----
 
 ## Overview
 

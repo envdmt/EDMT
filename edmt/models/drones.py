@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import time
+import warnings
 import duckdb
 import pandas as pd
 import numpy as np
@@ -530,6 +531,13 @@ def airPoint(
         ValueError: If ``longitude`` and ``latitude`` columns are not present in
         the extracted telemetry data.
     """
+
+    warnings.warn(
+        "airPoint will be deprecated and will be removed in a future version. "
+        "Use get_flight_routes instead for better performance and line geometries.",
+        DeprecationWarning,
+        stacklevel=2
+    )
 
     if len(df) > 500:
         print("Large dataset detected. Use get_flight_routes. to get better performance and convert to Line Geometries.")

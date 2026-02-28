@@ -5,8 +5,10 @@ from edmt import (
     conversion, 
     mapping, 
     models, 
-    plotting
+    plotting,
+    workflow
     )
+from ._edmt import list_functions
 import importlib.metadata
 
 ASCII = r"""
@@ -56,6 +58,7 @@ def init(silent=False, force=False):
     warnings.filterwarnings(action="ignore", category=ShapelyDeprecationWarning)
     warnings.filterwarnings(action="ignore", category=FutureWarning)
     warnings.filterwarnings("ignore", message=".*initial implementation of Parquet.*")
+    warnings.filterwarnings("ignore", category=FutureWarning, module="google.api_core")
 
     import plotly.io as pio  # type: ignore[import-untyped]
 
@@ -76,6 +79,6 @@ __all__ = [
     "mapping", 
     "models", 
     "plotting",
-    "plans"
-    ]
-
+    "list_functions",
+    "workflow"
+]
