@@ -14,8 +14,13 @@ from .workflow import (
     get_chirps_image_collection,
 )
 
+from .builder import (
+    gdf_to_ee_geometry
+)
+
 
 __all__ = [
+    "gdf_to_ee_geometry",
     "compute_lst_timeseries",
     "compute_ndvi_timeseries",
     "compute_evi_timeseries",
