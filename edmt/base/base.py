@@ -9,7 +9,6 @@ import time
 
 logging.basicConfig(level=logging.WARNING)
 
-# API key authentication
 class AirdataBaseClass:
     def __init__(self, api_key):
         self.api_key = api_key

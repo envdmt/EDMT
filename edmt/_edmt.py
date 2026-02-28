@@ -40,7 +40,6 @@ def list_functions(module_name: str = "edmt") -> None:
         try:
             submodule = __import__(modname, fromlist=[''])
 
-            # Only include functions defined in this submodule (not imported)
             submodule_functions = [
                 name for name, obj in inspect.getmembers(submodule)
                 if inspect.isfunction(obj) and getattr(obj, '__module__', None) == modname
