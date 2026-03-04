@@ -38,11 +38,7 @@ def gdf_to_ee_geometry(
         raise ValueError("GeoDataFrame must have a CRS")
 
     gdf = gdf.to_crs(epsg=4326)
-
-    try:
-        geom = gdf.geometry.union_all() 
-    except AttributeError:
-        geom = gdf.geometry.unary_union  
+    geom = gdf.geometry.unary_union  
 
     geojson = shapely.geometry.mapping(geom)
     return ee.Geometry(geojson)
