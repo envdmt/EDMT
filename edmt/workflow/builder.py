@@ -29,7 +29,7 @@ def ee_initialized(project: str | None = None) -> None:
 
 
 def gdf_to_ee_geometry(
-    gdf: gpd.GeoDataFrame
+        gdf: gpd.GeoDataFrame
 ) -> ee.Geometry:
     if gdf.empty:
         raise ValueError("GeoDataFrame is empty")
@@ -37,10 +37,9 @@ def gdf_to_ee_geometry(
     if gdf.crs is None:
         raise ValueError("GeoDataFrame must have a CRS")
 
-    # Ensure WGS84 for Earth Engine
     gdf = gdf.to_crs(epsg=4326)
+    geom = gdf.geometry.union_all()  
 
-    geom = gdf.union_all()
     geojson = shapely.geometry.mapping(geom)
     return ee.Geometry(geojson)
 
