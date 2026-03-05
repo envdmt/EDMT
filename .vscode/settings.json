@@ -2,6 +2,5 @@
     "github-actions.workflows.pinned.workflows": [
         ".github/workflows/python-package.yml"
     ],
-    "python-envs.defaultEnvManager": "ms-python.python:system",
-    "python-envs.pythonProjects": []
+    "python-envs.defaultEnvManager": "ms-python.python:venv"
 }
