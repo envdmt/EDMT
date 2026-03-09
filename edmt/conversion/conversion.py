@@ -2,8 +2,14 @@ from typing import Optional
 import uuid
 import pandas as pd
 import geopandas as gpd
+import numpy as np
 from shapely import make_valid
 from edmt.contrib.utils import clean_vars
+from typing import Iterable, Tuple, List, Union
+from matplotlib import pyplot as plt, colors
+
+
+ArrayLike = Union[Iterable[float], np.ndarray]
 
 # Time unit conversion factors relative to seconds
 time_chart: dict[str, float] = {
@@ -277,6 +283,77 @@ def generate_uuid(
     return out
 
 
+def generate_cmap(
+    data: ArrayLike,
+    num_divisions: int,
+    cmap: str = "viridis",
+) -> Tuple[List[str], List[str]]:
+    """
+    Generate range labels and corresponding hex colors from a colormap.
+
+    Parameters
+    ----------
+    data : array-like
+        Numeric data used to determine the value range.
+    num_divisions : int
+        Number of intervals to divide the data range into.
+    cmap : str, default="viridis"
+        Name of the matplotlib colormap.
+
+    Returns
+    -------
+    tuple[list[str], list[str]]
+        labels :
+            Range labels formatted as "min - max".
+        colors :
+            Hexadecimal color codes corresponding to each range.
+
+    Raises
+    ------
+    ValueError
+        If num_divisions is less than 1 or data is empty.
+    """
+
+    data_arr = np.asarray(list(data), dtype=float)
+
+    if data_arr.size == 0:
+        raise ValueError("Input data is empty.")
+
+    if num_divisions < 1:
+        raise ValueError("num_divisions must be >= 1.")
+
+    min_val = float(np.nanmin(data_arr))
+    max_val = float(np.nanmax(data_arr))
+
+    cmap = plt.get_cmap(cmap)
+
+    if np.isclose(min_val, max_val):
+        return (
+            [f"{min_val:.2f}"],
+            [colors.to_hex(cmap(0.5))]
+        )
+
+    bins = np.linspace(min_val, max_val, num_divisions + 1)
+
+    labels = [
+        f"{bins[i]:.2f} - {bins[i + 1]:.2f}"
+        for i in range(num_divisions)
+    ]
+
+    color_positions = (
+        np.linspace(0, 1, num_divisions)
+        if num_divisions > 1
+        else np.array([0.5])
+    )
+
+    hex_colors = [
+        colors.to_hex(cmap(pos))
+        for pos in color_positions
+    ]
+
+    return labels, hex_colors
+
+
 def get_utm_epsg(longitude=None):
     """
     Generates UTM EPSG code based on longitude.
@@ -499,3 +576,8 @@ def format_temperature(value: float, unit: str, decimals: int = 1, symbol: bool 
     if u in ("C", "F"):
         return f"{val_str} °{u}"
     return f"{val_str} K"
+
+
+
+
+

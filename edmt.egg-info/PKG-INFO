@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: edmt
-Version: 1.0.3
+Version: 1.0.4
 Summary: Environmental Data Management Toolbox
 Author-email: "Odero, Kuloba & musasia" <francisodero10@gmail.com>
 License: MIT License
@@ -50,9 +50,9 @@ Dynamic: license-file
   </a>
 
   <!-- Codecov -->
-  <a href="https://codecov.io/gh/envdmt/EDMT">
-  <img src="https://codecov.io/gh/envdmt/EDMT/branch/main/graph/badge.svg" alt="codecov" />
-</a>
+  <!-- <a href="https://codecov.io/gh/envdmt/EDMT">
+    <img src="https://codecov.io/gh/envdmt/EDMT/branch/main/graph/badge.svg" alt="codecov" />
+  </a> -->
 
 
   <!-- Docs -->

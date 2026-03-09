@@ -7,9 +7,9 @@
   </a>
 
   <!-- Codecov -->
-  <a href="https://codecov.io/gh/envdmt/EDMT">
-  <img src="https://codecov.io/gh/envdmt/EDMT/branch/main/graph/badge.svg" alt="codecov" />
-</a>
+  <!-- <a href="https://codecov.io/gh/envdmt/EDMT">
+    <img src="https://codecov.io/gh/envdmt/EDMT/branch/main/graph/badge.svg" alt="codecov" />
+  </a> -->
 
 
   <!-- Docs -->

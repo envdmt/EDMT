@@ -15,12 +15,16 @@ from .workflow import (
 )
 
 from .builder import (
-    gdf_to_ee_geometry
+    gdf_to_ee_geometry,
+    ee_to_points
 )
 
-
-__all__ = [
+_builder_functions = [
     "gdf_to_ee_geometry",
+    "ee_to_points",
+]
+
+_workflow_functions = [
     "compute_lst_timeseries",
     "compute_ndvi_timeseries",
     "compute_evi_timeseries",
@@ -34,4 +38,10 @@ __all__ = [
     "get_ndvi_image_collection",
     "get_evi_image_collection",
     "get_chirps_image_collection",
+]
+
+
+__all__ = [
+    _builder_functions,
+    _workflow_functions
 ]

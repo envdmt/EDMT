@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "edmt"
-version = "1.0.3"
+version = "1.0.4"
 description = "Environmental Data Management Toolbox"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -25,7 +25,8 @@ dependencies = [
   "fiona>=1.9.6,<1.10.1",
   "tqdm>=4",
   "requests>=2.28,<3",
-  "mapclassify"
+  "matplotlib>=3.9",
+  "mapclassify>=2.7",
 ]
 
 

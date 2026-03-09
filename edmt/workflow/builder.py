@@ -862,22 +862,30 @@ def _build_period_img(
 
 
 
+# --------------------------------------------------------
+# Raster to vector helper
+# --------------------------------------------------------
 
+def ee_to_points(
+        image: ee.Image, 
+        scale: int=30, 
+        num_pixels: int = 5000
+    ) -> gpd.GeoDataFrame:
+    """
+    Sample pixels as points and return GeoDataFrame.
+    """
 
+    fc = image.sample(
+        scale=scale,
+        numPixels=num_pixels,
+        geometries=True
+    )
 
+    geojson = fc.getInfo()
+    gdf = gpd.GeoDataFrame.from_features(geojson["features"])
+    gdf = gdf.set_crs("EPSG:4326")
 
-
-
-
-
-
-
-
-
-
-
-
-
+    return gdf
 
 
 
