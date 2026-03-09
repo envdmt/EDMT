@@ -16,13 +16,11 @@ from .workflow import (
 
 from .builder import (
     gdf_to_ee_geometry,
-    ee_to_polygons,
     ee_to_points
 )
 
 _builder_functions = [
     "gdf_to_ee_geometry",
-    "ee_to_polygons",
     "ee_to_points",
 ]
 
