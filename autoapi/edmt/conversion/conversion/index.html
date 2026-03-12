@@ -7,7 +7,7 @@
 
     <!-- Generated with Sphinx 8.1.3 and Furo 2024.08.06 -->
         <title>edmt.conversion.conversion - EDMT 1.0.2 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=a746c00c" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=354aac6f" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo-extensions.css?v=302659d7" />
@@ -282,6 +282,11 @@
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">¶</a></h2>
 <dl class="py data">
+<dt class="sig sig-object py" id="edmt.conversion.conversion.ArrayLike">
+<span class="sig-prename descclassname"><span class="pre">edmt.conversion.conversion.</span></span><span class="sig-name descname"><span class="pre">ArrayLike</span></span><a class="headerlink" href="#edmt.conversion.conversion.ArrayLike" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="edmt.conversion.conversion.time_chart">
 <span class="sig-prename descclassname"><span class="pre">edmt.conversion.conversion.</span></span><span class="sig-name descname"><span class="pre">time_chart</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#edmt.conversion.conversion.time_chart" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -419,6 +424,42 @@ otherwise to the back.</p></li>
 <span class="go"># First entry replaced with valid UUID; second preserved</span>
 </pre></div>
 </div>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.conversion.conversion.generate_cmap">
+<span class="sig-prename descclassname"><span class="pre">edmt.conversion.conversion.</span></span><span class="sig-name descname"><span class="pre">generate_cmap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ArrayLike</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_divisions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'viridis'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#edmt.conversion.conversion.generate_cmap" title="Link to this definition">¶</a></dt>
+<dd><p>Generate range labels and corresponding hex colors from a colormap.</p>
+<section id="id1">
+<h3>Parameters<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>data<span class="classifier">array-like</span></dt><dd><p>Numeric data used to determine the value range.</p>
+</dd>
+<dt>num_divisions<span class="classifier">int</span></dt><dd><p>Number of intervals to divide the data range into.</p>
+</dd>
+<dt>cmap<span class="classifier">str, default=&quot;viridis&quot;</span></dt><dd><p>Name of the matplotlib colormap.</p>
+</dd>
+</dl>
+</section>
+<section id="id2">
+<h3>Returns<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>tuple[list[str], list[str]]</dt><dd><dl class="simple">
+<dt>labels :</dt><dd><p>Range labels formatted as &quot;min - max&quot;.</p>
+</dd>
+<dt>colors :</dt><dd><p>Hexadecimal color codes corresponding to each range.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+<section id="id3">
+<h3>Raises<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>ValueError</dt><dd><p>If num_divisions is less than 1 or data is empty.</p>
+</dd>
+</dl>
 </section>
 </dd></dl>
 
@@ -590,6 +631,7 @@ symbol (bool): If True, uses °C/°F, and K without degree symbol.</p>
             <ul>
 <li><a class="reference internal" href="#">edmt.conversion.conversion</a><ul>
 <li><a class="reference internal" href="#module-contents">Module Contents</a><ul>
+<li><a class="reference internal" href="#edmt.conversion.conversion.ArrayLike"><code class="docutils literal notranslate"><span class="pre">ArrayLike</span></code></a></li>
 <li><a class="reference internal" href="#edmt.conversion.conversion.time_chart"><code class="docutils literal notranslate"><span class="pre">time_chart</span></code></a></li>
 <li><a class="reference internal" href="#edmt.conversion.conversion.time_chart_inverse"><code class="docutils literal notranslate"><span class="pre">time_chart_inverse</span></code></a></li>
 <li><a class="reference internal" href="#edmt.conversion.conversion.speed_chart"><code class="docutils literal notranslate"><span class="pre">speed_chart</span></code></a></li>
@@ -603,6 +645,7 @@ symbol (bool): If True, uses °C/°F, and K without degree symbol.</p>
 <li><a class="reference internal" href="#edmt.conversion.conversion._is_valid_uuid"><code class="docutils literal notranslate"><span class="pre">_is_valid_uuid()</span></code></a></li>
 <li><a class="reference internal" href="#edmt.conversion.conversion._find_uuid_like_column"><code class="docutils literal notranslate"><span class="pre">_find_uuid_like_column()</span></code></a></li>
 <li><a class="reference internal" href="#edmt.conversion.conversion.generate_uuid"><code class="docutils literal notranslate"><span class="pre">generate_uuid()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.conversion.conversion.generate_cmap"><code class="docutils literal notranslate"><span class="pre">generate_cmap()</span></code></a></li>
 <li><a class="reference internal" href="#edmt.conversion.conversion.get_utm_epsg"><code class="docutils literal notranslate"><span class="pre">get_utm_epsg()</span></code></a></li>
 <li><a class="reference internal" href="#edmt.conversion.conversion.convert_time"><code class="docutils literal notranslate"><span class="pre">convert_time()</span></code></a></li>
 <li><a class="reference internal" href="#edmt.conversion.conversion.convert_speed"><code class="docutils literal notranslate"><span class="pre">convert_speed()</span></code></a></li>

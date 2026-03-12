@@ -73,3 +73,8 @@ Module Contents
    Build one composite image for the period (server-side safe).
 
 
+.. py:function:: ee_to_points(image: ee.Image, scale: int = 30, num_pixels: int = 5000) -> geopandas.GeoDataFrame
+
+   Sample pixels as points and return GeoDataFrame.
+
+
