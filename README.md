@@ -5,13 +5,6 @@
   <a href="https://pypi.org/project/edmt/">
     <img src="https://img.shields.io/pypi/v/edmt.svg" alt="PyPI version" />
   </a>
-
-  <!-- Codecov -->
-  <!-- <a href="https://codecov.io/gh/envdmt/EDMT">
-    <img src="https://codecov.io/gh/envdmt/EDMT/branch/main/graph/badge.svg" alt="codecov" />
-  </a> -->
-
-
   <!-- Docs -->
   <a href="https://envdmt.github.io/EDMT/">
     <img src="https://img.shields.io/badge/docs-passing-brightgreen.svg" alt="docs" />
@@ -25,30 +18,48 @@
 </p>
 
 
-## Overview
+------------------------------------------------------------------------
 
-**EDMT (Environmental Data Management Toolbox)** is a lightweight Python library designed to make environmental data ingestion, cleaning, transformation, and basic analysis workflows easier and more reproducible. It provides a set of tools and helper functions tailored to the common needs of environmental scientists, data engineers, and analysts working with diverse observational and sensor-derived datasets.
+# Overview
 
-It provides modular tools for:
+EDMT (Environmental Data Management Toolbox) is a lightweight Python library for working with environmental and geospatial datasets. It provides practical utilities for data ingestion, cleaning, transformation, and exploratory analysis, helping researchers and analysts build reproducible data workflows.
 
-- Data ingestion (CSV, sensors, exports, logs)
-- Cleaning & quality control
-- Time-series handling
-- Spatial & temporal transformations
-- Basic analytics & summaries
-- Reusable, reproducible workflows
+EDMT integrates well with the Python scientific stack and is particularly useful when working with time-series environmental data, spatial datasets, and monitoring data pipelines.
 
-Why EDMT?
+It is designed for:
 
-Environmental data workflows often require stitching together formats, checks, and cleaning steps that are repetitive and error-prone. EDMT centralizes these common operations into reusable Python functions and classes, helping you:
+-   Environmental scientists
+-   Conservation and wildlife monitoring teams
+-   GIS and geospatial developers
+-   Data analysts working with environmental datasets
 
-- Save development time and reduce duplication
-- Standardize procedures across different projects
-- Improve reproducibility and traceability of results
+------------------------------------------------------------------------
 
----
+# Installation
 
-## Installation
+Install directly from PyPI:
 
-```bash
+``` bash
 pip install edmt
+```
+
+------------------------------------------------------------------------
+
+# Typical Use Cases
+
+EDMT can support workflows such as:
+
+-   Environmental monitoring pipelines
+-   Remote sensing preprocessing
+-   Field data quality control
+-   Environmental research and reporting
+
+------------------------------------------------------------------------
+
+# Documentation
+
+Full documentation is available here:
+
+https://envdmt.github.io/EDMT/
+
+------------------------------------------------------------------------

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "edmt"
-version = "1.0.4"
+version = "1.0.6.dev5"
 description = "Environmental Data Management Toolbox"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -13,8 +13,36 @@ authors = [
   {name = "Odero, Kuloba & musasia", email = "francisodero10@gmail.com"},
 ]
 classifiers = [
-  "Programming Language :: Python :: 3",
-  "Operating System :: OS Independent"
+    "Development Status :: 4 - Beta",
+
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Education",
+
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: GIS",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+
+    "Operating System :: OS Independent",
+
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+
+    "License :: OSI Approved :: MIT License",
+]
+
+keywords = [
+  "geospatial",
+  "gis",
+  "earth-engine",
+  "remote-sensing",
+  "conservation",
+  "spatial-analysis",
+  "geopandas"
 ]
 
 dependencies = [
@@ -32,6 +60,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/envdmt/EDMT/"
+Documentation = "https://envdmt.github.io/EDMT/"
 
 [project.scripts]
 edmt = "edmt.cli:main"
