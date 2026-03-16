@@ -237,14 +237,13 @@ Module Contents
 
 
 
-.. py:function:: format_temperature(value: float, unit: str, decimals: int = 1, symbol: bool = True) -> str
+.. py:function:: format_temperature(value: float, unit: str, symbol: bool = True) -> str
 
    Formats a temperature value with unit, e.g. '23.5 °C' or '296.6 K'.
 
    Args:
        value (float): Temperature value.
        unit (str): Unit to display (C, F, K).
-       decimals (int): Decimal places.
        symbol (bool): If True, uses °C/°F, and K without degree symbol.
 
    Returns:

@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../../../genindex.html" /><link rel="search" title="Search" href="../../../../search.html" /><link rel="next" title="edmt.plotting" href="../../plotting/index.html" /><link rel="prev" title="edmt.models" href="../index.html" />
 
     <!-- Generated with Sphinx 8.1.3 and Furo 2024.08.06 -->
-        <title>edmt.models.drones - EDMT 1.0.5 documentation</title>
+        <title>edmt.models.drones - EDMT 1.0.6 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=354aac6f" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
@@ -167,7 +167,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">EDMT 1.0.5 documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">EDMT 1.0.6 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -191,7 +191,7 @@
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../../../../index.html">
   
   
-  <span class="sidebar-brand-text">EDMT 1.0.5 documentation</span>
+  <span class="sidebar-brand-text">EDMT 1.0.6 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -237,6 +237,10 @@
 </li>
 </ul>
 </li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">RELEASE NOTES</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html">Changelog</a></li>
 </ul>
 
 </div>
@@ -293,7 +297,7 @@
 
 <dl class="py class">
 <dt class="sig sig-object py" id="edmt.models.drones.Airdata">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edmt.models.drones.</span></span><span class="sig-name descname"><span class="pre">Airdata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">api_key</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edmt.models.drones.Airdata" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">edmt.models.drones.</span></span><span class="sig-name descname"><span class="pre">Airdata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">api_key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_auth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edmt.models.drones.Airdata" title="Link to this definition">¶</a></dt>
 <dd><p>Client for interacting with the Airdata API.
 Handles authentication and provides methods to fetch various data types
 such as flights,flight groups, drones, batteries, and pilots.</p>
@@ -511,118 +515,18 @@ crs (str, optional): Coordinate Reference System for the output GeoDataFrame.</p
 
 <dl class="py function">
 <dt class="sig sig-object py" id="edmt.models.drones.airPoint">
-<span class="sig-prename descclassname"><span class="pre">edmt.models.drones.</span></span><span class="sig-name descname"><span class="pre">airPoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_ids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">link_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'csvLink'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_retries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunk_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_workers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">geopandas.GeoDataFrame</span></span></span><a class="headerlink" href="#edmt.models.drones.airPoint" title="Link to this definition">¶</a></dt>
-<dd><p>Download and extract point-based telemetry data from CSV links into a GeoDataFrame.</p>
-<p>This function processes a DataFrame containing metadata records and URLs to
-CSV files with telemetry data (e.g., GPS points). Each CSV is downloaded in
-parallel, merged with its corresponding metadata, and combined into a single
-GeoDataFrame of point geometries.</p>
-<p>The function supports optional filtering by record IDs, chunked processing
-for large datasets, retry logic for unstable network requests, and progress
-tracking via nested progress bars.</p>
-<dl>
-<dt>Args:</dt><dd><dl class="simple">
-<dt>df (pd.DataFrame): Input DataFrame containing metadata for each record.</dt><dd><p>Must include an <code class="docutils literal notranslate"><span class="pre">id</span></code> column and a column with CSV URLs.</p>
-</dd>
-<dt>filter_ids (list, optional): List of IDs to process. If provided, only</dt><dd><p>rows whose <code class="docutils literal notranslate"><span class="pre">id</span></code> is in this list will be processed.</p>
-</dd>
-<dt>link_col (str, optional): Name of the column containing CSV URLs.</dt><dd><p>Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;csvLink&quot;</span></code>.</p>
-</dd>
-<dt>max_retries (int, optional): Maximum number of retry attempts for failed</dt><dd><p>CSV downloads. Defaults to 3.</p>
-</dd>
-<dt>timeout (int, optional): Timeout in seconds for each CSV download request.</dt><dd><p>Defaults to 10.</p>
-</dd>
-<dt>chunk_size (int, optional): Number of rows to process per chunk. Chunking</dt><dd><p>is automatically enabled when the input DataFrame exceeds this size.
-Defaults to 100.</p>
-</dd>
-<dt>max_workers (int, optional): Number of parallel worker threads used for</dt><dd><p>downloading and processing CSV files. Defaults to 20.</p>
-</dd>
-</dl>
-</dd>
-<dt>Returns:</dt><dd><p>gpd.GeoDataFrame: A GeoDataFrame containing the merged metadata and
-telemetry records, with point geometries created from <code class="docutils literal notranslate"><span class="pre">longitude</span></code> and
-<code class="docutils literal notranslate"><span class="pre">latitude</span></code> columns using CRS <code class="docutils literal notranslate"><span class="pre">EPSG:4326</span></code>.</p>
-<p>If no valid telemetry data is retrieved, an empty GeoDataFrame is returned.</p>
-</dd>
-<dt>Raises:</dt><dd><p>ValueError: If required columns (<code class="docutils literal notranslate"><span class="pre">id</span></code> or the CSV link column) are missing.
-ValueError: If <code class="docutils literal notranslate"><span class="pre">longitude</span></code> and <code class="docutils literal notranslate"><span class="pre">latitude</span></code> columns are not present in
-the extracted telemetry data.</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-prename descclassname"><span class="pre">edmt.models.drones.</span></span><span class="sig-name descname"><span class="pre">airPoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edmt.models.drones.airPoint" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="edmt.models.drones.airLine">
-<span class="sig-prename descclassname"><span class="pre">edmt.models.drones.</span></span><span class="sig-name descname"><span class="pre">airLine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">geopandas.GeoDataFrame</span></span></span><a class="headerlink" href="#edmt.models.drones.airLine" title="Link to this definition">¶</a></dt>
-<dd><p>Aggregate point-based flight telemetry into line geometries with distance metrics.</p>
-<p>This function converts a GeoDataFrame of point-based telemetry (e.g. GPS fixes)
-into one LineString per flight by ordering points temporally and connecting
-them in sequence. Sorting and grouping are performed using DuckDB to improve
-performance and reduce memory usage for large datasets.</p>
-<p>Invalid geometries at (0, 0) are removed, coordinates are normalized to
-EPSG:4326, and total flight distance is computed using geodesic calculations.</p>
-<dl>
-<dt>Args:</dt><dd><dl class="simple">
-<dt>gdf (gpd.GeoDataFrame): GeoDataFrame containing point geometries and</dt><dd><p>flight telemetry. Must include:
-- <code class="docutils literal notranslate"><span class="pre">id</span></code>: unique flight identifier
-- <code class="docutils literal notranslate"><span class="pre">geometry</span></code>: Point geometries
-- <code class="docutils literal notranslate"><span class="pre">time(millisecond)</span></code>: timestamp used to order points</p>
-</dd>
-</dl>
-</dd>
-<dt>Returns:</dt><dd><dl class="simple">
-<dt>gpd.GeoDataFrame: A GeoDataFrame with one row per flight, containing:</dt><dd><ul class="simple">
-<li><p>original flight metadata</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">geometry</span></code> as a LineString representing the flight path</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">airline_distance_m</span></code>: total geodesic distance in meters</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">airline_time</span></code>: final timestamp for the flight</p></li>
-</ul>
-</dd>
-</dl>
-<p>If no valid flight paths can be constructed, an empty GeoDataFrame is returned.</p>
-</dd>
-<dt>Raises:</dt><dd><p>ValueError: If required columns are missing from the input GeoDataFrame.</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-prename descclassname"><span class="pre">edmt.models.drones.</span></span><span class="sig-name descname"><span class="pre">airLine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edmt.models.drones.airLine" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="edmt.models.drones.airSegment">
-<span class="sig-prename descclassname"><span class="pre">edmt.models.drones.</span></span><span class="sig-name descname"><span class="pre">airSegment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">geopandas.GeoDataFrame</span></span></span><a class="headerlink" href="#edmt.models.drones.airSegment" title="Link to this definition">¶</a></dt>
-<dd><p>Convert point-based flight trajectories into consecutive line segments.</p>
-<p>This function transforms a GeoDataFrame of ordered point telemetry into
-individual LineString segments representing movement between consecutive
-points for each flight <code class="docutils literal notranslate"><span class="pre">id</span></code>. Each segment includes distance, duration,
-and timing metadata, enabling fine-grained movement and speed analysis.</p>
-<p>Sorting and window operations are performed using DuckDB to efficiently
-compute consecutive point pairs while minimizing memory usage. Geodesic
-distance is calculated in meters using WGS84 coordinates.</p>
-<dl>
-<dt>Args:</dt><dd><dl class="simple">
-<dt>gdf (gpd.GeoDataFrame): GeoDataFrame containing point geometries and</dt><dd><p>telemetry attributes. Must include:
-- <code class="docutils literal notranslate"><span class="pre">id</span></code>: unique trajectory or flight identifier
-- <code class="docutils literal notranslate"><span class="pre">geometry</span></code>: Point geometries
-- <code class="docutils literal notranslate"><span class="pre">time(millisecond)</span></code>: timestamp used to order points</p>
-</dd>
-</dl>
-</dd>
-<dt>Returns:</dt><dd><p>gpd.GeoDataFrame: A GeoDataFrame where each row represents a single
-trajectory segment, including:</p>
-<blockquote>
-<div><ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">geometry</span></code>: LineString between consecutive points</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">segment_distance_m</span></code>: geodesic distance in meters</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">segment_duration_ms</span></code>: time difference between points</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">segment_start_time</span></code> and <code class="docutils literal notranslate"><span class="pre">segment_end_time</span></code></p></li>
-<li><p>original metadata columns propagated from the source data</p></li>
-</ul>
-</div></blockquote>
-<p>If no valid segments can be generated, an empty GeoDataFrame is returned.</p>
-</dd>
-<dt>Raises:</dt><dd><p>ValueError: If required columns are missing from the input GeoDataFrame.</p>
-</dd>
-</dl>
-</dd></dl>
+<span class="sig-prename descclassname"><span class="pre">edmt.models.drones.</span></span><span class="sig-name descname"><span class="pre">airSegment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edmt.models.drones.airSegment" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </section>
 </section>
@@ -714,7 +618,7 @@ trajectory segment, including:</p>
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=30fc56dd"></script>
+</div><script src="../../../../_static/documentation_options.js?v=ec1d1156"></script>
     <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../../_static/scripts/furo.js?v=5fa4622c"></script>
