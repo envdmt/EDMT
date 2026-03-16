@@ -11,6 +11,8 @@ edmt.conversion.conversion
 Module Contents
 ---------------
 
+.. py:data:: ArrayLike
+
 .. py:data:: time_chart
    :type:  dict[str, float]
 
@@ -117,6 +119,33 @@ Module Contents
    >>> df_existing = pd.DataFrame({"uuid": ["invalid", "7af3ea7c-5a14-48c2-a3c2-b014488c0216"], "val": [1, 2]})
    >>> fixed = generate_uuid(df_existing)
    # First entry replaced with valid UUID; second preserved
+
+
+.. py:function:: generate_cmap(data: ArrayLike, num_divisions: int, cmap: str = 'viridis') -> Tuple[List[str], List[str]]
+
+   Generate range labels and corresponding hex colors from a colormap.
+
+   Parameters
+   ----------
+   data : array-like
+       Numeric data used to determine the value range.
+   num_divisions : int
+       Number of intervals to divide the data range into.
+   cmap : str, default="viridis"
+       Name of the matplotlib colormap.
+
+   Returns
+   -------
+   tuple[list[str], list[str]]
+       labels :
+           Range labels formatted as "min - max".
+       colors :
+           Hexadecimal color codes corresponding to each range.
+
+   Raises
+   ------
+   ValueError
+       If num_divisions is less than 1 or data is empty.
 
 
 .. py:function:: get_utm_epsg(longitude=None)

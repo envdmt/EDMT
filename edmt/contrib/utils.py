@@ -30,10 +30,17 @@ def clean_time_cols(df,columns = []):
 
 def format_iso_time(date_string: str) -> str:
     try:
-        return pd.to_datetime(date_string).isoformat()
-    except ValueError:
-        raise ValueError(f"Failed to parse timestamp'{date_string}'")
-    
+        dt = pd.to_datetime(date_string)
+        if isinstance(dt, (pd.DatetimeIndex, pd.Series)):
+            if len(dt) == 0:
+                raise ValueError("Empty datetime collection")
+            dt = dt[0]
+        if pd.isna(dt):
+            raise ValueError("Invalid timestamp (NaT)")
+        return dt.isoformat()
+    except (ValueError, TypeError, AttributeError):
+        raise ValueError(f"Failed to parse timestamp '{date_string}'")   
+
 
 def norm_exp(df: pd.DataFrame, cols : Union[str, list]) -> pd.DataFrame:
     """
@@ -95,7 +102,6 @@ def append_cols(df: pd.DataFrame, cols: Union[str, list]):
 
     remaining_cols = [col for col in df.columns if col not in cols]
     return df[remaining_cols + cols]
-
 
 
 def dict_expand(data,cols):

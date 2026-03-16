@@ -1,22 +1,27 @@
 import logging
-logger = logging.getLogger(__name__)
 import base64
 import http.client
+from typing import Optional, Union
 import requests
 import pandas as pd
 from io import StringIO
 import time
 
+logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.WARNING)
 
 class AirdataBaseClass:
-    def __init__(self, api_key):
+    def __init__(self, api_key: str, skip_auth: bool = False):
         self.api_key = api_key
         self.base_url = "api.airdata.com"
         self.authenticated = False
         self.auth_header = self._get_auth_header()
 
-        self.authenticate(validate=True)
+        if not skip_auth:
+            self.authenticate(validate=True)
+        else:
+            self.authenticated = True
+            self.auth_header = {"Authorization": "Bearer fake_token"}
 
     def _get_auth_header(self):
         key_with_colon = self.api_key + ":"
@@ -62,11 +67,11 @@ class AirdataBaseClass:
 
 
 def ExtractCSV(
-    row, 
-    col : str,
-    max_retries : int = 3, 
-    timeout : int = 15
-    ) -> pd.DataFrame:
+    row: Union[dict, pd.Series],
+    col: str,
+    max_retries: int = 3,
+    timeout: int = 15
+    ) -> Optional[pd.DataFrame]:
     """
     Fetches a CSV file from a URL specified in a given column of a metadata record.
 

@@ -80,13 +80,13 @@ Module Contents
 
       Parameters:
           sort_by (str, optional): Field to sort by. Valid values are 'title' and 'created'.
-                                   If None, no sorting is applied.
+              If None, no sorting is applied.
           ascending (bool): Whether to sort in ascending order. Defaults to True.
           id (str, optional): Specific ID of a flight group to fetch.
 
       Returns:
           pd.DataFrame: DataFrame containing retrieved flight data.
-                        Returns empty DataFrame if request fails or no data found.
+              Returns empty DataFrame if request fails or no data found.
 
 
 
@@ -202,113 +202,9 @@ Module Contents
            flight metadata and a LineString geometry representing the flight route.
 
 
-.. py:function:: airPoint(df: pandas.DataFrame, filter_ids: Optional[List] = None, link_col: str = 'csvLink', max_retries: int = 3, timeout: int = 10, chunk_size: int = 100, max_workers: int = 20) -> geopandas.GeoDataFrame
+.. py:function:: airPoint(*args, **kwargs)
 
-   Download and extract point-based telemetry data from CSV links into a GeoDataFrame.
+.. py:function:: airLine(*args, **kwargs)
 
-   This function processes a DataFrame containing metadata records and URLs to
-   CSV files with telemetry data (e.g., GPS points). Each CSV is downloaded in
-   parallel, merged with its corresponding metadata, and combined into a single
-   GeoDataFrame of point geometries.
-
-   The function supports optional filtering by record IDs, chunked processing
-   for large datasets, retry logic for unstable network requests, and progress
-   tracking via nested progress bars.
-
-   Args:
-       df (pd.DataFrame): Input DataFrame containing metadata for each record.
-           Must include an ``id`` column and a column with CSV URLs.
-       filter_ids (list, optional): List of IDs to process. If provided, only
-           rows whose ``id`` is in this list will be processed.
-       link_col (str, optional): Name of the column containing CSV URLs.
-           Defaults to ``"csvLink"``.
-       max_retries (int, optional): Maximum number of retry attempts for failed
-           CSV downloads. Defaults to 3.
-       timeout (int, optional): Timeout in seconds for each CSV download request.
-           Defaults to 10.
-       chunk_size (int, optional): Number of rows to process per chunk. Chunking
-           is automatically enabled when the input DataFrame exceeds this size.
-           Defaults to 100.
-       max_workers (int, optional): Number of parallel worker threads used for
-           downloading and processing CSV files. Defaults to 20.
-
-   Returns:
-       gpd.GeoDataFrame: A GeoDataFrame containing the merged metadata and
-       telemetry records, with point geometries created from ``longitude`` and
-       ``latitude`` columns using CRS ``EPSG:4326``.
-
-       If no valid telemetry data is retrieved, an empty GeoDataFrame is returned.
-
-   Raises:
-       ValueError: If required columns (``id`` or the CSV link column) are missing.
-       ValueError: If ``longitude`` and ``latitude`` columns are not present in
-       the extracted telemetry data.
-
-
-.. py:function:: airLine(gdf: geopandas.GeoDataFrame) -> geopandas.GeoDataFrame
-
-   Aggregate point-based flight telemetry into line geometries with distance metrics.
-
-   This function converts a GeoDataFrame of point-based telemetry (e.g. GPS fixes)
-   into one LineString per flight by ordering points temporally and connecting
-   them in sequence. Sorting and grouping are performed using DuckDB to improve
-   performance and reduce memory usage for large datasets.
-
-   Invalid geometries at (0, 0) are removed, coordinates are normalized to
-   EPSG:4326, and total flight distance is computed using geodesic calculations.
-
-   Args:
-       gdf (gpd.GeoDataFrame): GeoDataFrame containing point geometries and
-           flight telemetry. Must include:
-           - ``id``: unique flight identifier
-           - ``geometry``: Point geometries
-           - ``time(millisecond)``: timestamp used to order points
-
-   Returns:
-       gpd.GeoDataFrame: A GeoDataFrame with one row per flight, containing:
-           - original flight metadata
-           - ``geometry`` as a LineString representing the flight path
-           - ``airline_distance_m``: total geodesic distance in meters
-           - ``airline_time``: final timestamp for the flight
-
-       If no valid flight paths can be constructed, an empty GeoDataFrame is returned.
-
-   Raises:
-       ValueError: If required columns are missing from the input GeoDataFrame.
-
-
-.. py:function:: airSegment(gdf: geopandas.GeoDataFrame) -> geopandas.GeoDataFrame
-
-   Convert point-based flight trajectories into consecutive line segments.
-
-   This function transforms a GeoDataFrame of ordered point telemetry into
-   individual LineString segments representing movement between consecutive
-   points for each flight ``id``. Each segment includes distance, duration,
-   and timing metadata, enabling fine-grained movement and speed analysis.
-
-   Sorting and window operations are performed using DuckDB to efficiently
-   compute consecutive point pairs while minimizing memory usage. Geodesic
-   distance is calculated in meters using WGS84 coordinates.
-
-   Args:
-       gdf (gpd.GeoDataFrame): GeoDataFrame containing point geometries and
-           telemetry attributes. Must include:
-           - ``id``: unique trajectory or flight identifier
-           - ``geometry``: Point geometries
-           - ``time(millisecond)``: timestamp used to order points
-
-   Returns:
-       gpd.GeoDataFrame: A GeoDataFrame where each row represents a single
-       trajectory segment, including:
-           - ``geometry``: LineString between consecutive points
-           - ``segment_distance_m``: geodesic distance in meters
-           - ``segment_duration_ms``: time difference between points
-           - ``segment_start_time`` and ``segment_end_time``
-           - original metadata columns propagated from the source data
-
-       If no valid segments can be generated, an empty GeoDataFrame is returned.
-
-   Raises:
-       ValueError: If required columns are missing from the input GeoDataFrame.
-
+.. py:function:: airSegment(*args, **kwargs)
 

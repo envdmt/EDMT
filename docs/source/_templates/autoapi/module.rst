@@ -1,7 +1,3 @@
-{{ fullname | escape | underline }}
-
-.. currentmodule:: {{ fullname }}
-
 {% block body %}
 
 {% if classes %}
