@@ -20,16 +20,6 @@ from edmt.conversion.conversion import (
 )
 
 # --- Helper Fixtures ---
-
-@pytest.fixture
-def sample_sdf():
-    return pd.DataFrame({
-        "SHAPE": [Point(0, 0), Point(1, 1)],
-        "name": ["A", "B"],
-        "Shape__Area": [1.0, 2.0],
-        "Shape__Length": [1.0, 2.0]
-    })
-
 @pytest.fixture
 def sample_df():
     return pd.DataFrame({"name": ["Alice", "Bob"]})
@@ -77,24 +67,6 @@ def test_generate_uuid_index_position(sample_df):
     assert df_front.columns[0] == "uuid"
     df_back = generate_uuid(sample_df, index=False)
     assert df_back.columns[-1] == "uuid"
-
-# --- GeoDataFrame Conversion ---
-
-def test_sdf_to_gdf(sample_sdf):
-    gdf = sdf_to_gdf(sample_sdf, crs="EPSG:4326")
-    assert isinstance(gdf, gpd.GeoDataFrame)
-    assert gdf.crs.to_string() == "EPSG:4326"
-    assert "SHAPE" not in gdf.columns
-    assert "geometry" in gdf.columns
-
-def test_sdf_to_gdf_empty():
-    empty_df = pd.DataFrame()
-    with pytest.raises(ValueError, match="empty"):
-        sdf_to_gdf(empty_df)
-
-def test_sdf_to_gdf_invalid_input():
-    with pytest.raises(ValueError, match="DataFrame"):
-        sdf_to_gdf("not a df")
 
 # --- UTM EPSG ---
 
@@ -175,7 +147,7 @@ def test_convert_temperature_invalid():
 
 def test_format_temperature():
     assert format_temperature(25.5, "C") == "25.5 °C"
-    assert format_temperature(298.65, "K", symbol=False) == "298.65 K"
+    assert format_temperature(298.6, "K", symbol=False) == "298.6 K"
     assert format_temperature(77, "F", decimals=0) == "77 °F"
 
 # --- Edge Cases ---

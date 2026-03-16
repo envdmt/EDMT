@@ -11,13 +11,17 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.WARNING)
 
 class AirdataBaseClass:
-    def __init__(self, api_key):
+    def __init__(self, api_key: str, skip_auth: bool = False):
         self.api_key = api_key
         self.base_url = "api.airdata.com"
         self.authenticated = False
         self.auth_header = self._get_auth_header()
 
-        self.authenticate(validate=True)
+        if not skip_auth:
+            self.authenticate(validate=True)
+        else:
+            self.authenticated = True
+            self.auth_header = {"Authorization": "Bearer fake_token"}
 
     def _get_auth_header(self):
         key_with_colon = self.api_key + ":"

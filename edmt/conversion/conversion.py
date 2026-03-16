@@ -568,7 +568,10 @@ def format_temperature(value: float, unit: str, decimals: int = 1, symbol: bool 
     if u not in temp_units:
         raise ValueError(f"Unsupported temperature unit: {unit!r}. Valid: {', '.join(temp_units)}")
 
-    val_str = f"{float(value):.{int(decimals)}f}"
+    if decimals is not None:
+        val_str = f"{value:.{decimals}f}"
+    else:        
+        val_str = f"{value:.{int}f}"
 
     if not symbol:
         return f"{val_str} {u}"
