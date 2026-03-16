@@ -3,10 +3,11 @@ from .conversion import (
     generate_uuid,
     generate_cmap,
     get_utm_epsg,
-    convert_distance,
     convert_time,
     convert_speed,
-    convert_temperature
+    convert_distance,
+    convert_temperature,
+    format_temperature
 )
 
 __all__ = [
@@ -14,8 +15,9 @@ __all__ = [
     'generate_uuid',
     'generate_cmap',
     'get_utm_epsg',
-    'convert_distance',
     'convert_time',
     'convert_speed',
-    'convert_temperature'
+    'convert_distance',
+    'convert_temperature',
+    'format_temperature'
     ]
