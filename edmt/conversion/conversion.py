@@ -551,14 +551,13 @@ def convert_temperature(value: float, unit_from: str, unit_to: str) -> float:
     return round(out, 3)
 
 
-def format_temperature(value: float, unit: str, decimals: int = 1, symbol: bool = True) -> str:
+def format_temperature(value: float, unit: str, symbol: bool = True) -> str:
     """
     Formats a temperature value with unit, e.g. '23.5 °C' or '296.6 K'.
 
     Args:
         value (float): Temperature value.
         unit (str): Unit to display (C, F, K).
-        decimals (int): Decimal places.
         symbol (bool): If True, uses °C/°F, and K without degree symbol.
 
     Returns:
@@ -568,17 +567,12 @@ def format_temperature(value: float, unit: str, decimals: int = 1, symbol: bool 
     if u not in temp_units:
         raise ValueError(f"Unsupported temperature unit: {unit!r}. Valid: {', '.join(temp_units)}")
 
-    if decimals is not None:
-        val_str = f"{value:.{decimals}f}"
-    else:        
-        val_str = f"{value:.{int}f}"
-
     if not symbol:
-        return f"{val_str} {u}"
+        return f"{value} {u}"
 
     if u in ("C", "F"):
-        return f"{val_str} °{u}"
-    return f"{val_str} K"
+        return f"{value} °{u}"
+    return f"{value} K"
 
 
 
