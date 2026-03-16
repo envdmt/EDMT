@@ -42,7 +42,7 @@ Module Contents
 
 
 
-.. py:function:: ExtractCSV(row, col: str, max_retries: int = 3, timeout: int = 15) -> pandas.DataFrame
+.. py:function:: ExtractCSV(row: Union[dict, pandas.Series], col: str, max_retries: int = 3, timeout: int = 15) -> Optional[pandas.DataFrame]
 
    Fetches a CSV file from a URL specified in a given column of a metadata record.
 

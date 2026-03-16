@@ -1,12 +1,13 @@
 import logging
-logger = logging.getLogger(__name__)
 import base64
 import http.client
+from typing import Optional, Union
 import requests
 import pandas as pd
 from io import StringIO
 import time
 
+logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.WARNING)
 
 class AirdataBaseClass:
@@ -62,11 +63,11 @@ class AirdataBaseClass:
 
 
 def ExtractCSV(
-    row, 
-    col : str,
-    max_retries : int = 3, 
-    timeout : int = 15
-    ) -> pd.DataFrame:
+    row: Union[dict, pd.Series],
+    col: str,
+    max_retries: int = 3,
+    timeout: int = 15
+    ) -> Optional[pd.DataFrame]:
     """
     Fetches a CSV file from a URL specified in a given column of a metadata record.
 

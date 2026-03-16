@@ -33,7 +33,7 @@ def get_satellite_collection(
     start_date: str,
     end_date: str,
     satellite: Optional[str] = None,
-) -> Tuple[ee.ImageCollection, Dict[str, Any]]:
+    ) -> Tuple[ee.ImageCollection, Dict[str, Any]]:
     """
     Retrieves and configures Earth Engine ImageCollections for specific environmental products.
 
@@ -115,7 +115,7 @@ def compute_period_feature(
     frequency: str,
     meta: Dict[str, Any],
     scale: Optional[int] = None,
-) -> ee.Feature:
+    ) -> ee.Feature:
     """
     Constructs a single Earth Engine Feature representing aggregated statistics for a specific time period.
 
@@ -193,7 +193,7 @@ def compute_timeseries(
     roi_gdf: gpd.GeoDataFrame,
     satellite: Optional[str] = None,
     scale: Optional[int] = None,
-) -> pd.DataFrame:
+    ) -> pd.DataFrame:
     """
     Generates a pandas DataFrame time series from Earth Engine environmental data.
 
@@ -322,7 +322,7 @@ def get_product_image(
     satellite: Optional[str] = None,
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
     reducer: ReducerName = "mean",
-) -> ee.Image:
+    ) -> ee.Image:
     """
     Generates a single composite Earth Engine Image for a specific environmental product.
 
@@ -412,7 +412,7 @@ def get_product_image_collection(
     satellite: Optional[str] = None,
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
     reducer: ReducerName = "mean",
-) -> ee.ImageCollection:
+    ) -> ee.ImageCollection:
     """
     Generates a time-series Earth Engine ImageCollection of composite images.
 

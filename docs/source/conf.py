@@ -8,13 +8,15 @@ logging.getLogger('nbsphinx').setLevel(logging.DEBUG)
 
 project = 'EDMT'
 copyright = '2026, EDMT'
-author = 'Odero,Kuloba & Musasia'
-release = '1.0.2'
+author = 'Odero'
+release = '1.0.6'
 
 # General configuration
 extensions = [        
     'autoapi.extension',
 ]
+
+nb_execution_mode = "off"
 
 # Path to your source code
 autoapi_dirs = ['../../edmt']
