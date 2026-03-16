@@ -4,7 +4,7 @@ import geopandas as gpd
 import numpy as np
 from shapely.geometry import Point, Polygon
 import uuid
-from edmt.contrib.utils import (
+from edmt.conversion import (
     sdf_to_gdf,
     _is_valid_uuid,
     _find_uuid_like_column,
