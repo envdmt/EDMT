@@ -30,9 +30,12 @@ def clean_time_cols(df,columns = []):
 
 def format_iso_time(date_string: str) -> str:
     try:
-        return pd.to_datetime(date_string).isoformat()
-    except ValueError:
-        raise ValueError(f"Failed to parse timestamp'{date_string}'")
+        dt = pd.to_datetime(date_string)
+        if isinstance(dt, pd.DatetimeIndex):
+            return dt[0].isoformat()
+        return dt.isoformat()
+    except (ValueError, TypeError, AttributeError):
+        raise ValueError(f"Failed to parse timestamp '{date_string}'")
     
 
 def norm_exp(df: pd.DataFrame, cols : Union[str, list]) -> pd.DataFrame:

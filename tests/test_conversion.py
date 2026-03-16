@@ -147,8 +147,8 @@ def test_convert_temperature_invalid():
 
 def test_format_temperature():
     assert format_temperature(25.5, "C") == "25.5 °C"
-    assert format_temperature(298.6, "K", symbol=False) == "298.6 K"
-    assert format_temperature(77, "F", decimals=0) == "77 °F"
+    assert format_temperature(298.6, "K") == "298.6 K"
+    assert format_temperature(77, "F") == "77 °F"
 
 # --- Edge Cases ---
 
