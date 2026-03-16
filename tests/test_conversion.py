@@ -6,16 +6,17 @@ from shapely.geometry import Point, Polygon
 import uuid
 from edmt.conversion import (
     sdf_to_gdf,
-    _is_valid_uuid,
-    _find_uuid_like_column,
     generate_uuid,
     generate_cmap,
     get_utm_epsg,
     convert_time,
     convert_speed,
     convert_distance,
-    convert_temperature,
-    format_temperature,
+    convert_temperature
+)
+
+from edmt.conversion.conversion import (
+    _is_valid_uuid, _find_uuid_like_column,format_temperature
 )
 
 # --- Helper Fixtures ---
