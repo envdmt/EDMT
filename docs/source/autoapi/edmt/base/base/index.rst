@@ -15,7 +15,7 @@ Module Contents
 
 .. py:data:: logger
 
-.. py:class:: AirdataBaseClass(api_key)
+.. py:class:: AirdataBaseClass(api_key: str, skip_auth: bool = False)
 
    .. py:attribute:: api_key
 

@@ -17,7 +17,7 @@ Module Contents
 
 .. py:data:: geod
 
-.. py:class:: Airdata(api_key)
+.. py:class:: Airdata(api_key: str, skip_auth: bool = False)
 
 
 

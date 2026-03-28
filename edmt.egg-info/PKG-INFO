@@ -69,6 +69,11 @@ Dynamic: license-file
     <img src="https://img.shields.io/badge/docs-passing-brightgreen.svg" alt="docs" />
   </a>
 
+  <!-- Tests -->
+  <a href="https://github.com/envdmt/EDMT/actions?query=workflow%3ATests">
+    <img src="https://github.com/envdmt/EDMT/workflows/Tests/badge.svg" alt="tests" />
+  </a>
+
   <!-- Jupyter -->
   <img src="https://img.shields.io/badge/Jupyter-Lab-orange.svg" alt="Jupyter Lab" />
 

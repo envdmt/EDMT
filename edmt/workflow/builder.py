@@ -71,7 +71,7 @@ def _evi_from_nir_red_blue(nir: ee.Image, red: ee.Image, blue: ee.Image) -> ee.I
 # --------------------------------------------------------
 # Index Helpers : Compute_period_feature*
 # --------------------------------------------------------
-Frequency = Literal["daily", "weekly", "monthly", "yearly"]
+Frequency = Literal["revisit", "weekly", "monthly", "yearly"]
 
 
 def _advance_end(start: ee.Date, frequency: str) -> ee.Date:
@@ -290,7 +290,7 @@ def _build_ndvi(satellite: str, start_date: str, end_date: str) -> Tuple[ee.Imag
             "satellite" : sat
             }
 
-    raise ValueError(f"Unsupported satellite for NDVI: {satellite}. Use LANDSAT8DAY, MODIS, S2, or VIIRS.")
+    raise ValueError(f"Unsupported satellite for NDVI: {satellite}. Use LANDSAT, MODIS, SENTINEL, or VIIRS.")
 
 
 
