@@ -326,7 +326,18 @@ def _build_evi(satellite: str, start_date: str, end_date: str) -> Tuple[ee.Image
             cirrus = qa.bitwiseAnd(1 << 11).eq(0)
             return img.updateMask(cloud.And(cirrus))
 
-        ic = base.map(_mask_s2)
+        def _to_evi(img):
+            img = _mask_s2(img)
+
+            blue = img.select("B2").divide(10000.0)
+            red = img.select("B4").divide(10000.0)
+            nir = img.select("B8").divide(10000.0)
+
+            evi = _evi_from_nir_red_blue(nir, red, blue)
+            return evi.copyProperties(img, ["system:time_start"])
+
+        ic = base.map(_to_evi)
+
         return ic, {
             "product": "EVI",
             "bands": ["EVI"],
@@ -356,7 +367,18 @@ def _build_evi(satellite: str, start_date: str, end_date: str) -> Tuple[ee.Image
             shadow = qa.bitwiseAnd(1 << 4).eq(0)
             return img.updateMask(cloud.And(shadow))
 
-        ic = base.map(_mask_landsat)
+        def _to_evi(img):
+            img = _mask_landsat(img)
+
+            blue = _sr(img, "SR_B2")
+            red  = _sr(img, "SR_B4")
+            nir  = _sr(img, "SR_B5")
+
+            evi = _evi_from_nir_red_blue(nir, red, blue)
+            return evi.copyProperties(img, ["system:time_start"])
+
+        ic = base.map(_to_evi)
+
         return ic, {
             "product": "EVI",
             "bands": ["EVI"],
