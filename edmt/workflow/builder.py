@@ -61,10 +61,9 @@ def _ndvi_from_nir_red(nir: ee.Image, red: ee.Image) -> ee.Image:
 
 
 def _evi_from_nir_red_blue(nir: ee.Image, red: ee.Image, blue: ee.Image) -> ee.Image:
-    # EVI = 2.5 * (NIR - RED) / (NIR + 6*RED - 7.5*BLUE + 1)
-    num = nir.subtract(red).multiply(2.5)
-    den = nir.add(red.multiply(6.0)).subtract(blue.multiply(7.5)).add(1.0)
-    return num.divide(den).rename("EVI")
+    return nir.subtract(red).multiply(2.5).divide(
+        nir.add(red.multiply(6)).subtract(blue.multiply(7.5)).add(1)
+    ).rename("EVI")
 
 
 
@@ -321,14 +320,13 @@ def _build_evi(satellite: str, start_date: str, end_date: str) -> Tuple[ee.Image
             .filter(ee.Filter.lte("CLOUDY_PIXEL_PERCENTAGE", 60))
         )
 
-        def _to_evi(img: ee.Image) -> ee.Image:
-            blue = img.select("B2").divide(10000.0)
-            red = img.select("B4").divide(10000.0)
-            nir = img.select("B8").divide(10000.0)
-            evi = _evi_from_nir_red_blue(nir, red, blue)
-            return evi.copyProperties(img, ["system:time_start"])
+        def _mask_s2(img):
+            qa = img.select("QA60")
+            cloud = qa.bitwiseAnd(1 << 10).eq(0)
+            cirrus = qa.bitwiseAnd(1 << 11).eq(0)
+            return img.updateMask(cloud.And(cirrus))
 
-        ic = base.map(_to_evi)
+        ic = base.map(_mask_s2)
         return ic, {
             "product": "EVI",
             "bands": ["EVI"],
@@ -352,14 +350,13 @@ def _build_evi(satellite: str, start_date: str, end_date: str) -> Tuple[ee.Image
         def _sr(img: ee.Image, band: str) -> ee.Image:
             return img.select(band).multiply(0.0000275).add(-0.2)
 
-        def _to_evi(img: ee.Image) -> ee.Image:
-            blue = _sr(img, "SR_B2")
-            red  = _sr(img, "SR_B4")
-            nir  = _sr(img, "SR_B5")
-            evi = _evi_from_nir_red_blue(nir, red, blue) 
-            return evi.copyProperties(img, ["system:time_start"])
+        def _mask_landsat(img):
+            qa = img.select("QA_PIXEL")
+            cloud = qa.bitwiseAnd(1 << 3).eq(0)
+            shadow = qa.bitwiseAnd(1 << 4).eq(0)
+            return img.updateMask(cloud.And(shadow))
 
-        ic = base.map(_to_evi)
+        ic = base.map(_mask_landsat)
         return ic, {
             "product": "EVI",
             "bands": ["EVI"],
