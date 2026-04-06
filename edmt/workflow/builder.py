@@ -348,31 +348,25 @@ def _build_evi(satellite: str, start_date: str, end_date: str) -> Tuple[ee.Image
             "satellite" : sat
             }
 
-    if sat in ("LANDSAT8", "LANDSAT_8", "LC08", "LANDSAT9", "LANDSAT_9", "LC09"):
-        col_id = "LANDSAT/LC08/C02/T1_L2" if sat in ("LANDSAT8", "LANDSAT_8", "LC08") else "LANDSAT/LC09/C02/T1_L2"
-
+    if sat in ("SENTINEL", "SENTINEL2", "S2"):
         base = (
-            ee.ImageCollection(col_id)
+            ee.ImageCollection("COPERNICUS/S2_HARMONIZED")
             .filterDate(start_date, end_date)
+            .filter(ee.Filter.lte("CLOUDY_PIXEL_PERCENTAGE", 60))
         )
 
-        # C2 L2 SR scale/offset
-        # SR = DN * 0.0000275 + (-0.2)
-        def _sr(img: ee.Image, band: str) -> ee.Image:
-            return img.select(band).multiply(0.0000275).add(-0.2)
-
-        def _mask_landsat(img):
-            qa = img.select("QA_PIXEL")
-            cloud = qa.bitwiseAnd(1 << 3).eq(0)
-            shadow = qa.bitwiseAnd(1 << 4).eq(0)
-            return img.updateMask(cloud.And(shadow))
+        def _mask_s2(img):
+            qa = img.select("QA60")
+            cloud = qa.bitwiseAnd(1 << 10).eq(0)
+            cirrus = qa.bitwiseAnd(1 << 11).eq(0)
+            return img.updateMask(cloud.And(cirrus))
 
         def _to_evi(img):
-            img = _mask_landsat(img)
+            img = _mask_s2(img)
 
-            blue = _sr(img, "SR_B2")
-            red  = _sr(img, "SR_B4")
-            nir  = _sr(img, "SR_B5")
+            blue = img.select("B2").divide(10000.0)
+            red = img.select("B4").divide(10000.0)
+            nir = img.select("B8").divide(10000.0)
 
             evi = _evi_from_nir_red_blue(nir, red, blue)
             return evi.copyProperties(img, ["system:time_start"])
