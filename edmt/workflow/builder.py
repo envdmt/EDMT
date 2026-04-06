@@ -293,7 +293,7 @@ def _build_ndvi(satellite: str, start_date: str, end_date: str) -> Tuple[ee.Imag
 
 
 
-def _build_evi(satellite: str, start_date: str, end_date: str):
+def _build_evi(satellite: str, start_date: str, end_date: str) -> Tuple[ee.ImageCollection, Dict[str, Any]]:
     sat = _norm(satellite)
 
     if sat == "MODIS":
