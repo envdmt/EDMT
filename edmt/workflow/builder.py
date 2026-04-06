@@ -293,7 +293,7 @@ def _build_ndvi(satellite: str, start_date: str, end_date: str) -> Tuple[ee.Imag
 
 
 
-def _build_evi(satellite: str, start_date: str, end_date: str) -> Tuple[ee.ImageCollection, Dict[str, Any]]:
+def _build_evi(satellite: str, start_date: str, end_date: str):
     sat = _norm(satellite)
 
     if sat == "MODIS":
@@ -301,18 +301,21 @@ def _build_evi(satellite: str, start_date: str, end_date: str) -> Tuple[ee.Image
             ee.ImageCollection("MODIS/061/MOD13Q1")
             .filterDate(start_date, end_date)
             .select(["EVI"], ["EVI"])
-            .map(lambda img: img.multiply(0.0001).rename("EVI").copyProperties(img, ["system:time_start"]))
+            .map(lambda img: img.multiply(0.0001)
+                 .rename("EVI")
+                 .copyProperties(img, ["system:time_start"]))
         )
+
         return ic, {
             "product": "EVI",
             "bands": ["EVI"],
             "unit": "EVI",
             "scale_m": 250,
-            "start_date" : start_date,
-            "end_date" : end_date,
-            "satellite" : sat
-            }
-
+            "start_date": start_date,
+            "end_date": end_date,
+            "satellite": sat,
+        }
+    
     if sat in ("SENTINEL", "SENTINEL2", "S2"):
         base = (
             ee.ImageCollection("COPERNICUS/S2_HARMONIZED")
@@ -330,11 +333,11 @@ def _build_evi(satellite: str, start_date: str, end_date: str) -> Tuple[ee.Image
             img = _mask_s2(img)
 
             blue = img.select("B2").divide(10000.0)
-            red = img.select("B4").divide(10000.0)
-            nir = img.select("B8").divide(10000.0)
+            red  = img.select("B4").divide(10000.0)
+            nir  = img.select("B8").divide(10000.0)
 
             evi = _evi_from_nir_red_blue(nir, red, blue)
-            return evi.copyProperties(img, ["system:time_start"])
+            return evi.rename("EVI").copyProperties(img, ["system:time_start"])
 
         ic = base.map(_to_evi)
 
@@ -343,33 +346,38 @@ def _build_evi(satellite: str, start_date: str, end_date: str) -> Tuple[ee.Image
             "bands": ["EVI"],
             "unit": "EVI",
             "scale_m": 10,
-            "start_date" : start_date,
-            "end_date" : end_date,
-            "satellite" : sat
-            }
+            "start_date": start_date,
+            "end_date": end_date,
+            "satellite": sat,
+        }
 
-    if sat in ("SENTINEL", "SENTINEL2", "S2"):
-        base = (
-            ee.ImageCollection("COPERNICUS/S2_HARMONIZED")
-            .filterDate(start_date, end_date)
-            .filter(ee.Filter.lte("CLOUDY_PIXEL_PERCENTAGE", 60))
+    if sat in ("LANDSAT8", "LANDSAT_8", "LC08", "LANDSAT9", "LANDSAT_9", "LC09"):
+        col_id = (
+            "LANDSAT/LC08/C02/T1_L2"
+            if sat in ("LANDSAT8", "LANDSAT_8", "LC08")
+            else "LANDSAT/LC09/C02/T1_L2"
         )
 
-        def _mask_s2(img):
-            qa = img.select("QA60")
-            cloud = qa.bitwiseAnd(1 << 10).eq(0)
-            cirrus = qa.bitwiseAnd(1 << 11).eq(0)
-            return img.updateMask(cloud.And(cirrus))
+        base = ee.ImageCollection(col_id).filterDate(start_date, end_date)
+
+        def _sr(img, band):
+            return img.select(band).multiply(0.0000275).add(-0.2)
+
+        def _mask_landsat(img):
+            qa = img.select("QA_PIXEL")
+            cloud = qa.bitwiseAnd(1 << 3).eq(0)
+            shadow = qa.bitwiseAnd(1 << 4).eq(0)
+            return img.updateMask(cloud.And(shadow))
 
         def _to_evi(img):
-            img = _mask_s2(img)
+            img = _mask_landsat(img)
 
-            blue = img.select("B2").divide(10000.0)
-            red = img.select("B4").divide(10000.0)
-            nir = img.select("B8").divide(10000.0)
+            blue = _sr(img, "SR_B2")
+            red  = _sr(img, "SR_B4")
+            nir  = _sr(img, "SR_B5")
 
             evi = _evi_from_nir_red_blue(nir, red, blue)
-            return evi.copyProperties(img, ["system:time_start"])
+            return evi.rename("EVI").copyProperties(img, ["system:time_start"])
 
         ic = base.map(_to_evi)
 
@@ -387,7 +395,6 @@ def _build_evi(satellite: str, start_date: str, end_date: str) -> Tuple[ee.Image
         f"Unsupported satellite for EVI: {satellite}. "
         "Use MODIS, SENTINEL2/S2, or LANDSAT8/9."
     )
-
 
 
 def _build_ndvi_evi(satellite: str, start_date: str, end_date: str) -> Tuple[ee.ImageCollection, Dict[str, Any]]:
@@ -497,7 +504,6 @@ def _build_chirps(start_date: str, end_date: str) -> Tuple[ee.ImageCollection, D
         "start_date" : start_date,
         "end_date" : end_date
         }
-
 
 
 

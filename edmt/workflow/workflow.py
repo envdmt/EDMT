@@ -164,7 +164,7 @@ def get_chirps_image(
     start_date: str,
     end_date: str,
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
-    reducer: ReducerName = "mean",
+    reducer: ReducerName = "max",
 ) -> ee.Image:
     return get_product_image(
         "CHIRPS", 
@@ -238,7 +238,7 @@ def get_chirps_image_collection(
     end_date: str,
     frequency: Frequency = "monthly",
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
-    reducer: ReducerName = "mean",
+    reducer: ReducerName = "max",
 ) -> ee.ImageCollection:
     return get_product_image_collection(
         "CHIRPS", 
@@ -249,10 +249,6 @@ def get_chirps_image_collection(
         roi_gdf=roi_gdf, 
         reducer=reducer
         )
-
-
-
-
 
 
 
