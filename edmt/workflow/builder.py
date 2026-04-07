@@ -29,7 +29,9 @@ def ee_initialized(project: str | None = None) -> None:
         ee.Initialize()
 
 
-def gdf_to_ee_geometry(gdf: gpd.GeoDataFrame) -> ee.Geometry:
+def gdf_to_ee_geometry(
+        gdf: gpd.GeoDataFrame
+    ) -> ee.Geometry:
     if gdf.empty:
         raise ValueError("GeoDataFrame is empty")
 
@@ -37,12 +39,10 @@ def gdf_to_ee_geometry(gdf: gpd.GeoDataFrame) -> ee.Geometry:
         raise ValueError("GeoDataFrame must have a CRS")
 
     gdf = gdf.to_crs(epsg=4326)
+    geom = gdf.geometry.union_all()  
 
-    # dissolve is safer than union_all for multi-polygons
-    geom = gdf.geometry.dissolve().iloc[0]
-
-    return ee.Geometry(shapely.geometry.mapping(geom))
-
+    geojson = shapely.geometry.mapping(geom)
+    return ee.Geometry(geojson)
 
 
 # Index helpers 
@@ -104,8 +104,6 @@ def _timeseries_to_df(fc: ee.FeatureCollection) -> pd.DataFrame:
     feats = fc.getInfo()["features"]
     rows = [f["properties"] for f in feats]
     return pd.DataFrame(rows)
-
-# Reduce stastistics helpers
 
 
 def _empty(prod: str, start: ee.Date, meta: Dict[str, Any] = None) -> ee.Feature:
