@@ -152,15 +152,6 @@ def get_satellite_collection(
 
     return ic, meta
 
-    # meta.update({
-    #     "product": product,
-    #     "satellite": satellite,
-    #     "start_date": start_date,
-    #     "end_date": end_date,
-    # })
-
-    # return ic, meta
-
 
 
 
@@ -241,7 +232,7 @@ def compute_period_feature(
     size = period_ic.size()
     computed = _compute(prod, start, period_ic, geometry, scale, meta)
     empty = _empty(prod, start)
-    
+
     return ee.Feature(ee.Algorithms.If(size.gt(0), computed, empty))
 
 
@@ -323,7 +314,6 @@ def compute_timeseries(
         end_date=end_date,
         satellite=satellite,
         roi_gdf=roi_gdf,
-
     )
 
     if meta.get("satellite") == "MODIS":
@@ -443,8 +433,14 @@ def get_product_image(
 
     roi = gdf_to_ee_geometry(roi_gdf) if roi_gdf is not None else None
 
-    ic, meta = get_satellite_collection(product, start_date, end_date, satellite=satellite)
+    ic, meta = get_satellite_collection(
+        product=product,
+        start_date=start_date,
+        end_date=end_date,
+        satellite=satellite,
+        roi_gdf=roi_gdf,
 
+    )
     if roi is not None and str(meta.get("satellite", "")).upper() == "MODIS":
         first = ee.Image(ic.first())
         b0 = (meta.get("bands") or [meta.get("band")])[0]
