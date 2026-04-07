@@ -6,7 +6,7 @@ import pandas as pd
 import geopandas as gpd
 import shapely
 
-Frequency = Literal["revisit", "weekly", "monthly", "yearly"]
+Frequency = Literal["daily", "weekly", "monthly", "yearly"]
 
 # ----------------------------
 # 1 : Main helpers
@@ -27,22 +27,6 @@ def ee_initialized(project: str | None = None) -> None:
         ee.Initialize(project=project)
     else:
         ee.Initialize()
-
-
-# def gdf_to_ee_geometry(
-#         gdf: gpd.GeoDataFrame
-# ) -> ee.Geometry:
-#     if gdf.empty:
-#         raise ValueError("GeoDataFrame is empty")
-
-#     if gdf.crs is None:
-#         raise ValueError("GeoDataFrame must have a CRS")
-
-#     gdf = gdf.to_crs(epsg=4326)
-#     geom = gdf.geometry.union_all()  
-
-#     geojson = shapely.geometry.mapping(geom)
-#     return ee.Geometry(geojson)
 
 
 def gdf_to_ee_geometry(gdf: gpd.GeoDataFrame) -> ee.Geometry:
@@ -271,6 +255,31 @@ def _scale_lst(img, band, scale_cfg):
         raise ValueError("Unknown scaling type")
 
 
+# -------------
+# LST pipeline
+# -------------
+
+
+def _build_lst(satellite, start_date, end_date):
+    sat = _norm_sat(satellite)
+    cfg = _SAT_CONFIG["LST"].get(sat)
+
+    if not cfg:
+        raise ValueError(f"Unsupported LST satellite: {satellite}")
+
+    ic = ee.ImageCollection(cfg["collection"]).filterDate(start_date, end_date)
+
+    def _proc(img):
+        return _scale_lst(img, cfg["band"], cfg["scale"])
+
+    return ic.map(_proc), {
+        "bands": ["LST"],
+        "scale_m": cfg["scale_m"],
+        "unit": "K",
+    }
+
+
+
 # ---------------------
 # Vegetation pipeline
 #----------------------
@@ -337,29 +346,6 @@ def _build_vegetation(product, satellite, start_date, end_date):
         "scale_m": cfg["scale_m"],
     }
 
-
-# -------------
-# LST pipeline
-# -------------
-
-
-def _build_lst(satellite, start_date, end_date):
-    sat = _norm_sat(satellite)
-    cfg = _SAT_CONFIG["LST"].get(sat)
-
-    if not cfg:
-        raise ValueError(f"Unsupported LST satellite: {satellite}")
-
-    ic = ee.ImageCollection(cfg["collection"]).filterDate(start_date, end_date)
-
-    def _proc(img):
-        return _scale_lst(img, cfg["band"], cfg["scale"])
-
-    return ic.map(_proc), {
-        "bands": ["LST"],
-        "scale_m": cfg["scale_m"],
-        "unit": "K",
-    }
 
 # ----------------
 # CHIRPS pipeline
