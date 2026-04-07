@@ -110,158 +110,80 @@ def _timeseries_to_df(fc: ee.FeatureCollection) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-
-
-
-def _mask_lst_outliers(image: ee.Image, meta: Dict[str, Any]) -> ee.Image:
-    """Apply physical range mask + optional quality mask to remove outliers."""
-    band = meta["band"]
-    lst = image.select(band)
-    
-    # 1. Physical valid range (after scaling would be in Kelvin)
-    # These are conservative ranges based on typical Earth surface temperatures
-    min_k = 200   # ~ -73°C (very cold, but safe lower bound)
-    max_k = 350   # ~ 77°C (hot desert max; adjust to 370 if needed for extremes)
-    
-    # Mask values outside realistic temperature range
-    valid_range = lst.gte(min_k).And(lst.lte(max_k))
-    
-    masked = image.updateMask(valid_range)
-    
-    # 2. Sensor-specific quality filtering (best practice)
-    if meta["satellite"] == "MODIS":
-        qc = image.select('QC_Day')  # for daytime LST
-        # Keep only good quality pixels:
-        # Bits 0-1: 0 = good quality, LST produced
-        # Bits 6-7: 0 = LST error <=1K
-        qa_mask = qc.bitwiseAnd(3).eq(0)          # Mandatory QA good
-        error_mask = qc.rightShift(6).bitwiseAnd(3).eq(0)  # LST error <=1K
-        masked = masked.updateMask(qa_mask.And(error_mask))
-    
-    elif meta["satellite"] in ("LANDSAT8", "LANDSAT_8", "LC08", "LANDSAT9", "LANDSAT_9", "LC09"):
-        # Landsat Collection 2 has QA_PIXEL band with cloud/confidence flags
-        # Optional: You can add a simple cloud mask here if you import the QA band
-        qa_pixel = image.select('QA_PIXEL')
-        # Example: mask clouds (bit 3 = cloud, bit 4 = cloud shadow, etc.)
-        # Adjust bits according to your needs (or skip if you prefer only range filter)
-        cloud_mask = qa_pixel.bitwiseAnd(1 << 3).eq(0).And(   # no cloud
-                      qa_pixel.bitwiseAnd(1 << 4).eq(0))      # no cloud shadow
-        masked = masked.updateMask(cloud_mask)
-    
-    elif meta["satellite"] == "GCOM":
-        # GCOM has LST_QA_flag
-        qa = image.select('LST_QA_flag')
-        # Bit 0-1: Terrain type → keep only land (value 3)
-        land_mask = qa.bitwiseAnd(3).eq(3)
-        masked = masked.updateMask(land_mask)
-    
-    return masked
-
 # ----------------------------
 # Builders (return (ic, meta))
 # ----------------------------
 
+
 def _build_lst(satellite: str, start_date: str, end_date: str) -> Tuple[ee.ImageCollection, Dict[str, Any]]:
     sat = _norm(satellite)
-    
+
     if sat == "MODIS":
-        ic = (
-            ee.ImageCollection("MODIS/061/MOD11A1")
-            .filterDate(start_date, end_date)
-            .select(["LST_Day_1km", "QC_Day"], ["LST_Day_1km", "QC_Day"])  # include QC
-            .map(_copy_time)
-            .map(lambda img: _mask_lst_outliers(img, {
-                "band": "LST_Day_1km",
-                "satellite": sat
-            }))
-        )
+        ic = ee.ImageCollection("MODIS/061/MOD11A1").filterDate(start_date, end_date)
+        
+        def mask_modis(image: ee.Image) -> ee.Image:
+            lst = image.select("LST_Day_1km")
+            qc = image.select("QC_Day")
+            # QA: LST error (bits 0-1) == 00 AND Cloud (bits 5-6) == 00
+            qa_mask = qc.bitwiseAnd(3).eq(0).And(qc.bitwiseAnd(192).eq(0))
+            # Physical range: ~200-330 K (raw DN * 0.02)
+            range_mask = lst.gt(10000).And(lst.lt(16500))
+            return image.updateMask(qa_mask.And(range_mask))
+
+        ic = ic.select(["LST_Day_1km"], ["LST_Day_1km"]).map(mask_modis).map(_copy_time)
         meta = {
-            "product": "LST",
-            "band": "LST_Day_1km",
-            "unit": "K",
-            "multiply": 0.02,
-            "add": 0.0,
-            "scale_m": 1000,
-            "start_date": start_date,
-            "end_date": end_date,
-            "satellite": sat
+            "product": "LST", "band": "LST_Day_1km", "unit": "K",
+            "multiply": 0.02, "add": 0.0, "scale_m": 1000,
+            "start_date": start_date, "end_date": end_date, "satellite": sat
         }
         return ic, meta
 
-    if sat in ("LANDSAT8", "LANDSAT_8", "LC08"):
-        ic = (
-            ee.ImageCollection("LANDSAT/LC08/C02/T1_L2")
-            .filterDate(start_date, end_date)
-            .select(["ST_B10", "QA_PIXEL"], ["ST_B10", "QA_PIXEL"])  # include QA
-            .map(_copy_time)
-            .map(lambda img: _mask_lst_outliers(img, {
-                "band": "ST_B10",
-                "satellite": sat
-            }))
-        )
+    elif sat in ("LANDSAT8", "LANDSAT_8", "LC08", "LANDSAT9", "LANDSAT_9", "LC09"):
+        dataset_id = "LANDSAT/LC08/C02/T1_L2" if "8" in sat else "LANDSAT/LC09/C02/T1_L2"
+        ic = ee.ImageCollection(dataset_id).filterDate(start_date, end_date)
+        
+        def mask_landsat(image: ee.Image) -> ee.Image:
+            lst = image.select("ST_B10")
+            qa = image.select("QA_PIXEL")
+            # QA: Cloud (bit 3), Cloud Shadow (bit 4), Snow/Ice (bit 5)
+            qa_mask = qa.bitwiseAnd(1 << 3).eq(0) \
+                      .And(qa.bitwiseAnd(1 << 4).eq(0)) \
+                      .And(qa.bitwiseAnd(1 << 5).eq(0))
+            # Physical range: ~152-354 K
+            range_mask = lst.gt(1000).And(lst.lt(60000))
+            return image.updateMask(qa_mask.And(range_mask))
+
+        ic = ic.select(["ST_B10"], ["ST_B10"]).map(mask_landsat).map(_copy_time)
         meta = {
-            "product": "LST",
-            "band": "ST_B10",
-            "unit": "K",
-            "multiply": 0.00341802,
-            "add": 149.0,
-            "scale_m": 30,
-            "start_date": start_date,
-            "end_date": end_date,
-            "satellite": sat
+            "product": "LST", "band": "ST_B10", "unit": "K",
+            "multiply": 0.00341802, "add": 149.0, "scale_m": 30,
+            "start_date": start_date, "end_date": end_date, "satellite": sat
         }
         return ic, meta
 
-    if sat in ("LANDSAT9", "LANDSAT_9", "LC09"):
-        ic = (
-            ee.ImageCollection("LANDSAT/LC09/C02/T1_L2")
-            .filterDate(start_date, end_date)
-            .select(["ST_B10", "QA_PIXEL"], ["ST_B10", "QA_PIXEL"])
-            .map(_copy_time)
-            .map(lambda img: _mask_lst_outliers(img, {
-                "band": "ST_B10",
-                "satellite": sat
-            }))
-        )
-        meta = { 
-            "product": "LST",
-            "band": "ST_B10",
-            "unit": "K",
-            "multiply": 0.00341802,
-            "add": 149.0,
-            "scale_m": 30,
-            "start_date": start_date,
-            "end_date": end_date,
-            "satellite": sat
-        }
-        return ic, meta
+    elif sat == "GCOM":
+        ic = ee.ImageCollection("JAXA/GCOM-C/L3/LAND/LST/V3").filterDate(start_date, end_date)
+        
+        def mask_gcom(image: ee.Image) -> ee.Image:
+            lst = image.select("LST_AVE")
+            qc = image.select("QC")
+            # QA: Cloud (bit 0), Snow/Ice (bit 1), Water (bit 2)
+            qa_mask = qc.bitwiseAnd(1).eq(0) \
+                      .And(qc.bitwiseAnd(2).eq(0)) \
+                      .And(qc.bitwiseAnd(4).eq(0))
+            # Physical range: ~200-330 K
+            range_mask = lst.gt(10000).And(lst.lt(16500))
+            return image.updateMask(qa_mask.And(range_mask))
 
-    if sat == "GCOM":
-        ic = (
-            ee.ImageCollection("JAXA/GCOM-C/L3/LAND/LST/V3")
-            .filterDate(start_date, end_date)
-            .select(["LST_AVE", "LST_QA_flag"], ["LST_AVE", "LST_QA_flag"])
-            .map(_copy_time)
-            .map(lambda img: _mask_lst_outliers(img, {
-                "band": "LST_AVE",
-                "satellite": sat
-            }))
-        )
+        ic = ic.select(["LST_AVE"], ["LST_AVE"]).map(mask_gcom).map(_copy_time)
         meta = {
-            "product": "LST",
-            "band": "LST_AVE",
-            "unit": "K",
-            "multiply": 0.02,
-            "add": 0.0,
-            "scale_m": 5000,
-            "start_date": start_date,
-            "end_date": end_date,
-            "satellite": sat
+            "product": "LST", "band": "LST_AVE", "unit": "K",
+            "multiply": 0.02, "add": 0.0, "scale_m": 5000,
+            "start_date": start_date, "end_date": end_date, "satellite": sat
         }
         return ic, meta
 
     raise ValueError(f"Unsupported satellite for LST: {satellite}. Use MODIS, LANDSAT8/9, or GCOM.")
-
 
 # def _build_lst(satellite: str, start_date: str, end_date: str) -> Tuple[ee.ImageCollection, Dict[str, Any]]:
 #     sat = _norm(satellite)
