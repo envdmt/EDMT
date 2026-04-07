@@ -382,18 +382,11 @@ def _build_chirps(start_date, end_date):
 # 3 : Computation
 # -----------------
 
-# helper
-
-def _geom_in_img_crs(img, geometry):
-    return geometry.transform(img.projection(), 1)
-
 # LST
 
 def _compute_lst(start, period_ic, geometry, scale, meta, n):
     band = "LST"
     img = period_ic.select(band).mean()
-
-    geom = _geom_in_img_crs(img, geometry)
 
     reducer = (
         ee.Reducer.mean()
@@ -402,7 +395,7 @@ def _compute_lst(start, period_ic, geometry, scale, meta, n):
 
     stats = img.reduceRegion(
         reducer=reducer,
-        geometry=geom,
+        geometry=geometry,
         scale=scale,
         maxPixels=1e13,
         tileScale=16, 
