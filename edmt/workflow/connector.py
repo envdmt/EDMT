@@ -241,6 +241,7 @@ def compute_period_feature(
     size = period_ic.size()
     computed = _compute(prod, start, period_ic, geometry, scale, meta)
     empty = _empty(prod, start)
+    
     return ee.Feature(ee.Algorithms.If(size.gt(0), computed, empty))
 
 
@@ -335,8 +336,8 @@ def compute_timeseries(
 
     fc = ee.FeatureCollection(
         dates.map(lambda d: compute_period_feature(
-            product=product,
             start=ee.Date(d),
+            product=product,
             collection=ic,
             geometry=geometry,
             frequency=frequency,

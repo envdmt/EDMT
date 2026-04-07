@@ -123,23 +123,33 @@ def _timeseries_to_df(fc: ee.FeatureCollection) -> pd.DataFrame:
 
 # Reduce stastistics helpers
 
-def _empty(prod: str, start: ee.Date,) -> ee.Feature:
+
+def _empty(prod: str, start: ee.Date, meta: Dict[str, Any] = None) -> ee.Feature:
+    prod = prod.upper()
+
     base = {
         "date": start.format("YYYY-MM-dd"),
         "product": prod,
         "n_images": 0,
     }
 
-    if prod == "CHIRPS":
+    if prod == "LST":
+        base.update({"mean": None, "median": None, "min": None, "max": None})
+
+    elif prod == "CHIRPS":
         base["precipitation_mm"] = None
+
+    elif prod == "NDVI_EVI":
+        base.update({"ndvi": None, "evi": None})
+
     elif prod in ("NDVI", "EVI"):
         base[prod.lower()] = None
-    elif prod == "LST":
-        base.update({"mean": None, "median": None, "min": None, "max": None})
-    else:
-        base["value"] = None
-    return ee.Feature(None, base)
 
+    # Optional: attach unit if available
+    if meta and "unit" in meta:
+        base["unit"] = meta["unit"]
+
+    return ee.Feature(None, base)
 
 # ----------------------------
 # 2 : Builders (return (ic, meta))
@@ -388,8 +398,6 @@ def _compute_lst(start, period_ic, geometry, scale, meta, n):
     reducer = (
         ee.Reducer.mean()
         .combine(ee.Reducer.median(), sharedInputs=True)
-        .combine(ee.Reducer.min(), sharedInputs=True)
-        .combine(ee.Reducer.max(), sharedInputs=True)
     )
 
     stats = img.reduceRegion(
@@ -397,6 +405,7 @@ def _compute_lst(start, period_ic, geometry, scale, meta, n):
         geometry=geom,
         scale=scale,
         maxPixels=1e13,
+        tileScale=16, 
         bestEffort=True,
     )
 
@@ -426,6 +435,7 @@ def _compute_veg(prod, start, period_ic, geometry, scale, meta, n):
         geometry=geom,
         scale=scale,
         maxPixels=1e13,
+        tileScale=16, 
         bestEffort=True,
     )
 
@@ -447,10 +457,11 @@ def _compute_chirps(start, period_ic, geometry, scale, meta, n):
     geom = _geom_in_img_crs(img, geometry)
 
     stats = img.reduceRegion(
-        reducer=ee.Reducer.mean(),
+        reducer=ee.Reducer.max(),
         geometry=geom,
         scale=scale,
         maxPixels=1e13,
+        tileScale=16, 
         bestEffort=True,
     )
 
