@@ -6,6 +6,7 @@ import pandas as pd
 import geopandas as gpd
 import shapely
 
+Frequency = Literal["revisit", "weekly", "monthly", "yearly"]
 
 # ----------------------------
 # Main helpers
@@ -44,33 +45,31 @@ def gdf_to_ee_geometry(
     return ee.Geometry(geojson)
 
 
+# def gdf_to_ee_geometry(gdf: gpd.GeoDataFrame) -> ee.Geometry:
+#     if gdf.empty:
+#         raise ValueError("GeoDataFrame is empty")
 
-# --------------------------------------------------------
-# Index helpers : get_satellite_collection
-# --------------------------------------------------------
-def _norm(x: Optional[str]) -> str:
+#     if gdf.crs is None:
+#         raise ValueError("GeoDataFrame must have a CRS")
+
+#     gdf = gdf.to_crs(epsg=4326)
+
+#     # dissolve is safer than union_all for multi-polygons
+#     geom = gdf.geometry.dissolve().iloc[0]
+
+#     return ee.Geometry(shapely.geometry.mapping(geom))
+
+
+
+# --------------
+# Index helpers 
+# --------------
+def _norm_sat(x: Optional[str]) -> str:
     return (x or "").strip().upper().replace("-", "_").replace(" ", "_")
 
 
 def _copy_time(img: ee.Image) -> ee.Image:
     return img.copyProperties(img, ["system:time_start"])
-
-
-def _ndvi_from_nir_red(nir: ee.Image, red: ee.Image) -> ee.Image:
-    return nir.subtract(red).divide(nir.add(red)).rename("NDVI")
-
-
-def _evi_from_nir_red_blue(nir: ee.Image, red: ee.Image, blue: ee.Image) -> ee.Image:
-    return nir.subtract(red).multiply(2.5).divide(
-        nir.add(red.multiply(6)).subtract(blue.multiply(7.5)).add(1)
-    ).rename("EVI")
-
-
-
-# --------------------------------------------------------
-# Index Helpers : Compute_period_feature*
-# --------------------------------------------------------
-Frequency = Literal["revisit", "weekly", "monthly", "yearly"]
 
 
 def _advance_end(start: ee.Date, frequency: str) -> ee.Date:
@@ -86,12 +85,6 @@ def _advance_end(start: ee.Date, frequency: str) -> ee.Date:
     raise ValueError(f"Invalid frequency: {frequency}")
 
 
-
-
-# --------------------------------------------------------
-# Index Helpers : Timeseries builder
-# --------------------------------------------------------
-
 def _dates_for_frequency(start_date: str, end_date: str, frequency: str) -> ee.List:
     freq = frequency.lower()
     unit = {"daily": "day", "weekly": "week", "monthly": "month", "yearly": "year"}.get(freq)
@@ -104,6 +97,26 @@ def _dates_for_frequency(start_date: str, end_date: str, frequency: str) -> ee.L
     return ee.List.sequence(0, n).map(lambda i: start_ee.advance(ee.Number(i), unit))
 
 
+def _ndvi_from_nir_red(nir: ee.Image, red: ee.Image) -> ee.Image:
+    return nir.subtract(red).divide(nir.add(red)).rename("NDVI")
+
+
+def _evi_from_nir_red_blue(nir: ee.Image, red: ee.Image, blue: ee.Image) -> ee.Image:
+    return nir.subtract(red).multiply(2.5).divide(
+        nir.add(red.multiply(6)).subtract(blue.multiply(7.5)).add(1)
+    ).rename("EVI")
+
+
+def _apply_lst_scale(img, mult, add, band):
+    return (
+        img.select(band)
+           .multiply(mult)
+           .add(add)
+           .rename("LST")
+           .copyProperties(img, ["system:time_start"])
+    )
+
+
 def _timeseries_to_df(fc: ee.FeatureCollection) -> pd.DataFrame:
     feats = fc.getInfo()["features"]
     rows = [f["properties"] for f in feats]
@@ -113,77 +126,6 @@ def _timeseries_to_df(fc: ee.FeatureCollection) -> pd.DataFrame:
 # ----------------------------
 # Builders (return (ic, meta))
 # ----------------------------
-
-
-def _build_lst(satellite: str, start_date: str, end_date: str) -> Tuple[ee.ImageCollection, Dict[str, Any]]:
-    sat = _norm(satellite)
-
-    if sat == "MODIS":
-        ic = ee.ImageCollection("MODIS/061/MOD11A1").filterDate(start_date, end_date)
-        
-        def mask_modis(image: ee.Image) -> ee.Image:
-            lst = image.select("LST_Day_1km")
-            qc = image.select("QC_Day")
-            # QA: LST error (bits 0-1) == 00 AND Cloud (bits 5-6) == 00
-            qa_mask = qc.bitwiseAnd(3).eq(0).And(qc.bitwiseAnd(192).eq(0))
-            # Physical range: ~200-330 K (raw DN * 0.02)
-            range_mask = lst.gt(10000).And(lst.lt(16500))
-            return image.updateMask(qa_mask.And(range_mask))
-
-        ic = ic.select(["LST_Day_1km"], ["LST_Day_1km"]).map(mask_modis).map(_copy_time)
-        meta = {
-            "product": "LST", "band": "LST_Day_1km", "unit": "K",
-            "multiply": 0.02, "add": 0.0, "scale_m": 1000,
-            "start_date": start_date, "end_date": end_date, "satellite": sat
-        }
-        return ic, meta
-
-    elif sat in ("LANDSAT8", "LANDSAT_8", "LC08", "LANDSAT9", "LANDSAT_9", "LC09"):
-        dataset_id = "LANDSAT/LC08/C02/T1_L2" if "8" in sat else "LANDSAT/LC09/C02/T1_L2"
-        ic = ee.ImageCollection(dataset_id).filterDate(start_date, end_date)
-        
-        def mask_landsat(image: ee.Image) -> ee.Image:
-            lst = image.select("ST_B10")
-            qa = image.select("QA_PIXEL")
-            # QA: Cloud (bit 3), Cloud Shadow (bit 4), Snow/Ice (bit 5)
-            qa_mask = qa.bitwiseAnd(1 << 3).eq(0) \
-                      .And(qa.bitwiseAnd(1 << 4).eq(0)) \
-                      .And(qa.bitwiseAnd(1 << 5).eq(0))
-            # Physical range: ~152-354 K
-            range_mask = lst.gt(1000).And(lst.lt(60000))
-            return image.updateMask(qa_mask.And(range_mask))
-
-        ic = ic.select(["ST_B10"], ["ST_B10"]).map(mask_landsat).map(_copy_time)
-        meta = {
-            "product": "LST", "band": "ST_B10", "unit": "K",
-            "multiply": 0.00341802, "add": 149.0, "scale_m": 30,
-            "start_date": start_date, "end_date": end_date, "satellite": sat
-        }
-        return ic, meta
-
-    elif sat == "GCOM":
-        ic = ee.ImageCollection("JAXA/GCOM-C/L3/LAND/LST/V3").filterDate(start_date, end_date)
-        
-        def mask_gcom(image: ee.Image) -> ee.Image:
-            lst = image.select("LST_AVE")
-            qc = image.select("QC")
-            # QA: Cloud (bit 0), Snow/Ice (bit 1), Water (bit 2)
-            qa_mask = qc.bitwiseAnd(1).eq(0) \
-                      .And(qc.bitwiseAnd(2).eq(0)) \
-                      .And(qc.bitwiseAnd(4).eq(0))
-            # Physical range: ~200-330 K
-            range_mask = lst.gt(10000).And(lst.lt(16500))
-            return image.updateMask(qa_mask.And(range_mask))
-
-        ic = ic.select(["LST_AVE"], ["LST_AVE"]).map(mask_gcom).map(_copy_time)
-        meta = {
-            "product": "LST", "band": "LST_AVE", "unit": "K",
-            "multiply": 0.02, "add": 0.0, "scale_m": 5000,
-            "start_date": start_date, "end_date": end_date, "satellite": sat
-        }
-        return ic, meta
-
-    raise ValueError(f"Unsupported satellite for LST: {satellite}. Use MODIS, LANDSAT8/9, or GCOM.")
 
 # def _build_lst(satellite: str, start_date: str, end_date: str) -> Tuple[ee.ImageCollection, Dict[str, Any]]:
 #     sat = _norm(satellite)
@@ -272,304 +214,523 @@ def _build_lst(satellite: str, start_date: str, end_date: str) -> Tuple[ee.Image
 
 
 
-def _build_ndvi(satellite: str, start_date: str, end_date: str) -> Tuple[ee.ImageCollection, Dict[str, Any]]:
-    sat = _norm(satellite)
+# def _build_ndvi(satellite: str, start_date: str, end_date: str) -> Tuple[ee.ImageCollection, Dict[str, Any]]:
+#     sat = _norm(satellite)
 
-    if sat in ("LANDSAT", "LANDSAT_8DAY", "LANDSAT8DAY"):
-        ic = (
-            ee.ImageCollection("LANDSAT/COMPOSITES/C02/T1_L2_8DAY_NDVI")
-            .filterDate(start_date, end_date)
-            .select(["NDVI"], ["NDVI"])
-            .map(_copy_time)
-        )
-        return ic, {
-            "product": "NDVI",
-            "bands": ["NDVI"],
-            "unit": "NDVI",
-            "scale_m": 30,
-            "start_date" : start_date,
-            "end_date" : end_date,
-            "satellite" : sat
-            }
+#     if sat in ("LANDSAT", "LANDSAT_8DAY", "LANDSAT8DAY"):
+#         ic = (
+#             ee.ImageCollection("LANDSAT/COMPOSITES/C02/T1_L2_8DAY_NDVI")
+#             .filterDate(start_date, end_date)
+#             .select(["NDVI"], ["NDVI"])
+#             .map(_copy_time)
+#         )
+#         return ic, {
+#             "product": "NDVI",
+#             "bands": ["NDVI"],
+#             "unit": "NDVI",
+#             "scale_m": 30,
+#             "start_date" : start_date,
+#             "end_date" : end_date,
+#             "satellite" : sat
+#             }
 
-    if sat == "MODIS":
-        ic = (
-            ee.ImageCollection("MODIS/061/MOD13Q1")
-            .filterDate(start_date, end_date)
-            .select(["NDVI"], ["NDVI"])
-            .map(lambda img: img.multiply(0.0001).rename("NDVI").copyProperties(img, ["system:time_start"]))
-        )
-        return ic, {
-            "product": "NDVI",
-            "bands": ["NDVI"],
-            "unit": "NDVI",
-            "scale_m": 250,
-            "start_date" : start_date,
-            "end_date" : end_date,
-            "satellite" : sat
-            }
+#     if sat == "MODIS":
+#         ic = (
+#             ee.ImageCollection("MODIS/061/MOD13Q1")
+#             .filterDate(start_date, end_date)
+#             .select(["NDVI"], ["NDVI"])
+#             .map(lambda img: img.multiply(0.0001).rename("NDVI").copyProperties(img, ["system:time_start"]))
+#         )
+#         return ic, {
+#             "product": "NDVI",
+#             "bands": ["NDVI"],
+#             "unit": "NDVI",
+#             "scale_m": 250,
+#             "start_date" : start_date,
+#             "end_date" : end_date,
+#             "satellite" : sat
+#             }
 
-    if sat in ("SENTINEL", "SENTINEL2", "S2"):
-        base = (
-            ee.ImageCollection("COPERNICUS/S2_HARMONIZED")
-            .filterDate(start_date, end_date)
-            .filter(ee.Filter.lte("CLOUDY_PIXEL_PERCENTAGE", 60))
-        )
+#     if sat in ("SENTINEL", "SENTINEL2", "S2"):
+#         base = (
+#             ee.ImageCollection("COPERNICUS/S2_HARMONIZED")
+#             .filterDate(start_date, end_date)
+#             .filter(ee.Filter.lte("CLOUDY_PIXEL_PERCENTAGE", 60))
+#         )
 
-        def _to_ndvi(img: ee.Image) -> ee.Image:
-            red = img.select("B4").divide(10000.0)
-            nir = img.select("B8").divide(10000.0)
-            ndvi = _ndvi_from_nir_red(nir, red)
-            return ndvi.copyProperties(img, ["system:time_start"])
+#         def _to_ndvi(img: ee.Image) -> ee.Image:
+#             red = img.select("B4").divide(10000.0)
+#             nir = img.select("B8").divide(10000.0)
+#             ndvi = _ndvi_from_nir_red(nir, red)
+#             return ndvi.copyProperties(img, ["system:time_start"])
 
-        ic = base.map(_to_ndvi)
-        return ic, {
-            "product": "NDVI",
-            "bands": ["NDVI"],
-            "unit": "NDVI",
-            "scale_m": 10,
-            "start_date" : start_date,
-            "end_date" : end_date,
-            "satellite" : sat
-            }
+#         ic = base.map(_to_ndvi)
+#         return ic, {
+#             "product": "NDVI",
+#             "bands": ["NDVI"],
+#             "unit": "NDVI",
+#             "scale_m": 10,
+#             "start_date" : start_date,
+#             "end_date" : end_date,
+#             "satellite" : sat
+#             }
 
-    if sat in ("VIIRS", "NOAA_VIIRS", "NOAA"):
-        ic = (
-            ee.ImageCollection("NOAA/CDR/VIIRS/NDVI/V1")
-            .filterDate(start_date, end_date)
-            .select(["NDVI"], ["NDVI"])
-            .map(lambda img: (
-                img.updateMask(img.neq(-9998))
-                   .multiply(0.0001)
-                   .rename("NDVI")
-                   .copyProperties(img, ["system:time_start"])
-            ))
-        )
-        return ic, {
-            "product": "NDVI",
-            "bands": ["NDVI"],
-            "unit": "NDVI",
-            "scale_m": 500,
-            "start_date" : start_date,
-            "end_date" : end_date,
-            "satellite" : sat
-            }
+#     if sat in ("VIIRS", "NOAA_VIIRS", "NOAA"):
+#         ic = (
+#             ee.ImageCollection("NOAA/CDR/VIIRS/NDVI/V1")
+#             .filterDate(start_date, end_date)
+#             .select(["NDVI"], ["NDVI"])
+#             .map(lambda img: (
+#                 img.updateMask(img.neq(-9998))
+#                    .multiply(0.0001)
+#                    .rename("NDVI")
+#                    .copyProperties(img, ["system:time_start"])
+#             ))
+#         )
+#         return ic, {
+#             "product": "NDVI",
+#             "bands": ["NDVI"],
+#             "unit": "NDVI",
+#             "scale_m": 500,
+#             "start_date" : start_date,
+#             "end_date" : end_date,
+#             "satellite" : sat
+#             }
 
-    raise ValueError(f"Unsupported satellite for NDVI: {satellite}. Use LANDSAT, MODIS, SENTINEL, or VIIRS.")
+#     raise ValueError(f"Unsupported satellite for NDVI: {satellite}. Use LANDSAT, MODIS, SENTINEL, or VIIRS.")
 
 
 
-def _build_evi(satellite: str, start_date: str, end_date: str) -> Tuple[ee.ImageCollection, Dict[str, Any]]:
-    sat = _norm(satellite)
+# def _build_evi(satellite: str, start_date: str, end_date: str) -> Tuple[ee.ImageCollection, Dict[str, Any]]:
+#     sat = _norm(satellite)
 
-    if sat == "MODIS":
-        ic = (
-            ee.ImageCollection("MODIS/061/MOD13Q1")
-            .filterDate(start_date, end_date)
-            .select(["EVI"], ["EVI"])
-            .map(lambda img: img.multiply(0.0001)
-                 .rename("EVI")
-                 .copyProperties(img, ["system:time_start"]))
-        )
+#     if sat == "MODIS":
+#         ic = (
+#             ee.ImageCollection("MODIS/061/MOD13Q1")
+#             .filterDate(start_date, end_date)
+#             .select(["EVI"], ["EVI"])
+#             .map(lambda img: img.multiply(0.0001)
+#                  .rename("EVI")
+#                  .copyProperties(img, ["system:time_start"]))
+#         )
 
-        return ic, {
-            "product": "EVI",
-            "bands": ["EVI"],
-            "unit": "EVI",
-            "scale_m": 250,
-            "start_date": start_date,
-            "end_date": end_date,
-            "satellite": sat,
-        }
+#         return ic, {
+#             "product": "EVI",
+#             "bands": ["EVI"],
+#             "unit": "EVI",
+#             "scale_m": 250,
+#             "start_date": start_date,
+#             "end_date": end_date,
+#             "satellite": sat,
+#         }
     
-    if sat in ("SENTINEL", "SENTINEL2", "S2"):
-        base = (
-            ee.ImageCollection("COPERNICUS/S2_HARMONIZED")
-            .filterDate(start_date, end_date)
-            .filter(ee.Filter.lte("CLOUDY_PIXEL_PERCENTAGE", 60))
-        )
+#     if sat in ("SENTINEL", "SENTINEL2", "S2"):
+#         base = (
+#             ee.ImageCollection("COPERNICUS/S2_HARMONIZED")
+#             .filterDate(start_date, end_date)
+#             .filter(ee.Filter.lte("CLOUDY_PIXEL_PERCENTAGE", 60))
+#         )
 
-        def _mask_s2(img):
-            qa = img.select("QA60")
-            cloud = qa.bitwiseAnd(1 << 10).eq(0)
-            cirrus = qa.bitwiseAnd(1 << 11).eq(0)
-            return img.updateMask(cloud.And(cirrus))
+#         def _mask_s2(img):
+#             qa = img.select("QA60")
+#             cloud = qa.bitwiseAnd(1 << 10).eq(0)
+#             cirrus = qa.bitwiseAnd(1 << 11).eq(0)
+#             return img.updateMask(cloud.And(cirrus))
 
-        def _to_evi(img):
-            img = _mask_s2(img)
+#         def _to_evi(img):
+#             img = _mask_s2(img)
 
-            blue = img.select("B2").divide(10000.0)
-            red  = img.select("B4").divide(10000.0)
-            nir  = img.select("B8").divide(10000.0)
+#             blue = img.select("B2").divide(10000.0)
+#             red  = img.select("B4").divide(10000.0)
+#             nir  = img.select("B8").divide(10000.0)
 
-            evi = _evi_from_nir_red_blue(nir, red, blue)
-            return evi.rename("EVI").copyProperties(img, ["system:time_start"])
+#             evi = _evi_from_nir_red_blue(nir, red, blue)
+#             return evi.rename("EVI").copyProperties(img, ["system:time_start"])
 
-        ic = base.map(_to_evi)
+#         ic = base.map(_to_evi)
 
-        return ic, {
-            "product": "EVI",
-            "bands": ["EVI"],
-            "unit": "EVI",
+#         return ic, {
+#             "product": "EVI",
+#             "bands": ["EVI"],
+#             "unit": "EVI",
+#             "scale_m": 10,
+#             "start_date": start_date,
+#             "end_date": end_date,
+#             "satellite": sat,
+#         }
+
+#     if sat in ("LANDSAT8", "LANDSAT_8", "LC08", "LANDSAT9", "LANDSAT_9", "LC09"):
+#         col_id = (
+#             "LANDSAT/LC08/C02/T1_L2"
+#             if sat in ("LANDSAT8", "LANDSAT_8", "LC08")
+#             else "LANDSAT/LC09/C02/T1_L2"
+#         )
+
+#         base = ee.ImageCollection(col_id).filterDate(start_date, end_date)
+
+#         def _sr(img, band):
+#             return img.select(band).multiply(0.0000275).add(-0.2)
+
+#         def _mask_landsat(img):
+#             qa = img.select("QA_PIXEL")
+#             cloud = qa.bitwiseAnd(1 << 3).eq(0)
+#             shadow = qa.bitwiseAnd(1 << 4).eq(0)
+#             return img.updateMask(cloud.And(shadow))
+
+#         def _to_evi(img):
+#             img = _mask_landsat(img)
+
+#             blue = _sr(img, "SR_B2")
+#             red  = _sr(img, "SR_B4")
+#             nir  = _sr(img, "SR_B5")
+
+#             evi = _evi_from_nir_red_blue(nir, red, blue)
+#             return evi.rename("EVI").copyProperties(img, ["system:time_start"])
+
+#         ic = base.map(_to_evi)
+
+#         return ic, {
+#             "product": "EVI",
+#             "bands": ["EVI"],
+#             "unit": "EVI",
+#             "scale_m": 30,
+#             "start_date": start_date,
+#             "end_date": end_date,
+#             "satellite": sat,
+#         }
+
+#     raise ValueError(
+#         f"Unsupported satellite for EVI: {satellite}. "
+#         "Use MODIS, SENTINEL2/S2, or LANDSAT8/9."
+#     )
+
+
+# def _build_ndvi_evi(satellite: str, start_date: str, end_date: str) -> Tuple[ee.ImageCollection, Dict[str, Any]]:
+#     sat = _norm(satellite)
+
+#     if sat == "MODIS":
+#         ic = (
+#             ee.ImageCollection("MODIS/061/MOD13Q1")
+#             .filterDate(start_date, end_date)
+#             .select(["NDVI", "EVI"], ["NDVI", "EVI"])
+#             .map(lambda img: (
+#                 img.multiply(0.0001)
+#                    .rename(["NDVI", "EVI"])
+#                    .copyProperties(img, ["system:time_start"])
+#             ))
+#         )
+#         return ic, {
+#             "product": "NDVI_EVI",
+#             "bands": ["NDVI", "EVI"],
+#             "unit": "index",
+#             "scale_m": 250,
+#             "start_date" : start_date,
+#             "end_date" : end_date,
+#             "satellite" : sat
+#             }
+
+#     if sat in ("SENTINEL", "SENTINEL2", "S2"):
+#         base = (
+#             ee.ImageCollection("COPERNICUS/S2_HARMONIZED")
+#             .filterDate(start_date, end_date)
+#             .filter(ee.Filter.lte("CLOUDY_PIXEL_PERCENTAGE", 60))
+#         )
+
+#         def _to_both(img: ee.Image) -> ee.Image:
+#             blue = img.select("B2").divide(10000.0)
+#             red = img.select("B4").divide(10000.0)
+#             nir = img.select("B8").divide(10000.0)
+#             ndvi = _ndvi_from_nir_red(nir, red)
+#             evi = _evi_from_nir_red_blue(nir, red, blue)
+#             out = ndvi.addBands(evi)
+#             return out.copyProperties(img, ["system:time_start"])
+
+#         ic = base.map(_to_both)
+#         return ic, {
+#             "product": "NDVI_EVI",
+#             "bands": ["NDVI", "EVI"],
+#             "unit": "index",
+#             "scale_m": 10,
+#             "start_date" : start_date,
+#             "end_date" : end_date,
+#             "satellite" : sat
+#             }
+
+#     if sat in ("LANDSAT8", "LANDSAT_8", "LC08", "LANDSAT9", "LANDSAT_9", "LC09"):
+#         col_id = "LANDSAT/LC08/C02/T1_L2" if sat in ("LANDSAT8", "LANDSAT_8", "LC08") else "LANDSAT/LC09/C02/T1_L2"
+
+#         base = (
+#             ee.ImageCollection(col_id)
+#             .filterDate(start_date, end_date)
+#         )
+
+#         # C2 L2 SR scale/offset: SR = DN * 0.0000275 + (-0.2)
+#         def _sr(img: ee.Image, band: str) -> ee.Image:
+#             return img.select(band).multiply(0.0000275).add(-0.2)
+
+#         def _to_both(img: ee.Image) -> ee.Image:
+#             blue = _sr(img, "SR_B2")
+#             red  = _sr(img, "SR_B4")
+#             nir  = _sr(img, "SR_B5")
+
+#             ndvi = _ndvi_from_nir_red(nir, red)           # "NDVI"
+#             evi  = _evi_from_nir_red_blue(nir, red, blue) # "EVI"
+
+#             out = ndvi.addBands(evi)
+#             return out.copyProperties(img, ["system:time_start"])
+
+#         ic = base.map(_to_both)
+#         return ic, {
+#             "product": "NDVI_EVI",
+#             "bands": ["NDVI", "EVI"],
+#             "unit": "index",
+#             "scale_m": 30,
+#             "start_date": start_date,
+#             "end_date": end_date,
+#             "satellite": sat,
+#         }
+
+#     raise ValueError(
+#         f"Unsupported satellite for NDVI_EVI: {satellite}. "
+#         "Use MODIS, SENTINEL2/S2, or LANDSAT8/9."
+#     )
+
+
+
+# def _build_chirps(start_date: str, end_date: str) -> Tuple[ee.ImageCollection, Dict[str, Any]]:
+#     ic = (
+#         ee.ImageCollection("UCSB-CHG/CHIRPS/DAILY")
+#         .filterDate(start_date, end_date)
+#         .select(["precipitation"], ["precipitation"])
+#         .map(_copy_time)
+#     )
+#     return ic, {
+#         "product": "CHIRPS",
+#         "bands": ["precipitation"],
+#         "unit": "mm",
+#         "scale_m": 5500,
+#         "start_date" : start_date,
+#         "end_date" : end_date
+#         }
+
+
+# -----------------------------------
+# Master registry
+#------------------------------------
+
+_PRODUCT_REGISTRY = {
+    "LST": "lst",
+    "NDVI": "vegetation",
+    "EVI": "vegetation",
+    "NDVI_EVI": "vegetation",
+    "CHIRPS": "chirps",
+}
+
+# -----------------------------------
+# Satellite configs
+#------------------------------------
+
+
+_SAT_CONFIG = {
+    "LST": {
+        "LANDSAT8": {"collection": "LANDSAT/LC08/C02/T1_L2", "band": "ST_B10", "scale_m": 30},
+        "LANDSAT9": {"collection": "LANDSAT/LC09/C02/T1_L2", "band": "ST_B10", "scale_m": 30},
+        "MODIS": {"collection": "MODIS/061/MOD11A1", "band": "LST_Day_1km", "scale_m": 1000},
+    },
+
+    "VEG": {
+        "SENTINEL2": {
+            "collection": "COPERNICUS/S2_HARMONIZED",
+            "bands": {"blue": "B2", "red": "B4", "nir": "B8"},
+            "scale": 10000.0,
+            "mask": "S2",
             "scale_m": 10,
-            "start_date": start_date,
-            "end_date": end_date,
-            "satellite": sat,
-        }
+        },
+        "LANDSAT8": {
+            "collection": "LANDSAT/LC08/C02/T1_L2",
+            "bands": {"blue": "SR_B2", "red": "SR_B4", "nir": "SR_B5"},
+            "mask": "LANDSAT",
+            "scale_m": 30,
+        },
+        "LANDSAT9": {
+            "collection": "LANDSAT/LC09/C02/T1_L2",
+            "bands": {"blue": "SR_B2", "red": "SR_B4", "nir": "SR_B5"},
+            "mask": "LANDSAT",
+            "scale_m": 30,
+        },
+        "MODIS": {
+            "collection": "MODIS/061/MOD13Q1",
+            "bands": {"ndvi": "NDVI", "evi": "EVI"},
+            "scale": 0.0001,
+            "scale_m": 250,
+            "direct": True,
+        },
+    }
+}
 
-    if sat in ("LANDSAT8", "LANDSAT_8", "LC08", "LANDSAT9", "LANDSAT_9", "LC09"):
-        col_id = (
-            "LANDSAT/LC08/C02/T1_L2"
-            if sat in ("LANDSAT8", "LANDSAT_8", "LC08")
-            else "LANDSAT/LC09/C02/T1_L2"
-        )
 
-        base = ee.ImageCollection(col_id).filterDate(start_date, end_date)
+# ----------------------------------------
+# Core helpers (reused everywhere)
+#-----------------------------------------
 
-        def _sr(img, band):
-            return img.select(band).multiply(0.0000275).add(-0.2)
+def _mask_s2(img):
+    qa = img.select("QA60")
+    return img.updateMask(
+        qa.bitwiseAnd(1 << 10).eq(0)
+        .And(qa.bitwiseAnd(1 << 11).eq(0))
+    )
 
-        def _mask_landsat(img):
-            qa = img.select("QA_PIXEL")
-            cloud = qa.bitwiseAnd(1 << 3).eq(0)
-            shadow = qa.bitwiseAnd(1 << 4).eq(0)
-            return img.updateMask(cloud.And(shadow))
+def _mask_landsat(img):
+    qa = img.select("QA_PIXEL")
+    return img.updateMask(
+        qa.bitwiseAnd(1 << 3).eq(0)
+        .And(qa.bitwiseAnd(1 << 4).eq(0))
+    )
 
-        def _to_evi(img):
+def _sr(img, band):
+    return img.select(band).multiply(0.0000275).add(-0.2)
+
+def _apply_lst_scale(img, band):
+    return (
+        img.select(band)
+           .multiply(0.00341802)
+           .add(149.0)
+           .rename("LST")
+           .copyProperties(img, ["system:time_start"])
+    )
+
+
+# ----------------------------------------
+# Vegetation pipeline
+#-----------------------------------------
+
+def _build_vegetation(product, satellite, start_date, end_date):
+    sat = _norm_sat(satellite)
+    cfg = _SAT_CONFIG["VEG"].get(sat)
+
+    if not cfg:
+        raise ValueError(f"Unsupported vegetation satellite: {satellite}")
+
+    ic = ee.ImageCollection(cfg["collection"]).filterDate(start_date, end_date)
+
+    # MODIS shortcut
+    if cfg.get("direct"):
+        bands = []
+        if product in ("NDVI", "NDVI_EVI"):
+            bands.append(cfg["bands"]["ndvi"])
+        if product in ("EVI", "NDVI_EVI"):
+            bands.append(cfg["bands"]["evi"])
+
+        def _proc(img):
+            return (
+                img.select(bands)
+                   .multiply(cfg["scale"])
+                   .rename(bands)
+                   .copyProperties(img, ["system:time_start"])
+            )
+
+        return ic.map(_proc), {"bands": bands, "scale_m": cfg["scale_m"]}
+
+    def _proc(img):
+        # mask
+        if cfg["mask"] == "S2":
+            img = _mask_s2(img)
+        else:
             img = _mask_landsat(img)
 
-            blue = _sr(img, "SR_B2")
-            red  = _sr(img, "SR_B4")
-            nir  = _sr(img, "SR_B5")
+        # bands
+        if sat.startswith("LANDSAT"):
+            blue = _sr(img, cfg["bands"]["blue"])
+            red  = _sr(img, cfg["bands"]["red"])
+            nir  = _sr(img, cfg["bands"]["nir"])
+        else:
+            scale = cfg.get("scale", 10000.0)
+            blue = img.select(cfg["bands"]["blue"]).divide(scale)
+            red  = img.select(cfg["bands"]["red"]).divide(scale)
+            nir  = img.select(cfg["bands"]["nir"]).divide(scale)
 
-            evi = _evi_from_nir_red_blue(nir, red, blue)
-            return evi.rename("EVI").copyProperties(img, ["system:time_start"])
+        outputs = []
 
-        ic = base.map(_to_evi)
+        if product in ("NDVI", "NDVI_EVI"):
+            outputs.append(_ndvi_from_nir_red(nir, red).rename("NDVI"))
 
-        return ic, {
-            "product": "EVI",
-            "bands": ["EVI"],
-            "unit": "EVI",
-            "scale_m": 30,
-            "start_date": start_date,
-            "end_date": end_date,
-            "satellite": sat,
-        }
+        if product in ("EVI", "NDVI_EVI"):
+            outputs.append(_evi_from_nir_red_blue(nir, red, blue).rename("EVI"))
 
-    raise ValueError(
-        f"Unsupported satellite for EVI: {satellite}. "
-        "Use MODIS, SENTINEL2/S2, or LANDSAT8/9."
-    )
+        out = outputs[0] if len(outputs) == 1 else outputs[0].addBands(outputs[1])
+
+        return out.copyProperties(img, ["system:time_start"])
+
+    return ic.map(_proc), {"bands": [product], "scale_m": cfg["scale_m"]}
 
 
-def _build_ndvi_evi(satellite: str, start_date: str, end_date: str) -> Tuple[ee.ImageCollection, Dict[str, Any]]:
-    sat = _norm(satellite)
+# --------------------------------------------------------
+# LST pipeline
+# --------------------------------------------------------
 
-    if sat == "MODIS":
-        ic = (
-            ee.ImageCollection("MODIS/061/MOD13Q1")
-            .filterDate(start_date, end_date)
-            .select(["NDVI", "EVI"], ["NDVI", "EVI"])
-            .map(lambda img: (
-                img.multiply(0.0001)
-                   .rename(["NDVI", "EVI"])
+
+def _build_lst(satellite, start_date, end_date):
+    sat = _norm_sat(satellite)
+    cfg = _SAT_CONFIG["LST"].get(sat)
+
+    if not cfg:
+        raise ValueError(f"Unsupported LST satellite: {satellite}")
+
+    ic = ee.ImageCollection(cfg["collection"]).filterDate(start_date, end_date)
+
+    def _proc(img):
+        if sat.startswith("LANDSAT"):
+            return _apply_lst_scale(img, cfg["band"])
+        else:
+            return (
+                img.select(cfg["band"])
+                   .multiply(0.02)
+                   .rename("LST")
                    .copyProperties(img, ["system:time_start"])
-            ))
-        )
-        return ic, {
-            "product": "NDVI_EVI",
-            "bands": ["NDVI", "EVI"],
-            "unit": "index",
-            "scale_m": 250,
-            "start_date" : start_date,
-            "end_date" : end_date,
-            "satellite" : sat
-            }
+            )
 
-    if sat in ("SENTINEL", "SENTINEL2", "S2"):
-        base = (
-            ee.ImageCollection("COPERNICUS/S2_HARMONIZED")
-            .filterDate(start_date, end_date)
-            .filter(ee.Filter.lte("CLOUDY_PIXEL_PERCENTAGE", 60))
-        )
+    return ic.map(_proc), {"bands": ["LST"], "scale_m": cfg["scale_m"]}
 
-        def _to_both(img: ee.Image) -> ee.Image:
-            blue = img.select("B2").divide(10000.0)
-            red = img.select("B4").divide(10000.0)
-            nir = img.select("B8").divide(10000.0)
-            ndvi = _ndvi_from_nir_red(nir, red)
-            evi = _evi_from_nir_red_blue(nir, red, blue)
-            out = ndvi.addBands(evi)
-            return out.copyProperties(img, ["system:time_start"])
+# --------------------------------------------------------
+# CHIRPS pipeline
+# --------------------------------------------------------
 
-        ic = base.map(_to_both)
-        return ic, {
-            "product": "NDVI_EVI",
-            "bands": ["NDVI", "EVI"],
-            "unit": "index",
-            "scale_m": 10,
-            "start_date" : start_date,
-            "end_date" : end_date,
-            "satellite" : sat
-            }
-
-    if sat in ("LANDSAT8", "LANDSAT_8", "LC08", "LANDSAT9", "LANDSAT_9", "LC09"):
-        col_id = "LANDSAT/LC08/C02/T1_L2" if sat in ("LANDSAT8", "LANDSAT_8", "LC08") else "LANDSAT/LC09/C02/T1_L2"
-
-        base = (
-            ee.ImageCollection(col_id)
-            .filterDate(start_date, end_date)
-        )
-
-        # C2 L2 SR scale/offset: SR = DN * 0.0000275 + (-0.2)
-        def _sr(img: ee.Image, band: str) -> ee.Image:
-            return img.select(band).multiply(0.0000275).add(-0.2)
-
-        def _to_both(img: ee.Image) -> ee.Image:
-            blue = _sr(img, "SR_B2")
-            red  = _sr(img, "SR_B4")
-            nir  = _sr(img, "SR_B5")
-
-            ndvi = _ndvi_from_nir_red(nir, red)           # "NDVI"
-            evi  = _evi_from_nir_red_blue(nir, red, blue) # "EVI"
-
-            out = ndvi.addBands(evi)
-            return out.copyProperties(img, ["system:time_start"])
-
-        ic = base.map(_to_both)
-        return ic, {
-            "product": "NDVI_EVI",
-            "bands": ["NDVI", "EVI"],
-            "unit": "index",
-            "scale_m": 30,
-            "start_date": start_date,
-            "end_date": end_date,
-            "satellite": sat,
-        }
-
-    raise ValueError(
-        f"Unsupported satellite for NDVI_EVI: {satellite}. "
-        "Use MODIS, SENTINEL2/S2, or LANDSAT8/9."
-    )
-
-
-
-def _build_chirps(start_date: str, end_date: str) -> Tuple[ee.ImageCollection, Dict[str, Any]]:
+def _build_chirps(start_date, end_date):
     ic = (
         ee.ImageCollection("UCSB-CHG/CHIRPS/DAILY")
         .filterDate(start_date, end_date)
-        .select(["precipitation"], ["precipitation"])
-        .map(_copy_time)
+        .select(["precipitation"])
+        .map(lambda img: img.rename("precipitation")
+             .copyProperties(img, ["system:time_start"]))
     )
-    return ic, {
-        "product": "CHIRPS",
-        "bands": ["precipitation"],
-        "unit": "mm",
-        "scale_m": 5500,
-        "start_date" : start_date,
-        "end_date" : end_date
-        }
+
+    return ic, {"bands": ["precipitation"], "scale_m": 5500}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -602,6 +763,7 @@ def _compute(prod: str,start: ee.Date,period_ic: ee.ImageCollection,geometry: ee
     def _reduce_mean(img: ee.Image, band: str) -> ee.Dictionary:
         proj = img.select(band).projection()
         geom_in_img_crs = geometry.transform(proj, 1)
+
         return img.select(band).reduceRegion(
             reducer=ee.Reducer.mean(),
             geometry=geom_in_img_crs,

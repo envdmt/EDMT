@@ -7,12 +7,16 @@ from .builder import (
     Frequency,
     ee_initialized,
     gdf_to_ee_geometry,
-    _norm,
+
+    _PRODUCT_REGISTRY,
+    _build_vegetation,
+
+    _norm_sat,
     _build_chirps,
     _build_lst,
-    _build_ndvi,
-    _build_evi,
-    _build_ndvi_evi,
+    # _build_ndvi,
+    # _build_evi,
+    # _build_ndvi_evi,
     _compute,
     _empty,
     _advance_end,
@@ -28,78 +32,138 @@ from .builder import (
 # ----------------------------
 # ONE public entry function
 # ----------------------------
-def get_satellite_collection(
-    product: str,
-    start_date: str,
-    end_date: str,
-    satellite: Optional[str] = None,
-    ) -> Tuple[ee.ImageCollection, Dict[str, Any]]:
-    """
-    Retrieves and configures Earth Engine ImageCollections for specific environmental products.
+# def get_satellite_collection(
+#     product: str,
+#     start_date: str,
+#     end_date: str,
+#     satellite: Optional[str] = None,
+#     ) -> Tuple[ee.ImageCollection, Dict[str, Any]]:
+#     """
+#     Retrieves and configures Earth Engine ImageCollections for specific environmental products.
 
-    This function serves as the single workflow entry-point for fetching satellite or 
-    climate data collections. It handles product normalization, parameter validation, 
-    and routing to specific builder functions based on the requested data type.
+#     This function serves as the single workflow entry-point for fetching satellite or 
+#     climate data collections. It handles product normalization, parameter validation, 
+#     and routing to specific builder functions based on the requested data type.
 
-    This function:
-    - Normalizes the `product` string to handle case variations or aliases (e.g., "NDVI+EVI").
-    - Validates whether the `satellite` parameter is required based on the product type.
-    - Routes the request to specific internal builder functions (e.g., `_build_lst`, `_build_chirps`).
-    - Constructs an `ee.ImageCollection` filtered by the specified date range.
-    - Generates a metadata dictionary containing band information, units, and scaling factors.
-    - Returns a tuple containing the configured collection and its associated metadata.
+#     This function:
+#     - Normalizes the `product` string to handle case variations or aliases (e.g., "NDVI+EVI").
+#     - Validates whether the `satellite` parameter is required based on the product type.
+#     - Routes the request to specific internal builder functions (e.g., `_build_lst`, `_build_chirps`).
+#     - Constructs an `ee.ImageCollection` filtered by the specified date range.
+#     - Generates a metadata dictionary containing band information, units, and scaling factors.
+#     - Returns a tuple containing the configured collection and its associated metadata.
 
-    Args:
-        product (str): The environmental product identifier. Must be one of:
-            - "LST" (Land Surface Temperature)
-            - "NDVI" (Normalized Difference Vegetation Index)
-            - "EVI" (Enhanced Vegetation Index)
-            - "NDVI_EVI" (Combined vegetation indices)
-            - "CHIRPS" (Climate Hazards Group InfraRed Precipitation with Station data)
-        start_date (str): Start date for the collection filter in 'YYYY-MM-DD' format.
-        end_date (str): End date for the collection filter in 'YYYY-MM-DD' format.
-        satellite (str, optional): The satellite platform identifier (e.g., "Landsat8", "MODIS").
-            - Required for: LST, NDVI, EVI, NDVI_EVI.
-            - Ignored for: CHIRPS (precipitation data does not depend on a specific satellite platform).
-            - Defaults to None.
+#     Args:
+#         product (str): The environmental product identifier. Must be one of:
+#             - "LST" (Land Surface Temperature)
+#             - "NDVI" (Normalized Difference Vegetation Index)
+#             - "EVI" (Enhanced Vegetation Index)
+#             - "NDVI_EVI" (Combined vegetation indices)
+#             - "CHIRPS" (Climate Hazards Group InfraRed Precipitation with Station data)
+#         start_date (str): Start date for the collection filter in 'YYYY-MM-DD' format.
+#         end_date (str): End date for the collection filter in 'YYYY-MM-DD' format.
+#         satellite (str, optional): The satellite platform identifier (e.g., "Landsat8", "MODIS").
+#             - Required for: LST, NDVI, EVI, NDVI_EVI.
+#             - Ignored for: CHIRPS (precipitation data does not depend on a specific satellite platform).
+#             - Defaults to None.
 
-    Returns:
-        Tuple[ee.ImageCollection, Dict[str, Any]]:
-            - If successful: a tuple containing:
-                - `ic` (ee.ImageCollection): The filtered Earth Engine ImageCollection.
-                - `meta` (dict): A dictionary containing metadata keys such as:
-                    - "bands": List of available band names.
-                    - "units": Measurement units for the data (e.g., "kelvin", "index").
-                    - "scale": Spatial resolution in meters.
-                    - "scaling_factors": Coefficients required for data calibration (when relevant).
+#     Returns:
+#         Tuple[ee.ImageCollection, Dict[str, Any]]:
+#             - If successful: a tuple containing:
+#                 - `ic` (ee.ImageCollection): The filtered Earth Engine ImageCollection.
+#                 - `meta` (dict): A dictionary containing metadata keys such as:
+#                     - "bands": List of available band names.
+#                     - "units": Measurement units for the data (e.g., "kelvin", "index").
+#                     - "scale": Spatial resolution in meters.
+#                     - "scaling_factors": Coefficients required for data calibration (when relevant).
             
-    Raises:
-        ValueError:
-            - If `product` is not one of the supported identifiers.
-            - If `satellite` is missing for products that require it (all except CHIRPS).
-            - If date formats are invalid (handled by downstream builders).
-    """
-    prod = _norm(product)
+#     Raises:
+#         ValueError:
+#             - If `product` is not one of the supported identifiers.
+#             - If `satellite` is missing for products that require it (all except CHIRPS).
+#             - If date formats are invalid (handled by downstream builders).
+#     """
+#     prod = _norm_sat(product)
 
-    if prod == "CHIRPS":
-        return _build_chirps(start_date, end_date)
+#     if prod == "CHIRPS":
+#         return _build_chirps(start_date, end_date)
 
-    if not satellite:
-        raise ValueError(f"'satellite' is required for product={product} (except CHIRPS).")
+#     if not satellite:
+#         raise ValueError(f"'satellite' is required for product={product} (except CHIRPS).")
 
-    if prod == "LST":
-        return _build_lst(satellite, start_date, end_date)
+#     if prod == "LST":
+#         return _build_lst(satellite, start_date, end_date)
 
-    if prod == "NDVI":
-        return _build_ndvi(satellite, start_date, end_date)
+#     if prod == "NDVI":
+#         return _build_ndvi(satellite, start_date, end_date)
 
-    if prod == "EVI":
-        return _build_evi(satellite, start_date, end_date)
+#     if prod == "EVI":
+#         return _build_evi(satellite, start_date, end_date)
 
-    if prod in ("NDVI_EVI", "NDVI+EVI", "NDVIAND_EVI"):
-        return _build_ndvi_evi(satellite, start_date, end_date)
+#     if prod in ("NDVI_EVI", "NDVI+EVI", "NDVIAND_EVI"):
+#         return _build_ndvi_evi(satellite, start_date, end_date)
 
-    raise ValueError(f"Unsupported product: {product}. Use LST, NDVI, EVI, NDVI_EVI, or CHIRPS.")
+#     raise ValueError(f"Unsupported product: {product}. Use LST, NDVI, EVI, NDVI_EVI, or CHIRPS.")
+
+
+
+def get_satellite_collection(
+        product, 
+        satellite=None, 
+        start_date=None, 
+        end_date=None,
+        roi_gdf: Optional[gpd.GeoDataFrame] = None,
+        ):
+    product = product.upper()
+
+    if product not in _PRODUCT_REGISTRY:
+        raise ValueError(f"Unsupported product: {product}")
+
+    pipeline = _PRODUCT_REGISTRY[product]
+
+    if pipeline == "vegetation":
+        ic, meta = _build_vegetation(product, satellite, start_date, end_date)
+
+    elif pipeline == "lst":
+        ic, meta = _build_lst(satellite, start_date, end_date)
+
+    elif pipeline == "chirps":
+        ic, meta = _build_chirps(start_date, end_date)
+
+    else:
+        raise ValueError("Invalid pipeline")
+    
+    # if roi_gdf is not None:
+    #     roi = gdf_to_ee_geometry(roi_gdf)
+
+    #     # Clip each image
+    #     ic = ic.map(lambda img: img.clip(roi))
+    #     meta["roi_applied"] = True
+
+    # else:
+    #     meta["roi_applied"] = False
+
+    # meta.update({
+    #     "product": product,
+    #     "satellite": satellite,
+    #     "start_date": start_date,
+    #     "end_date": end_date,
+    # })
+
+    # return ic, meta
+
+    meta.update({
+        "product": product,
+        "satellite": satellite,
+        "start_date": start_date,
+        "end_date": end_date,
+    })
+
+    return ic, meta
+
+
+
+
 
 
 
