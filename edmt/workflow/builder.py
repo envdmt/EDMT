@@ -407,11 +407,9 @@ def _compute_veg(prod, start, period_ic, geometry, scale, meta, n):
     band = prod
     img = period_ic.select(band).mean()
 
-    geom = _geom_in_img_crs(img, geometry)
-
     stats = img.reduceRegion(
         reducer=ee.Reducer.mean(),
-        geometry=geom,
+        geometry=geometry,
         scale=scale,
         maxPixels=1e13,
         tileScale=16, 
@@ -433,11 +431,9 @@ def _compute_chirps(start, period_ic, geometry, scale, meta, n):
     band = (meta.get("bands") or ["precipitation"])[0]
     img = period_ic.select(band).sum().rename(band)
 
-    geom = _geom_in_img_crs(img, geometry)
-
     stats = img.reduceRegion(
         reducer=ee.Reducer.max(),
-        geometry=geom,
+        geometry=geometry,
         scale=scale,
         maxPixels=1e13,
         tileScale=16, 
