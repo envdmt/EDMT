@@ -133,24 +133,15 @@ def get_satellite_collection(
     else:
         raise ValueError("Invalid pipeline")
     
-    # if roi_gdf is not None:
-    #     roi = gdf_to_ee_geometry(roi_gdf)
+    if roi_gdf is not None:
+        roi = gdf_to_ee_geometry(roi_gdf)
 
-    #     # Clip each image
-    #     ic = ic.map(lambda img: img.clip(roi))
-    #     meta["roi_applied"] = True
+        # Clip each image
+        ic = ic.map(lambda img: img.clip(roi))
+        meta["roi_applied"] = True
 
-    # else:
-    #     meta["roi_applied"] = False
-
-    # meta.update({
-    #     "product": product,
-    #     "satellite": satellite,
-    #     "start_date": start_date,
-    #     "end_date": end_date,
-    # })
-
-    # return ic, meta
+    else:
+        meta["roi_applied"] = False
 
     meta.update({
         "product": product,
@@ -160,6 +151,15 @@ def get_satellite_collection(
     })
 
     return ic, meta
+
+    # meta.update({
+    #     "product": product,
+    #     "satellite": satellite,
+    #     "start_date": start_date,
+    #     "end_date": end_date,
+    # })
+
+    # return ic, meta
 
 
 
@@ -238,10 +238,10 @@ def compute_period_feature(
         scale = int(meta.get("scale_m"))
 
     period_ic = collection.filterDate(start, end)
+    size = period_ic.size()
     computed = _compute(prod, start, period_ic, geometry, scale, meta)
     empty = _empty(prod, start)
-
-    return ee.Feature(ee.Algorithms.If(period_ic.size().gt(0), computed, empty))
+    return ee.Feature(ee.Algorithms.If(size.gt(0), computed, empty))
 
 
 
@@ -321,17 +321,15 @@ def compute_timeseries(
         start_date=start_date,
         end_date=end_date,
         satellite=satellite,
+        roi_gdf=roi_gdf,
+
     )
 
-    if satellite:
-        meta = {**meta, "satellite": satellite.upper()}
-
-    if meta.get("product") in ("NDVI", "EVI") and str(meta.get("satellite", "")).upper() == "MODIS":
-      first = ee.Image(ic.first())
-      proj = first.select(meta["bands"][0]).projection()
-      geometry = geometry.transform(proj, 1)
-
-    ic = ic.filterBounds(geometry)
+    if meta.get("satellite") == "MODIS":
+        first = ee.Image(ic.first())
+        band = meta.get("bands", ["NDVI"])[0]
+        proj = first.select(band).projection()
+        geometry = geometry.transform(proj, 1)
 
     dates = _dates_for_frequency(start_date, end_date, frequency)
 
