@@ -178,77 +178,52 @@ def CompositeImage(
     satellite: Optional[str] = None,
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
     reducer: ReducerName = "mean",
-    ) -> ee.Image:
+    scale: Optional[int] = None,
+) -> ee.Feature:
     """
-    Generates a single composite Earth Engine Image for a specific environmental product.
+    Computes regional statistics (mean, min, max) for a given product over a date range.
 
-    This function creates a reduced composite image over a specified date range and 
-    optional region of interest. It handles product-specific scaling (e.g., Kelvin to 
-    Celsius for LST), projection transformations for MODIS data, and reducer logic.
-
-    This function:
-    - Initializes the Earth Engine session via `ee_initialized()`.
-    - Converts the input `roi_gdf` to an `ee.Geometry` if provided.
-    - Retrieves the source `ee.ImageCollection` and metadata via `get_satellite_collection`.
-    - Applies projection transformation to the ROI if the satellite is MODIS.
-    - Filters the collection to bounds of the ROI (if provided).
-    - Validates that band information exists in the metadata.
-    - Computes the final composite image using `_compute_img` with the specified reducer.
-    - Returns product-specific units (e.g., °C for LST, mm for CHIRPS sum).
+    This function replaces raw composite generation with a registry-based statistical 
+    reduction. It handles product-specific scaling, projection alignment, and returns 
+    an `ee.Feature` containing reduced values and metadata.
 
     Args:
-        product (str): The environmental product identifier (e.g., "LST", "NDVI", "CHIRPS").
-        start_date (str): Start date for the composite window in 'YYYY-MM-DD' format.
-        end_date (str): End date for the composite window in 'YYYY-MM-DD' format.
-        satellite (str, optional): Satellite platform identifier (e.g., "MODIS", "Landsat8"). 
-            Required for certain products. Defaults to None.
-        roi_gdf (gpd.GeoDataFrame, optional): The Region of Interest as a GeoDataFrame. 
-            If provided, the image reduction is clipped/masked to this geometry. 
-            Defaults to None.
-        reducer (ReducerName, optional): The statistical reducer to apply over the time range. 
-            Options include "mean", "median", "sum", "min", "max". 
-            Note: "sum" is recommended for CHIRPS precipitation totals. 
+        product (str): Environmental product identifier (e.g., "LST", "NDVI", "CHIRPS").
+        start_date (str): Start date in 'YYYY-MM-DD' format.
+        end_date (str): End date in 'YYYY-MM-DD' format.
+        satellite (str, optional): Satellite platform (e.g., "MODIS"). Defaults to None.
+        roi_gdf (gpd.GeoDataFrame, optional): Region of Interest. If provided, stats are 
+            computed over this geometry. Defaults to None.
+        reducer (ReducerName): Temporal reducer applied before spatial reduction. 
             Defaults to "mean".
+        scale (int, optional): Pixel scale in meters. If None, auto-derived from the 
+            first image in the collection. Defaults to None.
 
     Returns:
-        ee.Image:
-            A single-band or multi-band Earth Engine Image representing the composite.
-            - **LST**: Returns temperature in degrees Celsius (°C).
-            - **NDVI/EVI**: Returns vegetation index values (typically -1 to 1).
-            - **CHIRPS**: Returns precipitation in millimeters (mm). 
-              If `reducer="sum"`, returns total accumulation; otherwise returns daily statistic.
-
-    Raises:
-        ValueError: If the metadata does not contain required band information 
-            ('bands' or 'band' keys missing).
-
-    Notes:
-        - **Earth Engine Initialization:** Calls `ee_initialized()` internally.
-        - **MODIS Projection:** Automatically transforms the ROI geometry to match 
-          the MODIS projection if applicable to ensure accurate pixel alignment.
-        - **Scaling:** Product-specific scaling factors (e.g., LST Kelvin conversion) 
-          are applied within `_compute_img` based on metadata.
-        - **Reducer Logic:** For precipitation (CHIRPS), use `reducer="sum"` to get 
-          total accumulation over the period. For vegetation/temperature, "mean" 
-          is typically preferred.
+        ee.Feature: Contains keys like `lst_c_mean`, `lst_c_min`, `lst_c_max`, 
+                    `precipitation_mm_mean`, etc., plus metadata (`n_images`, `unit`, etc.)
     """
     ee_initialized()
 
+    # Convert ROI if provided
     roi = gdf_to_ee_geometry(roi_gdf) if roi_gdf is not None else None
 
+    # Fetch collection & metadata
     ic, meta = get_satellite_collection(
         product=product,
         start_date=start_date,
         end_date=end_date,
         satellite=satellite,
-
     )
+
+    # MODIS projection alignment
     if roi is not None and str(meta.get("satellite", "")).upper() == "MODIS":
         first = ee.Image(ic.first())
         b0 = (meta.get("bands") or [meta.get("band")])[0]
         proj = first.select(b0).projection()
         roi = roi.transform(proj, 1)
 
+    # Filter collection to ROI bounds
     if roi is not None:
         ic = ic.filterBounds(roi)
 
@@ -257,11 +232,24 @@ def CompositeImage(
     if not bands:
         raise ValueError("meta must include 'bands' or 'band'")
 
-    r = reducer.lower()
+    # Auto-derive scale if not explicitly provided
+    if scale is None:
+        first_img = ee.Image(ic.first())
+        scale = int(first_img.select(bands[0]).projection().nominalScale())
 
-    img = _compute_image(product, start_date, end_date, ic, meta, roi, r)
+    # Dispatch to registry-based compute function
+    feature = _compute(
+        prod=prod,
+        start=ee.Date(start_date),
+        end=ee.Date(end_date),
+        period_ic=ic,
+        geometry=roi,
+        scale=scale,
+        meta=meta,
+        reducer=reducer.lower(),
+    )
 
-    return img
+    return feature
 
 
 

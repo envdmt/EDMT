@@ -764,7 +764,8 @@ def _compute_image(
 # # Helpers : Image Collection 
 # # ----------------------------
 
-# ReducerName = Literal["mean", "median", "min", "max"]
+
+ReducerName = Literal["mean", "median", "sum", "min", "max"]
 
 
 # # ----------------------------
