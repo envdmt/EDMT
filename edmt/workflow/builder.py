@@ -380,6 +380,7 @@ def _geom_in_img_crs(img, geometry):
 def _compute_lst(start, period_ic, geometry, scale, meta, n=None):
     band = "LST"
     img = period_ic.select(band).mean().subtract(273.15)
+    img = img.clip(geometry)
 
     geom = _geom_in_img_crs(img, geometry)
 

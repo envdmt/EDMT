@@ -316,12 +316,6 @@ def compute_timeseries(
         roi_gdf=roi_gdf,
     )
 
-    if meta.get("satellite") == "MODIS":
-        first = ee.Image(ic.first())
-        band = meta.get("bands", ["NDVI"])[0]
-        proj = first.select(band).projection()
-        geometry = geometry.transform(proj, 1)
-
     dates = _dates_for_frequency(start_date, end_date, frequency)
 
     fc = ee.FeatureCollection(
