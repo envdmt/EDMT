@@ -291,9 +291,10 @@ def _build_vegetation(product, satellite, start_date, end_date):
 
     ic = ee.ImageCollection(cfg["collection"]).filterDate(start_date, end_date)
 
-    # MODIS shortcut
+    # MODIS
     if cfg.get("direct"):
         bands = []
+
         if product in ("NDVI", "NDVI_EVI"):
             bands.append(cfg["bands"]["ndvi"])
         if product in ("EVI", "NDVI_EVI"):
@@ -307,16 +308,20 @@ def _build_vegetation(product, satellite, start_date, end_date):
                    .copyProperties(img, ["system:time_start"])
             )
 
-        return ic.map(_proc), {"bands": bands, "scale_m": cfg["scale_m"]}
+        return ic.map(_proc), {
+            "bands": bands,
+            "scale_m": cfg["scale_m"],
+        }
 
+    # Derived NDVI / EVI
     def _proc(img):
-        # mask
+        # ---- Masking ----
         if cfg["mask"] == "S2":
             img = _mask_s2(img)
         else:
             img = _mask_landsat(img)
 
-        # bands
+        # ---- Band scaling ----
         if sat.startswith("LANDSAT"):
             blue = _sr(img, cfg["bands"]["blue"])
             red  = _sr(img, cfg["bands"]["red"])
@@ -327,6 +332,7 @@ def _build_vegetation(product, satellite, start_date, end_date):
             red  = img.select(cfg["bands"]["red"]).divide(scale)
             nir  = img.select(cfg["bands"]["nir"]).divide(scale)
 
+        # ---- Compute indices ----
         outputs = []
 
         if product in ("NDVI", "NDVI_EVI"):
@@ -367,34 +373,6 @@ def _build_chirps(start_date, end_date):
 # -----------------
 
 # LST
-
-# def _compute_lst(start, period_ic, geometry, scale, meta, n):
-#     band = "LST"
-#     img = period_ic.select(band).mean().subtract(273.15)
-
-#     reducer = (
-#         ee.Reducer.mean()
-#         .combine(ee.Reducer.median(), sharedInputs=True)
-#     )
-
-#     stats = img.reduceRegion(
-#         reducer=reducer,
-#         geometry=geometry,
-#         scale=scale,
-#         maxPixels=1e13,
-#         tileScale=16, 
-#         bestEffort=True,
-#     )
-
-#     return ee.Feature(None, {
-#         "date": start.format("YYYY-MM-dd"),
-#         "product": "LST",
-#         "satellite": meta.get("satellite"),
-#         "mean": stats.get("LST_mean"),
-#         "median": stats.get("LST_median"),
-#         "n_images": n,
-#         "unit": "°C",
-#     })
 
 def _geom_in_img_crs(img, geometry):
     return geometry.transform(img.projection(), 1)
