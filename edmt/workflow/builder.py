@@ -368,7 +368,35 @@ def _build_chirps(start_date, end_date):
 
 # LST
 
-def _compute_lst(start, period_ic, geometry, scale, meta, n):
+# def _compute_lst(start, period_ic, geometry, scale, meta, n):
+#     band = "LST"
+#     img = period_ic.select(band).mean().subtract(273.15)
+
+#     reducer = (
+#         ee.Reducer.mean()
+#         .combine(ee.Reducer.median(), sharedInputs=True)
+#     )
+
+#     stats = img.reduceRegion(
+#         reducer=reducer,
+#         geometry=geometry,
+#         scale=scale,
+#         maxPixels=1e13,
+#         tileScale=16, 
+#         bestEffort=True,
+#     )
+
+#     return ee.Feature(None, {
+#         "date": start.format("YYYY-MM-dd"),
+#         "product": "LST",
+#         "satellite": meta.get("satellite"),
+#         "mean": stats.get("LST_mean"),
+#         "median": stats.get("LST_median"),
+#         "n_images": n,
+#         "unit": "°C",
+#     })
+
+def _compute_lst(start, period_ic, geometry, scale, meta, n=None):
     band = "LST"
     img = period_ic.select(band).mean().subtract(273.15)
 
@@ -382,8 +410,14 @@ def _compute_lst(start, period_ic, geometry, scale, meta, n):
         geometry=geometry,
         scale=scale,
         maxPixels=1e13,
-        tileScale=16, 
+        tileScale=16,
         bestEffort=True,
+    )
+
+    unique_dates = (
+        ee.List(period_ic.aggregate_array("system:time_start"))
+        .distinct()
+        .size()
     )
 
     return ee.Feature(None, {
@@ -392,10 +426,9 @@ def _compute_lst(start, period_ic, geometry, scale, meta, n):
         "satellite": meta.get("satellite"),
         "mean": stats.get("LST_mean"),
         "median": stats.get("LST_median"),
-        "n_images": n,
+        "n_observations": unique_dates,
         "unit": "°C",
     })
-
 
 # NDVI/EVI
 
