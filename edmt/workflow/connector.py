@@ -19,6 +19,8 @@ from .builder import (
     _advance_end,
     _dates_for_frequency,
     _timeseries_to_df,
+    _period_dates,
+    _build_period_img,
     _compute_image
 )
 
