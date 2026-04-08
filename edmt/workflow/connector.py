@@ -19,9 +19,12 @@ from .builder import (
     _advance_end,
     _dates_for_frequency,
     _timeseries_to_df,
+
+    _composite_image,
+
+
     _period_dates,
     _build_period_img,
-    _compute_image
 )
 
 ReducerName = Literal["mean", "median", "sum", "min", "max"]
@@ -35,6 +38,7 @@ def get_satellite_collection(
         satellite=None, 
         start_date=None, 
         end_date=None,
+        roi_gdf: Optional[gpd.GeoDataFrame] = None,
     ):
     
     product = _norm_sat(product)
@@ -55,6 +59,13 @@ def get_satellite_collection(
 
     else:
         raise ValueError("Invalid pipeline")
+    
+    if roi_gdf is not None:
+        roi = gdf_to_ee_geometry(roi_gdf)
+        ic = ic.filterBounds(roi)
+        meta["roi_applied"] = True
+    else:
+        meta["roi_applied"] = False
     
     meta.update({
         "product": product,
@@ -171,40 +182,20 @@ def ComputeTimeseries(
 
 
 # ------------------------------------
-# ONE get_product_image function
+# ONE CompositeImage function
 # ------------------------------------
+
+
 def CompositeImage(
     product: str,
     start_date: str,
     end_date: str,
     satellite: Optional[str] = None,
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
-    reducer: ReducerName = "mean",
+    reducer: str = "mean",
     scale: Optional[int] = None,
-) -> ee.Feature:
-    """
-    Computes regional statistics (mean, min, max) for a given product over a date range.
+) -> ee.Image:
 
-    This function replaces raw composite generation with a registry-based statistical 
-    reduction. It handles product-specific scaling, projection alignment, and returns 
-    an `ee.Feature` containing reduced values and metadata.
-
-    Args:
-        product (str): Environmental product identifier (e.g., "LST", "NDVI", "CHIRPS").
-        start_date (str): Start date in 'YYYY-MM-DD' format.
-        end_date (str): End date in 'YYYY-MM-DD' format.
-        satellite (str, optional): Satellite platform (e.g., "MODIS"). Defaults to None.
-        roi_gdf (gpd.GeoDataFrame, optional): Region of Interest. If provided, stats are 
-            computed over this geometry. Defaults to None.
-        reducer (ReducerName): Temporal reducer applied before spatial reduction. 
-            Defaults to "mean".
-        scale (int, optional): Pixel scale in meters. If None, auto-derived from the 
-            first image in the collection. Defaults to None.
-
-    Returns:
-        ee.Feature: Contains keys like `lst_c_mean`, `lst_c_min`, `lst_c_max`, 
-                    `precipitation_mm_mean`, etc., plus metadata (`n_images`, `unit`, etc.)
-    """
     ee_initialized()
 
     roi = gdf_to_ee_geometry(roi_gdf) if roi_gdf is not None else None
@@ -214,40 +205,34 @@ def CompositeImage(
         start_date=start_date,
         end_date=end_date,
         satellite=satellite,
+        roi_gdf=roi_gdf,
     )
 
-    if roi is not None and str(meta.get("satellite", "")).upper() == "MODIS":
-        first = ee.Image(ic.first())
-        b0 = (meta.get("bands") or [meta.get("band")])[0]
-        proj = first.select(b0).projection()
-        roi = roi.transform(proj, 1)
-
-    if roi is not None:
-        ic = ic.filterBounds(roi)
-
     prod = str(meta.get("product", product)).upper()
-    bands = meta.get("bands") or ([meta.get("band")] if meta.get("band") else [])
-    if not bands:
-        raise ValueError("meta must include 'bands' or 'band'")
 
     if scale is None:
-        first_img = ee.Image(ic.first())
-        raw_scale = first_img.select(bands[0]).projection().nominalScale().getInfo()
-        scale = int(raw_scale) if raw_scale and raw_scale != float('inf') else 1000
+        scale = int(meta.get("scale_m", 1000))
 
-    feature = _compute_image(
-        prod=prod,
-        start=ee.Date(start_date),
-        end=ee.Date(end_date),
-        period_ic=ic,
+    start = ee.Date(start_date)
+    end = ee.Date(end_date)
+
+    period_ic = ic.filterDate(start, end)
+
+    img = _composite_image(
+        product=prod,
+        start=start,
+        end=end,
+        period_ic=period_ic,
         geometry=roi,
         scale=scale,
         meta=meta,
         reducer=reducer.lower(),
     )
 
-    return feature
+    if roi is not None:
+        img = img.clip(roi)
 
+    return img
 
 
 def CollectionImage(
