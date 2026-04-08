@@ -232,7 +232,8 @@ def CompositeImage(
 
     if scale is None:
         first_img = ee.Image(ic.first())
-        scale = int(first_img.select(bands[0]).projection().nominalScale())
+        raw_scale = first_img.select(bands[0]).projection().nominalScale().getInfo()
+        scale = int(raw_scale) if raw_scale and raw_scale != float('inf') else 1000
 
     feature = _compute_image(
         prod=prod,
