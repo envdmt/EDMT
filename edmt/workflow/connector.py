@@ -125,7 +125,6 @@ def compute_timeseries(
         start_date=start_date,
         end_date=end_date,
         satellite=satellite,
-        roi_gdf=roi_gdf,
     )
 
     dates = _dates_for_frequency(start_date, end_date, frequency)
