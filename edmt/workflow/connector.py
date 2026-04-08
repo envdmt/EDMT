@@ -154,6 +154,41 @@ def get_satellite_collection(
 
 
 
+def get_satellite_collection(
+        product, 
+        satellite=None, 
+        start_date=None, 
+        end_date=None,
+        roi_gdf: Optional[gpd.GeoDataFrame] = None,
+    ):
+    
+    product = product.upper()
+
+    if product not in _PRODUCT_REGISTRY:
+        raise ValueError(f"Unsupported product: {product}")
+
+    pipeline = _PRODUCT_REGISTRY[product]
+
+    if pipeline == "vegetation":
+        ic, meta = _build_vegetation(product, satellite, start_date, end_date)
+
+    elif pipeline == "lst":
+        ic, meta = _build_lst(satellite, start_date, end_date)
+
+    elif pipeline == "chirps":
+        ic, meta = _build_chirps(start_date, end_date)
+
+    else:
+        raise ValueError("Invalid pipeline")
+    
+    meta.update({
+        "product": product,
+        "satellite": satellite,
+        "start_date": start_date,
+        "end_date": end_date,
+    })
+
+    return ic, meta
 
 
 
