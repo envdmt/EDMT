@@ -400,6 +400,8 @@ def _compute_lst(start, period_ic, geometry, scale, meta, n=None):
     band = "LST"
     img = period_ic.select(band).mean().subtract(273.15)
 
+    geom = geometry.transform(img.projection(), 1)
+
     reducer = (
         ee.Reducer.mean()
         .combine(ee.Reducer.median(), sharedInputs=True)
@@ -407,7 +409,7 @@ def _compute_lst(start, period_ic, geometry, scale, meta, n=None):
 
     stats = img.reduceRegion(
         reducer=reducer,
-        geometry=geometry,
+        geometry=geom,
         scale=scale,
         maxPixels=1e13,
         tileScale=16,
@@ -436,9 +438,11 @@ def _compute_veg(prod, start, period_ic, geometry, scale, meta, n):
     band = prod
     img = period_ic.select(band).mean()
 
+    geom = geometry.transform(img.projection(), 1)
+
     stats = img.reduceRegion(
         reducer=ee.Reducer.mean(),
-        geometry=geometry,
+        geometry=geom,
         scale=scale,
         maxPixels=1e13,
         tileScale=16, 
@@ -454,15 +458,16 @@ def _compute_veg(prod, start, period_ic, geometry, scale, meta, n):
     })
 
 
-
 # CHIRPS
 def _compute_chirps(start, period_ic, geometry, scale, meta, n):
     band = (meta.get("bands") or ["precipitation"])[0]
     img = period_ic.select(band).sum().rename(band)
 
+    geom = geometry.transform(img.projection(), 1)
+
     stats = img.reduceRegion(
         reducer=ee.Reducer.max(),
-        geometry=geometry,
+        geometry=geom,
         scale=scale,
         maxPixels=1e13,
         tileScale=16, 
