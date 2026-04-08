@@ -675,11 +675,11 @@ def _compute_chirps_image(
 # Registry & Unified Dispatcher
 # ----------------------------
 _COMPUTE_REGISTRY_IMAGE = {
-    "CHIRPS_IMAGE": _compute_chirps_image,
-    "NDVI_IMAGE": _compute_veg_image,
-    "EVI_IMAGE": _compute_veg_image,
+    "CHIRPS": _compute_chirps_image,
+    "NDVI": _compute_veg_image,
+    "EVI": _compute_veg_image,
     "NDVI_EVI": _compute_veg_image,
-    "LST_IMAGE": _compute_lst_image,
+    "LST": _compute_lst_image,
 }
 
 
