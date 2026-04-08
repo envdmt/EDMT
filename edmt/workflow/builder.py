@@ -370,7 +370,7 @@ def _build_chirps(start_date, end_date):
 
 def _compute_lst(start, period_ic, geometry, scale, meta, n):
     band = "LST"
-    img = period_ic.select(band).mean()
+    img = period_ic.select(band).mean().subtract(273.15)
 
     reducer = (
         ee.Reducer.mean()
@@ -393,7 +393,7 @@ def _compute_lst(start, period_ic, geometry, scale, meta, n):
         "mean": stats.get("LST_mean"),
         "median": stats.get("LST_median"),
         "n_images": n,
-        "unit": meta.get("unit", "°C",),
+        "unit": "°C",
     })
 
 
