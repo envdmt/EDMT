@@ -372,12 +372,9 @@ def _build_chirps(start_date, end_date):
 # 3 : Computation
 # -----------------
 
-def _geom_in_img_crs(img, geometry, band=None):
-    if band:
-        proj = img.select(band).projection()
-    else:
-        proj = img.projection()
-    return geometry.transform(proj, 1)
+def _geom_in_img_crs(img, geometry, band):
+    proj = img.select(band).projection()
+    return ee.Geometry(geometry).transform(proj, 1)
 
 # LST
 
@@ -396,6 +393,7 @@ def _compute_lst(start, period_ic, geometry, scale, meta, n=None):
         reducer=reducer,
         geometry=geom,
         scale=scale,
+        crs=img.select(band).projection(),
         maxPixels=1e13,
         tileScale=16,
         bestEffort=True,
@@ -421,7 +419,7 @@ def _compute_lst(start, period_ic, geometry, scale, meta, n=None):
 
 def _compute_veg(prod, start, period_ic, geometry, scale, meta, n):
     band = prod
-    img = period_ic.select(band).mean()
+    img = period_ic.select(band).reduce(ee.Reducer.mean()).rename(band)
 
     geom = _geom_in_img_crs(img, geometry, band)
 
@@ -429,6 +427,7 @@ def _compute_veg(prod, start, period_ic, geometry, scale, meta, n):
         reducer=ee.Reducer.mean(),
         geometry=geom,
         scale=scale,
+        crs=img.select(band).projection(),
         maxPixels=1e13,
         tileScale=16, 
         bestEffort=True,
@@ -454,6 +453,7 @@ def _compute_chirps(start, period_ic, geometry, scale, meta, n):
         reducer=ee.Reducer.max(),
         geometry=geom,
         scale=scale,
+        crs=img.select(band).projection(),
         maxPixels=1e13,
         tileScale=16, 
         bestEffort=True,
