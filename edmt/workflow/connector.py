@@ -171,55 +171,7 @@ def compute_period_feature(
     meta: Dict[str, Any],
     scale: Optional[int] = None,
     ) -> ee.Feature:
-    """
-    Constructs a single Earth Engine Feature representing aggregated statistics for a specific time period.
-
-    This function serves as the universal feature builder for all supported environmental products. 
-    It handles date windowing, spatial reduction, scaling adjustments, and empty collection fallbacks 
-    within a server-side execution context.
-
-    This function:
-    - Normalizes the `start` date and calculates the `end` date based on the specified `frequency`.
-    - Filters the input `collection` to the computed time window.
-    - Determines the spatial resolution (`scale`), prioritizing the argument over metadata defaults.
-    - Computes reduced statistics (e.g., mean, max) over the `geometry` using `_compute`.
-    - Handles empty collections gracefully by returning a placeholder Feature via `_empty`.
-    - Wraps logic in `ee.Algorithms.If` to ensure conditional execution happens server-side.
-
-    Args:
-        product (str): The environmental product identifier (e.g., "LST", "NDVI", "CHIRPS"). 
-            Case-insensitive (converted to uppercase internally).
-        start (ee.Date): The start date of the aggregation period.
-        collection (ee.ImageCollection): The source Earth Engine ImageCollection containing 
-            the raw imagery data.
-        geometry (ee.Geometry): The spatial region over which to reduce the images 
-            (e.g., a flight path buffer or administrative boundary).
-        frequency (str): The time step frequency used to calculate the end date 
-            (e.g., 'day', 'month', 'year'). Passed to `_advance_end`.
-        meta (Dict[str, Any]): A metadata dictionary containing product-specific configuration. 
-            Expected keys include:
-            - "bands" or "band": Target band names for reduction.
-            - "scale_m": Default spatial resolution in meters.
-            - "unit": Optional unit label for property naming.
-            - "multiply"/"add": Optional scaling factors for calibration (e.g., LST Kelvin conversion).
-        scale (int, optional): Override for the spatial resolution in meters. 
-            If None, defaults to `meta["scale_m"]`. Defaults to None.
-
-    Returns:
-        ee.Feature:
-            - If data exists: A Feature containing the `geometry` and properties with 
-              computed statistics (e.g., "mean_ndvi", "max_lst") for the period.
-            - If collection is empty: A placeholder Feature returned by `_empty` containing 
-              null values or flags indicating missing data for the period.
-            
-    Notes:
-        - **Server-Side Execution:** All logic (filtering, reduction, conditionals) is executed 
-          on Google Earth Engine servers. No client-side loops are used here.
-        - **Dependencies:** Relies on helper functions `_advance_end`, `_compute`, and `_empty` 
-          being defined in the scope.
-        - **Scaling:** Product-specific scaling (e.g., Kelvin to Celsius) is handled inside 
-          `_compute` using factors provided in `meta`.
-    """
+    
     start = ee.Date(start)
     end = _advance_end(start, frequency)
 
@@ -250,58 +202,7 @@ def compute_timeseries(
     satellite: Optional[str] = None,
     scale: Optional[int] = None,
     ) -> pd.DataFrame:
-    """
-    Generates a pandas DataFrame time series from Earth Engine environmental data.
-
-    This function orchestrates the end-to-end workflow for extracting temporal 
-    statistics over a specific Region of Interest (ROI). It handles Earth Engine 
-    initialization, geometry conversion, collection filtering, server-side mapping, 
-    and client-side DataFrame cleaning.
-
-    This function:
-    - Initializes the Earth Engine session via `ee_initialized()`.
-    - Validates the input `roi_gdf` and converts it to an `ee.Geometry`.
-    - Retrieves the appropriate `ee.ImageCollection` and metadata via `get_satellite_collection`.
-    - Applies projection transformation for MODIS data to ensure spatial alignment.
-    - Generates a list of dates based on `frequency` and maps `compute_period_feature` 
-      over each period to build an `ee.FeatureCollection`.
-    - Converts the resulting FeatureCollection to a pandas DataFrame.
-    - Filters out rows with missing values (NaNs) based on product-specific columns 
-      (e.g., removes NaNs in "mean" for LST, "precipitation_mm" for CHIRPS).
-    - Adds a human-readable "month" column if the frequency is set to "monthly".
-
-    Args:
-        product (str): The environmental product identifier (e.g., "LST", "NDVI", "CHIRPS").
-        start_date (str): Start date for the time series in 'YYYY-MM-DD' format.
-        end_date (str): End date for the time series in 'YYYY-MM-DD' format.
-        frequency (str): Temporal aggregation frequency (e.g., "daily", "monthly", "yearly").
-        roi_gdf (gpd.GeoDataFrame): The Region of Interest as a GeoDataFrame. 
-            Must not be None. Used to define the spatial reduction geometry.
-        satellite (str, optional): Satellite platform identifier (e.g., "MODIS", "Landsat8"). 
-            Required for certain products via `get_satellite_collection`. Defaults to None.
-        scale (int, optional): Spatial resolution in meters for reduction. 
-            If None, defaults to product metadata. Defaults to None.
-
-    Returns:
-        pd.DataFrame:
-            A cleaned time series DataFrame indexed by date. 
-            - Contains columns for computed statistics (e.g., "mean", "ndvi", "precipitation_mm").
-            - Rows with missing data (NaNs) are removed based on product-specific logic.
-            - Includes a "month" column (string) if frequency is "monthly".
-            - Index is reset to default integer index.
-
-    Raises:
-        ValueError: If `roi_gdf` is None or invalid.
-
-    Notes:
-        - **MODIS Projection:** Automatically transforms geometry to match MODIS projection 
-          if product is NDVI/EVI and satellite is MODIS.
-        - **NaN Filtering:** Specific columns are checked for null values depending on 
-          the product (e.g., LST checks "mean", CHIRPS checks "precipitation_mm").
-        - **Performance:** Mapping over dates occurs server-side; large date ranges 
-          may increase computation time.
-
-    """
+    
     ee_initialized()
     if roi_gdf is None:
         raise ValueError("Provide roi_gdf (Region of Interest)")
