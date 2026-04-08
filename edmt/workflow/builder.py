@@ -393,7 +393,7 @@ def _compute_lst(start, period_ic, geometry, scale, meta, n):
         "mean": stats.get("LST_mean"),
         "median": stats.get("LST_median"),
         "n_images": n,
-        "unit": meta.get("unit", "K"),
+        "unit": meta.get("unit", "°C",),
     })
 
 
@@ -503,7 +503,7 @@ def _compute(
 # Helpers : Image Collection 
 # ----------------------------
 
-ReducerName = Literal["mean", "median", "min", "max", "sum"]
+ReducerName = Literal["mean", "median", "min", "max"]
 
 
 # ----------------------------
@@ -553,7 +553,7 @@ def _compute_img(
         if r == "sum":
             img = ic.select(band).sum().rename("precipitation_mm")
             unit = "mm"
-        elif r in ("mean", "median", "min", "max"):
+        elif r in ReducerName:
             img = getattr(ic.select(band), r)().rename("precipitation_mm")
             unit = "mm/day"
         else:
@@ -571,7 +571,7 @@ def _compute_img(
         })
 
     if prod in ("NDVI", "EVI"):
-        if r not in ("mean", "median", "min", "max"):
+        if r not in ReducerName:
             raise ValueError("NDVI/EVI reducer must be one of: mean, median, min, max")
 
         band = prod
@@ -639,7 +639,6 @@ def _compute_img(
         })
 
     raise ValueError(f"Unsupported product for image composite: {product}")
-
 
 
 def _period_dates(start_date: str, end_date: str, frequency: str) -> Tuple[str, int]:
