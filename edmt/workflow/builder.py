@@ -372,7 +372,7 @@ def _build_chirps(start_date, end_date):
 # 3 : Computation
 # -----------------
 
-def _geom_in_img_crs(img, geometry, band):
+def _geom_in_img_crs(img, geometry, band=None):
     proj = img.select(band).projection()
     return ee.Geometry(geometry).transform(proj, 1)
 
