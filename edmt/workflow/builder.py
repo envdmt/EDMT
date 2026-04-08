@@ -392,8 +392,6 @@ def _compute_lst(start, period_ic, geometry, scale, meta, n):
         "satellite": meta.get("satellite"),
         "mean": stats.get("LST_mean"),
         "median": stats.get("LST_median"),
-        "min": stats.get("LST_min"),
-        "max": stats.get("LST_max"),
         "n_images": n,
         "unit": meta.get("unit", "K"),
     })
