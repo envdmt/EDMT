@@ -114,6 +114,7 @@ def compute_timeseries(
     ) -> pd.DataFrame:
     
     ee_initialized()
+
     if roi_gdf is None:
         raise ValueError("Provide roi_gdf (Region of Interest)")
 
@@ -243,7 +244,6 @@ def get_product_image(
         start_date=start_date,
         end_date=end_date,
         satellite=satellite,
-        roi_gdf=roi_gdf,
 
     )
     if roi is not None and str(meta.get("satellite", "")).upper() == "MODIS":
