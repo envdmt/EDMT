@@ -413,56 +413,30 @@ def _compute_lst(start, period_ic, geometry, scale, meta, n=None):
     })
 
 # NDVI/EVI
-def _compute_veg_image(
-    start: ee.Date, end: ee.Date, period_ic: ee.ImageCollection,
-    geometry: ee.Geometry, scale: int, meta: Dict[str, Any],
-    reducer: str, n: ee.Number, prod: str
-) -> ee.Feature:
+def _compute_veg(prod, start, period_ic, geometry, scale, meta, n):
+    band = prod
+    img = period_ic.select(band).reduce(ee.Reducer.mean()).rename(band)
 
-    bands = ["NDVI", "EVI"] if prod == "NDVI_EVI" else [prod]
-    img = getattr(period_ic.select(bands), reducer)()
-
-    geom = _get_geom_in_img_crs(img, geometry)
+    geom = _geom_in_img_crs(img, geometry, band)
 
     stats = img.reduceRegion(
-        reducer=ee.Reducer.mean().combine(
-            ee.Reducer.minMax(), sharedInputs=True
-        ),
+        reducer=ee.Reducer.mean(),
         geometry=geom,
         scale=scale,
-        crs=img.projection(),
+        crs=img.select(band).projection(),
         maxPixels=1e13,
-        tileScale=16,
+        tileScale=16, 
         bestEffort=True,
     )
 
-    props = {
-        "period_start": start.format("YYYY-MM-dd"),
-        "period_end": end.format("YYYY-MM-dd"),
+    return ee.Feature(None, {
+        "date": start.format("YYYY-MM-dd"),
         "product": prod,
+        prod.lower(): stats.get(band),
         "n_images": n,
-        "reducer": reducer,
-        "unit": meta.get("unit", "index"),
         "satellite": meta.get("satellite"),
-    }
+    })
 
-    if prod == "NDVI_EVI":
-        props.update({
-            "mean_ndvi": stats.get("NDVI_mean"),
-            "min_ndvi": stats.get("NDVI_min"),
-            "max_ndvi": stats.get("NDVI_max"),
-            "mean_evi": stats.get("EVI_mean"),
-            "min_evi": stats.get("EVI_min"),
-            "max_evi": stats.get("EVI_max"),
-        })
-    else:
-        props.update({
-            "mean": stats.get(f"{prod}_mean"),
-            "min": stats.get(f"{prod}_min"),
-            "max": stats.get(f"{prod}_max"),
-        })
-
-    return ee.Feature(None, props)
 
 # CHIRPS
 def _compute_chirps(start, period_ic, geometry, scale, meta, n):
@@ -490,9 +464,7 @@ def _compute_chirps(start, period_ic, geometry, scale, meta, n):
     })
 
 
-
 # Compute Registry
-
 _COMPUTE_REGISTRY = {
     "CHIRPS": _compute_chirps,
     "NDVI": _compute_veg,
@@ -539,9 +511,6 @@ def _compute(
 # ----------------------------
 # Helpers
 # ----------------------------
-def _get_geom_in_img_crs(img: ee.Image, geometry: ee.Geometry) -> ee.Geometry:
-    """Transform geometry to image CRS ONLY at reduction time."""
-    return geometry.transform(img.projection(), 1)
 
 def _reduce_stats(img: ee.Image, geometry: ee.Geometry, scale: int) -> ee.Dictionary:
     geom = geometry.transform(img.projection(), 1)
@@ -725,14 +694,6 @@ def _composite_image(
 
     else:
         raise ValueError(f"Unsupported product: {product}")
-
-
-
-
-
-
-
-
 
 
 
