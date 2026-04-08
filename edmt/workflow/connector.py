@@ -19,9 +19,7 @@ from .builder import (
     _advance_end,
     _dates_for_frequency,
     _timeseries_to_df,
-    _compute_img,
-    _period_dates,
-    _build_period_img,
+    _compute_image
 )
 
 
@@ -103,7 +101,7 @@ def compute_period_feature(
 # ONE Ccompute_timeseries function
 # ------------------------------------
 
-def compute_timeseries(
+def ComputeTimeseries(
     product: str,
     start_date: str,
     end_date: str,
@@ -173,7 +171,7 @@ def compute_timeseries(
 # ------------------------------------
 # ONE get_product_image function
 # ------------------------------------
-def get_product_image(
+def CompositeImage(
     product: str,
     start_date: str,
     end_date: str,
@@ -261,13 +259,13 @@ def get_product_image(
 
     r = reducer.lower()
 
-    img = _compute_img(product, start_date, end_date, ic, meta, roi, r)
+    img = _compute_image(product, start_date, end_date, ic, meta, roi, r)
 
     return img
 
 
 
-def get_product_image_collection(
+def CollectionImage(
     product: str,
     start_date: str,
     end_date: str,

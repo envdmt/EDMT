@@ -4,9 +4,9 @@ import pandas as pd
 import ee
 from typing import Literal
 from .connector import (
-    compute_timeseries,
-    get_product_image,
-    get_product_image_collection,
+    ComputeTimeseries,
+    CompositeImage,
+    CollectionImage,
 )
 from .builder import (
     Frequency,
@@ -21,7 +21,7 @@ def compute_lst_timeseries(
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
     scale: Optional[int] = None,
 ) -> pd.DataFrame:
-    return compute_timeseries(
+    return ComputeTimeseries(
         product="LST",
         start_date=start_date,
         end_date=end_date,
@@ -40,7 +40,7 @@ def compute_ndvi_timeseries(
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
     scale: Optional[int] = None,
 ) -> pd.DataFrame:
-    return compute_timeseries(
+    return ComputeTimeseries(
         product="NDVI",
         start_date=start_date,
         end_date=end_date,
@@ -60,7 +60,7 @@ def compute_evi_timeseries(
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
     scale: Optional[int] = None,
 ) -> pd.DataFrame:
-    return compute_timeseries(
+    return ComputeTimeseries(
         product=product,
         start_date=start_date,
         end_date=end_date,
@@ -79,7 +79,7 @@ def compute_ndvi_evi_timeseries(
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
     scale: Optional[int] = None,
 ) -> pd.DataFrame:
-    return compute_timeseries(
+    return ComputeTimeseries(
         product="NDVI_EVI",
         start_date=start_date,
         end_date=end_date,
@@ -97,7 +97,7 @@ def compute_chirps_timeseries(
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
     scale: Optional[int] = None,
 ) -> pd.DataFrame:
-    return compute_timeseries(
+    return ComputeTimeseries(
         product="CHIRPS",
         start_date=start_date,
         end_date=end_date,
@@ -115,7 +115,7 @@ def get_lst_image(
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
     reducer: ReducerName = "mean",
 ) -> ee.Image:
-  return get_product_image(
+  return CompositeImage(
       "LST",
       start_date,
       end_date,
@@ -133,7 +133,7 @@ def get_ndvi_image(
     reducer: ReducerName = "mean",
 ) -> ee.Image:
 
-      return get_product_image(
+      return CompositeImage(
           "NDVI", 
           start_date, 
           end_date, 
@@ -150,7 +150,7 @@ def get_evi_image(
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
     reducer: ReducerName = "mean",
 ) -> ee.Image:
-    return get_product_image(
+    return CompositeImage(
         "EVI", 
         start_date, 
         end_date, 
@@ -166,7 +166,7 @@ def get_chirps_image(
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
     reducer: ReducerName = "max",
 ) -> ee.Image:
-    return get_product_image(
+    return CompositeImage(
         "CHIRPS", 
         start_date, 
         end_date, 
@@ -184,7 +184,7 @@ def get_lst_image_collection(
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
     reducer: ReducerName = "mean",
 ) -> ee.ImageCollection:
-    return get_product_image_collection(
+    return CollectionImage(
         "LST", 
         start_date, 
         end_date, 
@@ -203,7 +203,7 @@ def get_ndvi_image_collection(
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
     reducer: ReducerName = "mean",
 ) -> ee.ImageCollection:
-    return get_product_image_collection(
+    return CollectionImage(
         "NDVI", 
         start_date, 
         end_date, 
@@ -222,7 +222,7 @@ def get_evi_image_collection(
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
     reducer: ReducerName = "mean",
 ) -> ee.ImageCollection:
-    return get_product_image_collection(
+    return CollectionImage(
         "EVI", 
         start_date, 
         end_date, 
@@ -240,7 +240,7 @@ def get_chirps_image_collection(
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
     reducer: ReducerName = "max",
 ) -> ee.ImageCollection:
-    return get_product_image_collection(
+    return CollectionImage(
         "CHIRPS", 
         start_date, 
         end_date, 
