@@ -1,9 +1,9 @@
 import ee
 import geopandas as gpd
 import pandas as pd
-from typing import Tuple, Dict, Any, Optional
+from typing import Dict, Any, Optional,Literal
+
 from .builder import (
-    ReducerName,
     Frequency,
     ee_initialized,
     gdf_to_ee_geometry,
@@ -22,7 +22,7 @@ from .builder import (
     _compute_image
 )
 
-
+ReducerName = Literal["mean", "median", "sum", "min", "max"]
 
 # ----------------------------
 # ONE public entry function
@@ -205,10 +205,8 @@ def CompositeImage(
     """
     ee_initialized()
 
-    # Convert ROI if provided
     roi = gdf_to_ee_geometry(roi_gdf) if roi_gdf is not None else None
 
-    # Fetch collection & metadata
     ic, meta = get_satellite_collection(
         product=product,
         start_date=start_date,
@@ -216,14 +214,12 @@ def CompositeImage(
         satellite=satellite,
     )
 
-    # MODIS projection alignment
     if roi is not None and str(meta.get("satellite", "")).upper() == "MODIS":
         first = ee.Image(ic.first())
         b0 = (meta.get("bands") or [meta.get("band")])[0]
         proj = first.select(b0).projection()
         roi = roi.transform(proj, 1)
 
-    # Filter collection to ROI bounds
     if roi is not None:
         ic = ic.filterBounds(roi)
 
@@ -232,13 +228,11 @@ def CompositeImage(
     if not bands:
         raise ValueError("meta must include 'bands' or 'band'")
 
-    # Auto-derive scale if not explicitly provided
     if scale is None:
         first_img = ee.Image(ic.first())
         scale = int(first_img.select(bands[0]).projection().nominalScale())
 
-    # Dispatch to registry-based compute function
-    feature = _compute(
+    feature = _compute_image(
         prod=prod,
         start=ee.Date(start_date),
         end=ee.Date(end_date),

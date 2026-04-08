@@ -540,7 +540,7 @@ def _empty_feature(start: ee.Date, end: ee.Date, prod: str, meta: Dict[str, Any]
 # ----------------------------
 
 
-def _compute_lst(
+def _compute_lst_image(
     start: ee.Date, end: ee.Date, period_ic: ee.ImageCollection,
     geometry: ee.Geometry, scale: int, meta: Dict[str, Any],
     reducer: str, n: ee.Number
@@ -584,7 +584,7 @@ def _compute_lst(
         "satellite": meta.get("satellite"),
     })
 
-def _compute_veg(
+def _compute_veg_image(
     start: ee.Date, end: ee.Date, period_ic: ee.ImageCollection,
     geometry: ee.Geometry, scale: int, meta: Dict[str, Any],
     reducer: str, n: ee.Number, prod: str
@@ -630,7 +630,7 @@ def _compute_veg(
 
     return ee.Feature(None, props)
 
-def _compute_chirps(
+def _compute_chirps_image(
     start: ee.Date, end: ee.Date, period_ic: ee.ImageCollection,
     geometry: ee.Geometry, scale: int, meta: Dict[str, Any],
     reducer: str, n: ee.Number
@@ -765,7 +765,7 @@ def _compute_image(
 # # ----------------------------
 
 
-ReducerName = Literal["mean", "median", "sum", "min", "max"]
+# ReducerName = Literal["mean", "median", "sum", "min", "max"]
 
 
 # # ----------------------------
