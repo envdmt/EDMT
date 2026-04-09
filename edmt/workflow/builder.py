@@ -392,6 +392,7 @@ def _geom_in_img_crs(img, geometry, band=None):
 # LST
 def _compute_lst(start, period_ic, geometry, scale, meta, n=None):
     band = "LST"
+    satellite = meta.get("satellite").upper()
     img = period_ic.select(band).mean().subtract(273.15)
 
     geom = _geom_in_img_crs(img, geometry)
@@ -410,7 +411,7 @@ def _compute_lst(start, period_ic, geometry, scale, meta, n=None):
     return ee.Feature(None, {
         "date": start.format("YYYY-MM-dd"),
         "product": band,
-        "satellite": meta.get("satellite"),
+        "satellite": satellite,
         "mean": stats.get("LST"),
         "unit": "°C",
     })
@@ -418,6 +419,7 @@ def _compute_lst(start, period_ic, geometry, scale, meta, n=None):
 # NDVI/EVI
 def _compute_veg(prod, start, period_ic, geometry, scale, meta):
     band = prod
+    satellite = meta.get("satellite").upper()
     img = period_ic.select(band).reduce(ee.Reducer.mean()).rename(band)
 
     geom = _geom_in_img_crs(img, geometry, band)
@@ -436,7 +438,7 @@ def _compute_veg(prod, start, period_ic, geometry, scale, meta):
         "date": start.format("YYYY-MM-dd"),
         "product": prod,
         prod.lower(): stats.get(band),
-        "satellite": meta.get("satellite"),
+        "satellite": satellite,
     })
 
 
