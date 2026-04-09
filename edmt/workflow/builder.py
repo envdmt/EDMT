@@ -159,6 +159,7 @@ _PRODUCT_REGISTRY = {
     "CHIRPS": "chirps",
 }
 
+
 # Satellite configs
 _SAT_CONFIG = {
     "LST": {
@@ -193,8 +194,8 @@ _SAT_CONFIG = {
             "collection": "COPERNICUS/S2_HARMONIZED",
             "bands": {"blue": "B2", "red": "B4", "nir": "B8"},
             "scale": 10000.0,
-            "mask": "S2",
-            "scale_m": 10,
+            "mask": "SENTINEL2",
+            "scale_m": 30,
         },
         "LANDSAT8": {
             "collection": "LANDSAT/LC08/C02/T1_L2",
@@ -215,16 +216,8 @@ _SAT_CONFIG = {
             "scale_m": 250,
             "direct": True,
         },
-        "MODIS": {
-            "collection": "MODIS/061/MOD13Q1",
-            "bands": {"ndvi": "NDVI", "evi": "EVI"},
-            "scale": 0.0001,
-            "scale_m": 250,
-            "direct": True,
-        },
     }
 }
-
 
 # ----------------------------------
 # Core helpers (reused everywhere)
@@ -298,6 +291,8 @@ def _build_lst(satellite, start_date, end_date):
 
 # Vegetation pipeline
 
+# Vegetation pipeline
+
 def _build_vegetation(product, satellite, start_date, end_date):
     sat = _norm_sat(satellite)
     cfg = _SAT_CONFIG["VEG"].get(sat)
@@ -368,7 +363,6 @@ def _build_vegetation(product, satellite, start_date, end_date):
         "satellite": sat,
         "direct": False
     }
-
 
 # ----------------
 # CHIRPS pipeline
