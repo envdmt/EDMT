@@ -264,30 +264,6 @@ def _scale_lst(img, band, scale_cfg):
     else:
         raise ValueError("Unknown scaling type")
 
-def _daily_mosaic(ic: ee.ImageCollection) -> ee.ImageCollection:
-    dates = (
-        ic.aggregate_array("system:time_start")
-        .map(lambda t: ee.Date(t).format("YYYY-MM-dd"))
-        .distinct()
-    )
-
-    def _mosaic_for_date(d):
-        d = ee.Date.parse("YYYY-MM-dd", d)
-        next_day = d.advance(1, "day")
-
-        daily = ic.filterDate(d, next_day)
-
-        mosaic = daily.mosaic()
-
-        return (
-            mosaic
-            .set("system:time_start", d.millis())
-            .set("date", d.format("YYYY-MM-dd"))
-            .set("n_scenes", daily.size())
-        )
-
-    return ee.ImageCollection(dates.map(_mosaic_for_date))
-
 # -------------
 # LST pipeline
 # -------------
@@ -303,10 +279,6 @@ def _build_lst(satellite, start_date, end_date):
 
     def _proc(img):
         return _scale_lst(img, cfg["band"], cfg["scale"])
-    
-    if sat.startswith("LANDSAT"):
-        ic = _mask_landsat(ic)
-        ic = _daily_mosaic(ic)
 
     return ic.map(_proc), {
         "bands": ["LST"],
@@ -417,7 +389,6 @@ def _geom_in_img_crs(img, geometry, band=None):
     return geometry.transform(proj, 1)
 
 
-
 # LST
 def _compute_lst(start, period_ic, geometry, scale, meta, n=None):
     band = "LST"
@@ -435,19 +406,17 @@ def _compute_lst(start, period_ic, geometry, scale, meta, n=None):
         bestEffort=True,
     )
 
-    n_obs = period_ic.size()
 
     return ee.Feature(None, {
         "date": start.format("YYYY-MM-dd"),
         "product": band,
         "satellite": meta.get("satellite"),
-        "mean": stats.get("LST"),
-        "n_scenes": n_obs,
+        "mean": round(stats.get("LST"),2),
         "unit": "°C",
     })
 
 # NDVI/EVI
-def _compute_veg(prod, start, period_ic, geometry, scale, meta, n):
+def _compute_veg(prod, start, period_ic, geometry, scale, meta):
     band = prod
     img = period_ic.select(band).reduce(ee.Reducer.mean()).rename(band)
 
@@ -463,19 +432,16 @@ def _compute_veg(prod, start, period_ic, geometry, scale, meta, n):
         bestEffort=True,
     )
 
-    n_obs = period_ic.size()
-
     return ee.Feature(None, {
         "date": start.format("YYYY-MM-dd"),
         "product": prod,
-        prod.lower(): stats.get(band),
-        "n_scenes": n_obs,
+        prod.lower(): round(stats.get(band),2),
         "satellite": meta.get("satellite"),
     })
 
 
 # CHIRPS
-def _compute_chirps(start, period_ic, geometry, scale, meta, n):
+def _compute_chirps(start, period_ic, geometry, scale, meta):
     band = (meta.get("bands") or ["precipitation"])[0]
     img = period_ic.select(band).sum().rename(band)
 
@@ -494,8 +460,7 @@ def _compute_chirps(start, period_ic, geometry, scale, meta, n):
     return ee.Feature(None, {
         "date": start.format("YYYY-MM-dd"),
         "product": "CHIRPS",
-        "precipitation_mm": stats.get(band),
-        "n_scenes": n,
+        "precipitation_mm": round(stats.get(band),2),
         "unit": meta.get("unit", "mm"),
     })
 
@@ -529,9 +494,9 @@ def _compute(
         raise ValueError(f"Unsupported product in _compute: {prod}")
 
     if prod in ("NDVI", "EVI"):
-        return func(prod, start, period_ic, geometry, scale, meta, n)
+        return func(prod, start, period_ic, geometry, scale, meta)
 
-    return func(start, period_ic, geometry, scale, meta, n)
+    return func(start, period_ic, geometry, scale, meta)
 
 
 
