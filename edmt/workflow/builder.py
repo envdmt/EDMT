@@ -416,16 +416,14 @@ def _compute_lst(start, period_ic, geometry, scale, meta, n=None):
     geom = _geom_in_img_crs(img, geometry)
 
     stats = img.reduceRegion(
-    reducer=ee.Reducer.mean().combine(
-        ee.Reducer.minMax(), sharedInputs=True
-    ),
-    geometry=geom,
-    scale=scale,
-    crs=img.projection(),
-    maxPixels=1e13,
-    tileScale=16,
-    bestEffort=True,
-)
+        reducer=ee.Reducer.mean(),
+        geometry=geom,
+        scale=scale,
+        crs=img.projection(),
+        maxPixels=1e13,
+        tileScale=16,
+        bestEffort=True,
+    )
 
     n_obs = n_scenes(meta,period_ic)
 
@@ -433,9 +431,7 @@ def _compute_lst(start, period_ic, geometry, scale, meta, n=None):
         "date": start.format("YYYY-MM-dd"),
         "product": band,
         "satellite": meta.get("satellite"),
-        "mean": stats.get("LST_mean"),
-        "min": stats.get("LST_min"),
-        "max": stats.get("LST_max"),
+        "mean": stats.get("LST"),
         "n_scenes": n_obs,
         "unit": "°C",
     })
