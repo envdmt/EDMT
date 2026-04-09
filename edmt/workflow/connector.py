@@ -223,8 +223,6 @@ def CompositeImage(
         start=start,
         end=end,
         period_ic=period_ic,
-        geometry=roi,
-        scale=scale,
         meta=meta,
         reducer=reducer.lower(),
     )
