@@ -38,7 +38,6 @@ def get_satellite_collection(
         satellite=None, 
         start_date=None, 
         end_date=None,
-        roi_gdf: Optional[gpd.GeoDataFrame] = None,
     ):
     
     product = _norm_sat(product)
@@ -59,13 +58,6 @@ def get_satellite_collection(
 
     else:
         raise ValueError("Invalid pipeline")
-    
-    if roi_gdf is not None:
-        roi = gdf_to_ee_geometry(roi_gdf)
-        ic = ic.filterBounds(roi)
-        meta["roi_applied"] = True
-    else:
-        meta["roi_applied"] = False
     
     meta.update({
         "product": product,
@@ -111,7 +103,7 @@ def compute_period_feature(
 
 
 # ------------------------------------
-# ONE Ccompute_timeseries function
+# ONE Compute_timeseries function
 # ------------------------------------
 
 def ComputeTimeseries(
@@ -137,6 +129,14 @@ def ComputeTimeseries(
         end_date=end_date,
         satellite=satellite,
     )
+
+    if satellite and satellite.upper() == "MODIS":
+        bands = meta.get("bands", []) or [meta.get("band")]
+        band = bands[0] if bands else None
+        if band:
+            first = ee.Image(ic.first())
+            proj = first.select(band).projection()
+            geometry = geometry.transform(proj, 1)
 
     ic = ic.filterBounds(geometry)
 
@@ -180,6 +180,7 @@ def ComputeTimeseries(
         df["month"] = pd.to_datetime(df["date"]).dt.strftime("%B")
 
     return df.reset_index(drop=True)
+
 
 
 

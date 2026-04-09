@@ -21,6 +21,7 @@ def compute_lst_timeseries(
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
     scale: Optional[int] = None,
 ) -> pd.DataFrame:
+
     return ComputeTimeseries(
         product="LST",
         start_date=start_date,
@@ -35,11 +36,12 @@ def compute_lst_timeseries(
 def compute_ndvi_timeseries(
     start_date: str,
     end_date: str,
-    satellite: str = "LANDSAT",
+    satellite: str = "LANDSAT8",
     frequency: str = "monthly",
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
     scale: Optional[int] = None,
 ) -> pd.DataFrame:
+
     return ComputeTimeseries(
         product="NDVI",
         start_date=start_date,
@@ -53,34 +55,15 @@ def compute_ndvi_timeseries(
 
 def compute_evi_timeseries(
     start_date: str,
-    product: str,
     end_date: str,
-    satellite: str = "S2", 
+    satellite: str = "Sentinel2",
     frequency: str = "monthly",
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
     scale: Optional[int] = None,
 ) -> pd.DataFrame:
-    return ComputeTimeseries(
-        product=product,
-        start_date=start_date,
-        end_date=end_date,
-        frequency=frequency,
-        roi_gdf=roi_gdf,
-        satellite=satellite,
-        scale=scale,
-    )
 
-
-def compute_ndvi_evi_timeseries(
-    start_date: str,
-    end_date: str,
-    satellite: str = "MODIS",
-    frequency: str = "monthly",
-    roi_gdf: Optional[gpd.GeoDataFrame] = None,
-    scale: Optional[int] = None,
-) -> pd.DataFrame:
     return ComputeTimeseries(
-        product="NDVI_EVI",
+        product="EVI",
         start_date=start_date,
         end_date=end_date,
         frequency=frequency,
@@ -93,10 +76,11 @@ def compute_ndvi_evi_timeseries(
 def compute_chirps_timeseries(
     start_date: str,
     end_date: str,
-    frequency: Frequency = "monthly",
+    frequency: str = "monthly",
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
     scale: Optional[int] = None,
 ) -> pd.DataFrame:
+
     return ComputeTimeseries(
         product="CHIRPS",
         start_date=start_date,

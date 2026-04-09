@@ -147,7 +147,6 @@ def _reduce_stats(img: ee.Image, geometry: ee.Geometry, scale: int) -> ee.Dictio
         bestEffort=True,
     )
 
-
 # ----------------------------
 # 2 : Builders (return (ic, meta))
 # ----------------------------
@@ -157,7 +156,6 @@ _PRODUCT_REGISTRY = {
     "LST": "lst",
     "NDVI": "vegetation",
     "EVI": "vegetation",
-    "NDVI_EVI": "vegetation",
     "CHIRPS": "chirps",
 }
 
@@ -381,25 +379,15 @@ def _build_chirps(start_date, end_date):
 # 3 : Computation
 # -----------------
 
-def _geom_in_img_crs(img, geometry, band=None):
-    if band:
-        proj = img.select(band).projection()
-    else:
-        proj = img.projection()
-    return geometry.transform(proj, 1)
-
-
 # LST
 def _compute_lst(start, period_ic, geometry, scale, meta, n=None):
     band = "LST"
     satellite = meta.get("satellite").upper()
     img = period_ic.select(band).mean().subtract(273.15)
 
-    geom = _geom_in_img_crs(img, geometry)
-
     stats = img.reduceRegion(
         reducer=ee.Reducer.mean(),
-        geometry=geom,
+        geometry=geometry,
         scale=scale,
         crs=img.projection(),
         maxPixels=1e13,
@@ -416,17 +404,16 @@ def _compute_lst(start, period_ic, geometry, scale, meta, n=None):
         "unit": "°C",
     })
 
+
 # NDVI/EVI
 def _compute_veg(prod, start, period_ic, geometry, scale, meta):
     band = prod
     satellite = meta.get("satellite").upper()
     img = period_ic.select(band).reduce(ee.Reducer.mean()).rename(band)
 
-    geom = _geom_in_img_crs(img, geometry, band)
-
     stats = img.reduceRegion(
         reducer=ee.Reducer.mean(),
-        geometry=geom,
+        geometry=geometry,
         scale=scale,
         crs=img.select(band).projection(),
         maxPixels=1e13,
@@ -447,11 +434,9 @@ def _compute_chirps(start, period_ic, geometry, scale, meta):
     band = (meta.get("bands") or ["precipitation"])[0]
     img = period_ic.select(band).sum().rename(band)
 
-    geom = _geom_in_img_crs(img, geometry)
-
     stats = img.reduceRegion(
         reducer=ee.Reducer.max(),
-        geometry=geom,
+        geometry=geometry,
         scale=scale,
         crs=img.select(band).projection(),
         maxPixels=1e13,
@@ -465,6 +450,9 @@ def _compute_chirps(start, period_ic, geometry, scale, meta):
         "precipitation_mm": stats.get(band),
         "unit": meta.get("unit", "mm"),
     })
+
+
+
 
 
 # Compute Registry
