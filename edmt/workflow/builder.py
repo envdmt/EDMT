@@ -215,6 +215,13 @@ _SAT_CONFIG = {
             "scale_m": 250,
             "direct": True,
         },
+        "MODIS": {
+            "collection": "MODIS/061/MOD13Q1",
+            "bands": {"ndvi": "NDVI", "evi": "EVI"},
+            "scale": 0.0001,
+            "scale_m": 250,
+            "direct": True,
+        },
     }
 }
 
@@ -289,6 +296,8 @@ def _build_lst(satellite, start_date, end_date):
 # Vegetation pipeline
 #----------------------
 
+# Vegetation pipeline
+
 def _build_vegetation(product, satellite, start_date, end_date):
     sat = _norm_sat(satellite)
     cfg = _SAT_CONFIG["VEG"].get(sat)
@@ -302,13 +311,13 @@ def _build_vegetation(product, satellite, start_date, end_date):
     if cfg.get("direct"):
         bands = []
 
-        if product in ("NDVI", "NDVI_EVI"):
+        if product in ("NDVI"):
             bands.append(cfg["bands"]["ndvi"])
-        if product in ("EVI", "NDVI_EVI"):
+        if product in ("EVI"):
             bands.append(cfg["bands"]["evi"])
 
         def _proc(img):
-            return (
+          return (
                 img.select(bands)
                    .multiply(cfg["scale"])
                    .rename(bands)
@@ -318,12 +327,13 @@ def _build_vegetation(product, satellite, start_date, end_date):
         return ic.map(_proc), {
             "bands": bands,
             "scale_m": cfg["scale_m"],
+            "satellite": sat,
+            "direct": True
         }
 
     # Derived NDVI / EVI
     def _proc(img):
-        # ---- Masking ----
-        if cfg["mask"] == "S2":
+        if cfg["mask"] == "SENTINEL2":
             img = _mask_s2(img)
         else:
             img = _mask_landsat(img)
@@ -342,10 +352,10 @@ def _build_vegetation(product, satellite, start_date, end_date):
         # ---- Compute indices ----
         outputs = []
 
-        if product in ("NDVI", "NDVI_EVI"):
+        if product in ("NDVI"):
             outputs.append(_ndvi_from_nir_red(nir, red).rename("NDVI"))
 
-        if product in ("EVI", "NDVI_EVI"):
+        if product in ("EVI"):
             outputs.append(_evi_from_nir_red_blue(nir, red, blue).rename("EVI"))
 
         out = outputs[0] if len(outputs) == 1 else outputs[0].addBands(outputs[1])
@@ -353,8 +363,10 @@ def _build_vegetation(product, satellite, start_date, end_date):
         return out.copyProperties(img, ["system:time_start"])
 
     return ic.map(_proc), {
-        "bands": ["NDVI", "EVI"] if product == "NDVI_EVI" else [product],
+        "bands": ["NDVI", "EVI"],
         "scale_m": cfg["scale_m"],
+        "satellite": sat,
+        "direct": False
     }
 
 
