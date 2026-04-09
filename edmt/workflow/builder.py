@@ -411,7 +411,7 @@ def _compute_lst(start, period_ic, geometry, scale, meta, n=None):
         "date": start.format("YYYY-MM-dd"),
         "product": band,
         "satellite": meta.get("satellite"),
-        "mean": round(stats.get("LST"),2),
+        "mean": stats.get("LST"),
         "unit": "°C",
     })
 
@@ -435,7 +435,7 @@ def _compute_veg(prod, start, period_ic, geometry, scale, meta):
     return ee.Feature(None, {
         "date": start.format("YYYY-MM-dd"),
         "product": prod,
-        prod.lower(): round(stats.get(band),2),
+        prod.lower(): stats.get(band),
         "satellite": meta.get("satellite"),
     })
 
@@ -460,7 +460,7 @@ def _compute_chirps(start, period_ic, geometry, scale, meta):
     return ee.Feature(None, {
         "date": start.format("YYYY-MM-dd"),
         "product": "CHIRPS",
-        "precipitation_mm": round(stats.get(band),2),
+        "precipitation_mm": stats.get(band),
         "unit": meta.get("unit", "mm"),
     })
 
