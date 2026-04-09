@@ -389,6 +389,24 @@ def _geom_in_img_crs(img, geometry, band=None):
         proj = img.projection()
     return geometry.transform(proj, 1)
 
+def n_scenes(meta,period_ic):
+    sat = str(meta.get("satellite", "")).upper()
+
+    if sat.startswith("LANDSAT"):
+        n_obs = (
+            period_ic.aggregate_array("LANDSAT_SCENE_ID")
+            .distinct()
+            .size()
+        )
+    else:
+        n_obs = (
+            ee.List(period_ic.aggregate_array("system:time_start"))
+            .map(lambda t: ee.Date(t).format("YYYY-MM-dd"))
+            .distinct()
+            .size()
+        )
+    return n_obs
+
 # LST
 def _compute_lst(start, period_ic, geometry, scale, meta, n=None):
     band = "LST"
@@ -406,19 +424,14 @@ def _compute_lst(start, period_ic, geometry, scale, meta, n=None):
         bestEffort=True,
     )
 
-    unique_dates = (
-        ee.List(period_ic.aggregate_array("system:time_start"))
-        .map(lambda t: ee.Date(t).format("YYYY-MM-dd"))
-        .distinct()
-        .size()
-    )
+    n_obs = n_scenes(meta,period_ic)
 
     return ee.Feature(None, {
         "date": start.format("YYYY-MM-dd"),
         "product": band,
         "satellite": meta.get("satellite"),
-        "mean": stats.get("LST_mean"),
-        "n_scenes": unique_dates,
+        "mean":stats.get(f"{band}_mean"),
+        "n_scenes": n_obs,
         "unit": "°C",
     })
 
@@ -439,18 +452,13 @@ def _compute_veg(prod, start, period_ic, geometry, scale, meta, n):
         bestEffort=True,
     )
 
-    unique_dates = (
-        ee.List(period_ic.aggregate_array("system:time_start"))
-        .map(lambda t: ee.Date(t).format("YYYY-MM-dd"))
-        .distinct()
-        .size()
-    )
+    n_obs = n_scenes(meta,period_ic)
 
     return ee.Feature(None, {
         "date": start.format("YYYY-MM-dd"),
         "product": prod,
         prod.lower(): stats.get(band),
-        "n_scenes": unique_dates,
+        "n_scenes": n_obs,
         "satellite": meta.get("satellite"),
     })
 
@@ -503,7 +511,6 @@ def _compute(
 ) -> ee.Feature:
 
     n = period_ic.size()
-    prod = prod.upper()
 
     func = _COMPUTE_REGISTRY.get(prod)
 

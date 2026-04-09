@@ -138,6 +138,8 @@ def ComputeTimeseries(
         satellite=satellite,
     )
 
+    ic = ic.filterBounds(geometry)
+
     dates = _dates_for_frequency(start_date, end_date, frequency)
 
     fc = ee.FeatureCollection(
