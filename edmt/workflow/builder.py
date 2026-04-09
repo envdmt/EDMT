@@ -535,19 +535,6 @@ def _compute(
 
 
 
-
-# -----------------
-# Image
-# ---------------
-
-
-# ----------------------------
-# Helpers
-# ----------------------------
-
-
-
-
 # ----------------------------
 # Composite Build
 # ----------------------------
@@ -682,7 +669,9 @@ def _composite_image(
 
 
 
-
+# ----------------------------
+# Collection Build
+# ----------------------------
 
 def _period_dates(start_date: str, end_date: str, frequency: str) -> Tuple[str, int]:
     freq = frequency.lower()
