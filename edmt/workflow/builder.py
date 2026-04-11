@@ -80,16 +80,6 @@ def _dates_for_frequency(start_date: str, end_date: str, frequency: str) -> ee.L
     return ee.List.sequence(0, n).map(lambda i: start_ee.advance(ee.Number(i), unit))
 
 
-def _ndvi_from_nir_red(nir: ee.Image, red: ee.Image) -> ee.Image:
-    return nir.subtract(red).divide(nir.add(red)).rename("NDVI")
-
-
-def _evi_from_nir_red_blue(nir: ee.Image, red: ee.Image, blue: ee.Image) -> ee.Image:
-    return nir.subtract(red).multiply(2.5).divide(
-        nir.add(red.multiply(6)).subtract(blue.multiply(7.5)).add(1)
-    ).rename("EVI")
-
-
 def _apply_lst_scale(img, mult, add, band):
     return (
         img.select(band)
@@ -223,12 +213,41 @@ _SAT_CONFIG = {
 # Core helpers (reused everywhere)
 #-----------------------------------
 
-def _mask_s2(img):
-    qa = img.select("QA60")
-    return img.updateMask(
-        qa.bitwiseAnd(1 << 10).eq(0)
-        .And(qa.bitwiseAnd(1 << 11).eq(0))
+def _ndvi_from_nir_red(nir: ee.Image, red: ee.Image) -> ee.Image:
+    return nir.subtract(red).divide(nir.add(red)).rename("NDVI")
+
+
+def _evi_from_nir_red_blue(nir: ee.Image, red: ee.Image, blue: ee.Image) -> ee.Image:
+    nir  = nir.clamp(0, 1)
+    red  = red.clamp(0, 1)
+    blue = blue.clamp(0, 1)
+
+    numerator = nir.subtract(red).multiply(2.5)
+    denominator = (
+        nir.add(red.multiply(6))
+           .subtract(blue.multiply(7.5))
+           .add(1)
     )
+
+    denominator = denominator.where(denominator.abs().lt(1e-6), 1e-6)
+    evi = numerator.divide(denominator)
+    evi = evi.clamp(-1, 1)
+
+    return evi.rename("EVI")
+
+
+def _mask_s2(img):
+    scl = img.select("SCL")
+    mask = (
+        scl.neq(3) 
+        .And(scl.neq(8))  
+        .And(scl.neq(9))  
+        .And(scl.neq(10))
+        .And(scl.neq(11))
+    )
+
+    return img.updateMask(mask)
+
 
 def _mask_landsat(img):
     qa = img.select("QA_PIXEL")
@@ -237,8 +256,10 @@ def _mask_landsat(img):
         .And(qa.bitwiseAnd(1 << 4).eq(0))
     )
 
+
 def _sr(img, band):
     return img.select(band).multiply(0.0000275).add(-0.2)
+
 
 def _scale_lst(img, band, scale_cfg):
     if scale_cfg["type"] == "landsat":
@@ -261,6 +282,7 @@ def _scale_lst(img, band, scale_cfg):
 
     else:
         raise ValueError("Unknown scaling type")
+
 
 # -------------
 # LST pipeline
