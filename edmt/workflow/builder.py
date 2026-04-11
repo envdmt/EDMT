@@ -291,8 +291,6 @@ def _build_lst(satellite, start_date, end_date):
 
 # Vegetation pipeline
 
-# Vegetation pipeline
-
 def _build_vegetation(product, satellite, start_date, end_date):
     sat = _norm_sat(satellite)
     cfg = _SAT_CONFIG["VEG"].get(sat)
@@ -306,9 +304,9 @@ def _build_vegetation(product, satellite, start_date, end_date):
     if cfg.get("direct"):
         bands = []
 
-        if product in ("NDVI"):
+        if product == "NDVI":
             bands.append(cfg["bands"]["ndvi"])
-        if product in ("EVI"):
+        if product == "EVI":
             bands.append(cfg["bands"]["evi"])
 
         def _proc(img):
@@ -333,7 +331,6 @@ def _build_vegetation(product, satellite, start_date, end_date):
         else:
             img = _mask_landsat(img)
 
-        # ---- Band scaling ----
         if sat.startswith("LANDSAT"):
             blue = _sr(img, cfg["bands"]["blue"])
             red  = _sr(img, cfg["bands"]["red"])
@@ -344,13 +341,12 @@ def _build_vegetation(product, satellite, start_date, end_date):
             red  = img.select(cfg["bands"]["red"]).divide(scale)
             nir  = img.select(cfg["bands"]["nir"]).divide(scale)
 
-        # ---- Compute indices ----
         outputs = []
 
         if product in ("NDVI"):
             outputs.append(_ndvi_from_nir_red(nir, red).rename("NDVI"))
 
-        if product in ("EVI"):
+        if product == "EVI":
             outputs.append(_evi_from_nir_red_blue(nir, red, blue).rename("EVI"))
 
         out = outputs[0] if len(outputs) == 1 else outputs[0].addBands(outputs[1])
@@ -500,124 +496,90 @@ def _compute(
 # Composite Build
 # ----------------------------
 
-def _lst_composite(
-    start: ee.Date,
-    end: ee.Date,
-    period_ic: ee.ImageCollection,
-    meta: Dict[str, Any],
-    reducer: str
-) -> ee.Image:
-
-    band = meta.get("band") or (meta.get("bands") or [None])[0]
-
-    n = period_ic.size()
-
+# LST
+def _lst_composite(start, end, period_ic, meta, reducer):
+    band = meta["bands"][0]
     img = getattr(period_ic.select(band), reducer)()
 
-    unit = str(meta.get("unit", "K")).upper()
+    m = ee.Number(meta.get("multiply", 1.0))
+    a = ee.Number(meta.get("add", 0.0))
+    img = img.multiply(m).add(a)
 
-    if "multiply" in meta or "add" in meta:
-        m = ee.Number(meta.get("multiply", 1.0))
-        a = ee.Number(meta.get("add", 0.0))
-        img = img.multiply(m).add(a).subtract(273.15)
-    elif unit == "K":
+    if str(meta.get("unit", "K")).upper() == "K":
         img = img.subtract(273.15)
 
-    img = img.rename("LST_C")
-
-    return img.set({
+    return img.rename("LST_C").set({
         "period_start": start.format("YYYY-MM-dd"),
         "period_end": end.format("YYYY-MM-dd"),
         "product": "LST",
-        "n_images": n,
         "reducer": reducer,
         "unit": "°C",
-        "satellite": meta.get("satellite"),
+        "satellite": meta["satellite"],
     })
 
-
-def _veg_composite(
-    start: ee.Date,
-    end: ee.Date,
-    period_ic: ee.ImageCollection,
-    meta: Dict[str, Any],
-    reducer: str,
-    product: str
-) -> ee.Image:
-
-    bands = ["NDVI", "EVI"] if product == "NDVI_EVI" else [product]
-    n = period_ic.size()
-
+# NDVI/EVI
+def _veg_composite(start, end, period_ic, meta, reducer):
+    bands = meta["bands"]
     img = getattr(period_ic.select(bands), reducer)()
 
-    props = {
+    return img.set({
         "period_start": start.format("YYYY-MM-dd"),
         "period_end": end.format("YYYY-MM-dd"),
-        "product": product,
-        "n_images": n,
+        "product": meta["product"],
         "reducer": reducer,
         "unit": "index",
-        "satellite": meta.get("satellite"),
-    }
+        "satellite": meta["satellite"],
+    })
 
-    return img.set(props)
+# CHIRPS
+def _chirps_composite(start, end, period_ic, meta, reducer):
 
-
-def _chirps_composite(
-    start: ee.Date,
-    end: ee.Date,
-    period_ic: ee.ImageCollection,
-    meta: Dict[str, Any],
-    reducer: str
-) -> ee.Image:
-
-    band = meta.get("band", "precipitation")
+    band = meta["bands"][0]
     n = period_ic.size()
 
     if reducer == "sum":
-        img = period_ic.select(band).sum().rename("precipitation_mm")
+        img = period_ic.select(band).sum()
         unit = "mm"
     else:
-        img = getattr(period_ic.select(band), reducer)().rename("precipitation_mm")
+        img = getattr(period_ic.select(band), reducer)()
         unit = "mm/day"
 
-    return img.set({
+    return img.rename("precipitation_mm").set({
         "period_start": start.format("YYYY-MM-dd"),
         "period_end": end.format("YYYY-MM-dd"),
         "product": "CHIRPS",
         "n_images": n,
         "reducer": reducer,
         "unit": unit,
-        "satellite": "CHIRPS"
+        "satellite": meta["satellite"],
     })
 
 
-def _composite_image(
-    product: str,
-    start: ee.Date,
-    end: ee.Date,
-    period_ic: ee.ImageCollection,
-    meta: Dict[str, Any],
-    reducer: str = "mean",
-) -> ee.Image:
+_COMPOSITE_BUILDERS = {
+    "LST": _lst_composite,
+    "NDVI": _veg_composite,
+    "EVI": _veg_composite,
+    "NDVI_EVI": _veg_composite,
+    "CHIRPS": _chirps_composite,
+}
 
-    product = product.upper()
 
-    if product == "LST":
-        return _lst_composite(start, end, period_ic, meta, reducer)
+def _composite_image(product, start, end, period_ic, meta, reducer="mean"):
 
-    elif product in ("NDVI", "EVI", "NDVI_EVI"):
-        return _veg_composite(start, end, period_ic, meta, reducer, product)
+    product = _norm_sat(product)
 
-    elif product == "CHIRPS":
-        return _chirps_composite(start, end, period_ic, meta, reducer)
-
-    else:
+    if product not in _COMPOSITE_BUILDERS:
         raise ValueError(f"Unsupported product: {product}")
 
+    builder = _COMPOSITE_BUILDERS[product]
 
-
-
+    return builder(
+        start=start,
+        end=end,
+        period_ic=period_ic,
+        meta=meta,
+        reducer=reducer,
+    )
 
 
 

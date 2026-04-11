@@ -190,14 +190,13 @@ def ComputeTimeseries(
 
 
 def CompositeImage(
-    product: str,
-    start_date: str,
-    end_date: str,
-    satellite: Optional[str] = None,
-    roi_gdf: Optional[gpd.GeoDataFrame] = None,
-    reducer: str = "mean",
-    scale: Optional[int] = None,
-) -> ee.Image:
+    product,
+    start_date,
+    end_date,
+    satellite=None,
+    roi_gdf=None,
+    reducer="mean"
+):
 
     ee_initialized()
 
@@ -208,24 +207,16 @@ def CompositeImage(
         start_date=start_date,
         end_date=end_date,
         satellite=satellite,
-        roi_gdf=roi_gdf,
     )
-
-    prod = str(meta.get("product", product)).upper()
-
-    if scale is None:
-        scale = int(meta.get("scale_m", 1000))
 
     start = ee.Date(start_date)
     end = ee.Date(end_date)
 
-    period_ic = ic.filterDate(start, end)
-
     img = _composite_image(
-        product=prod,
+        product=meta.get("product"),
         start=start,
         end=end,
-        period_ic=period_ic,
+        period_ic=ic,
         meta=meta,
         reducer=reducer.lower(),
     )
@@ -234,6 +225,8 @@ def CompositeImage(
         img = img.clip(roi)
 
     return img
+
+
 
 
 def CollectionImage(

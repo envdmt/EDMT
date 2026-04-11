@@ -87,8 +87,7 @@ def compute_chirps_timeseries(
         end_date=end_date,
         frequency=frequency,
         roi_gdf=roi_gdf,
-        satellite=None,
-        scale=scale,
+        satellite=None
     )
 
 
