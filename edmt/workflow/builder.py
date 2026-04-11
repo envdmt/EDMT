@@ -181,7 +181,7 @@ _SAT_CONFIG = {
 
     "VEG": {
         "SENTINEL2": {
-            "collection": "COPERNICUS/S2_HARMONIZED",
+            "collection": "COPERNICUS/S2_SR_HARMONIZED",
             "bands": {"blue": "B2", "red": "B4", "nir": "B8"},
             "scale": 10000.0,
             "mask": "SENTINEL2",
