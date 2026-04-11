@@ -314,73 +314,95 @@ def _build_lst(satellite, start_date, end_date):
 # Vegetation pipeline
 
 def _build_vegetation(product, satellite, start_date, end_date):
+    product = product.upper()
     sat = _norm_sat(satellite)
-    cfg = _SAT_CONFIG["VEG"].get(sat)
 
+    cfg = _SAT_CONFIG["VEG"].get(sat)
     if not cfg:
         raise ValueError(f"Unsupported vegetation satellite: {satellite}")
 
     ic = ee.ImageCollection(cfg["collection"]).filterDate(start_date, end_date)
 
-    # MODIS
-    if cfg.get("direct"):
-        bands = []
+    # ----------------------------------
+    # Validate product
+    # ----------------------------------
+    if product not in ("NDVI", "EVI"):
+        raise ValueError(f"Unsupported vegetation product: {product}")
 
-        if product == "NDVI":
-            bands.append(cfg["bands"]["ndvi"])
-        if product == "EVI":
-            bands.append(cfg["bands"]["evi"])
+    # ----------------------------------
+    # MODIS (direct products)
+    # ----------------------------------
+    if cfg.get("direct"):
+
+        band_map = {
+            "NDVI": cfg["bands"]["ndvi"],
+            "EVI": cfg["bands"]["evi"],
+        }
+
+        src_band = band_map[product]
 
         def _proc(img):
-          return (
-                img.select(bands)
+            return (
+                img.select(src_band)
                    .multiply(cfg["scale"])
-                   .rename(bands)
+                   .rename(product)
                    .copyProperties(img, ["system:time_start"])
             )
 
         return ic.map(_proc), {
-            "bands": bands,
+            "bands": [product], 
             "scale_m": cfg["scale_m"],
             "satellite": sat,
+            "product": product,
             "direct": True
         }
 
+    # ----------------------------------
     # Derived NDVI / EVI
+    # ----------------------------------
     def _proc(img):
+
+        # Masking
         if cfg["mask"] == "SENTINEL2":
             img = _mask_s2(img)
         else:
             img = _mask_landsat(img)
 
+        # Reflectance extraction
         if sat.startswith("LANDSAT"):
             blue = _sr(img, cfg["bands"]["blue"])
             red  = _sr(img, cfg["bands"]["red"])
             nir  = _sr(img, cfg["bands"]["nir"])
         else:
             scale = cfg.get("scale", 10000.0)
-            blue = img.select(cfg["bands"]["blue"]).divide(scale)
-            red  = img.select(cfg["bands"]["red"]).divide(scale)
-            nir  = img.select(cfg["bands"]["nir"]).divide(scale)
 
-        outputs = []
+            blue = img.select(cfg["bands"]["blue"]).divide(scale).clamp(0, 1)
+            red  = img.select(cfg["bands"]["red"]).divide(scale).clamp(0, 1)
+            nir  = img.select(cfg["bands"]["nir"]).divide(scale).clamp(0, 1)
 
-        if product in ("NDVI"):
-            outputs.append(_ndvi_from_nir_red(nir, red).rename("NDVI"))
+        # Compute index
+        if product == "NDVI":
+            out = _ndvi_from_nir_red(nir, red).rename("NDVI")
 
-        if product == "EVI":
-            outputs.append(_evi_from_nir_red_blue(nir, red, blue).rename("EVI"))
-
-        out = outputs[0] if len(outputs) == 1 else outputs[0].addBands(outputs[1])
+        elif product == "EVI":
+            out = _evi_from_nir_red_blue(nir, red, blue).rename("EVI")
 
         return out.copyProperties(img, ["system:time_start"])
 
     return ic.map(_proc), {
-        "bands": ["NDVI", "EVI"],
+        "bands": [product], 
         "scale_m": cfg["scale_m"],
         "satellite": sat,
+        "product": product,
         "direct": False
     }
+
+
+
+
+
+
+
 
 # ----------------
 # CHIRPS pipeline
