@@ -197,6 +197,7 @@ def CompositeImage(
     roi_gdf=None,
     reducer="mean"
 ):
+    product = _norm_sat(product)
 
     ee_initialized()
 
@@ -213,7 +214,7 @@ def CompositeImage(
     end = ee.Date(end_date)
 
     img = _composite_image(
-        product=meta.get("product"),
+        product=product,
         start=start,
         end=end,
         period_ic=ic,

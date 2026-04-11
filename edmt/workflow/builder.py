@@ -517,12 +517,13 @@ def _lst_composite(start, end, period_ic, meta, reducer):
         "satellite": meta["satellite"],
     })
 
+
 # NDVI/EVI
 def _veg_composite(start, end, period_ic, meta, reducer):
-    bands = meta["bands"]
-    img = getattr(period_ic.select(bands), reducer)()
+    band = meta["bands"][0]
+    img = getattr(period_ic.select(band), reducer)()
 
-    return img.set({
+    return img.rename(band).set({
         "period_start": start.format("YYYY-MM-dd"),
         "period_end": end.format("YYYY-MM-dd"),
         "product": meta["product"],
@@ -530,6 +531,7 @@ def _veg_composite(start, end, period_ic, meta, reducer):
         "unit": "index",
         "satellite": meta["satellite"],
     })
+
 
 # CHIRPS
 def _chirps_composite(start, end, period_ic, meta, reducer):
@@ -555,11 +557,11 @@ def _chirps_composite(start, end, period_ic, meta, reducer):
     })
 
 
+
 _COMPOSITE_BUILDERS = {
     "LST": _lst_composite,
     "NDVI": _veg_composite,
     "EVI": _veg_composite,
-    "NDVI_EVI": _veg_composite,
     "CHIRPS": _chirps_composite,
 }
 
