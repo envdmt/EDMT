@@ -18,6 +18,7 @@ from .builder import (
     _empty,
     _advance_end,
     _freq_unit,
+    _make_dates,
     _timeseries_to_df,
     _composite_image,
     _build_period_img,
@@ -111,7 +112,7 @@ def ComputeTimeseries(
     satellite: Optional[str] = None,
     scale: Optional[int] = None,
     ) -> pd.DataFrame:
-    
+
     ee_initialized()
 
     if roi_gdf is None:
@@ -136,7 +137,10 @@ def ComputeTimeseries(
 
     ic = ic.filterBounds(geometry)
 
-    dates = _dates_for_frequency(start_date, end_date, frequency)
+    start = ee.Date(start_date)
+    end = ee.Date(end_date)
+
+    dates = _make_dates(start, end, frequency)
 
     fc = ee.FeatureCollection(
         dates.map(lambda d: compute_period_feature(

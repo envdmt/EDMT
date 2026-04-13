@@ -90,8 +90,6 @@ def _make_dates(start: ee.Date, end: ee.Date, frequency: str) -> ee.List:
         lambda i: start.advance(ee.Number(i), unit)
     )
 
-    return ee.List(_iterate(start, ee.List([])))
-
 
 def _apply_lst_scale(img, mult, add, band):
     return (
