@@ -5,6 +5,7 @@ from typing import Dict, Any, Optional,Literal
 
 from .builder import (
     Frequency,
+    ReducerName,
     ee_initialized,
     gdf_to_ee_geometry,
 
@@ -24,7 +25,7 @@ from .builder import (
     _build_period_img,
 )
 
-ReducerName = Literal["mean", "median", "sum", "min", "max"]
+
 
 # ----------------------------
 # ONE public entry function

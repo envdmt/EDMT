@@ -7,7 +7,7 @@ import geopandas as gpd
 import shapely
 
 Frequency = Literal["daily", "weekly", "monthly", "yearly"]
-
+ReducerName = Literal["mean", "median", "sum", "min", "max"]
 # ----------------------------
 # 1 : Main helpers
 # ----------------------------

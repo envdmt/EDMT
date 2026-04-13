@@ -4,12 +4,12 @@ import pandas as pd
 import ee
 from .connector import (
     ComputeTimeseries,
-    ReducerName,
     CompositeImage,
     CollectionImage,
 )
 from .builder import (
     Frequency,
+    ReducerName,
 )
 
 def compute_lst_timeseries(
