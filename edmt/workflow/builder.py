@@ -113,7 +113,6 @@ def _empty(prod: str, start: ee.Date, meta: Dict[str, Any] = None) -> ee.Feature
     base = {
         "date": start.format("YYYY-MM-dd"),
         "product": prod,
-        "n_images": 0,
     }
 
     if prod == "LST":
@@ -591,7 +590,6 @@ def _chirps_composite(start, end, period_ic, meta, reducer):
         "period_start": start.format("YYYY-MM-dd"),
         "period_end": end.format("YYYY-MM-dd"),
         "product": "CHIRPS",
-        "n_images": n,
         "reducer": reducer,
         "unit": unit,
         "satellite": meta["satellite"],
@@ -648,7 +646,6 @@ def _empty_img(start: ee.Date, end: ee.Date, freq: str, prod: str) -> ee.Image:
             "period_start": start.format("YYYY-MM-dd"),
             "period_end": end.format("YYYY-MM-dd"),
             "frequency": freq,
-            "n_images": 0,
             "product": prod,
         })
     )
