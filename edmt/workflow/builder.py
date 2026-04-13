@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, Dict, Any, Tuple, Literal
+from typing import Optional, Dict, Any, Literal
 import ee
 import pandas as pd
 import geopandas as gpd
@@ -39,7 +39,7 @@ def gdf_to_ee_geometry(
         raise ValueError("GeoDataFrame must have a CRS")
 
     gdf = gdf.to_crs(epsg=4326)
-    geom = gdf.geometry.union_all()  
+    geom = gdf.geometry.union_all()
 
     geojson = shapely.geometry.mapping(geom)
     return ee.Geometry(geojson)
@@ -55,29 +55,42 @@ def _copy_time(img: ee.Image) -> ee.Image:
     return img.copyProperties(img, ["system:time_start"])
 
 
+def _freq_unit(frequency: str) -> str:
+    freq_map = {
+        "daily": "day",
+        "weekly": "week",
+        "monthly": "month",
+        "yearly": "year",
+
+        "day": "day",
+        "week": "week",
+        "month": "month",
+        "year": "year",
+    }
+
+    try:
+        return freq_map[frequency.lower()]
+    except KeyError:
+        raise ValueError(
+            f"Invalid frequency '{frequency}'. Use: daily, weekly, monthly, yearly"
+        )
+
+
 def _advance_end(start: ee.Date, frequency: str) -> ee.Date:
-    f = frequency.lower()
-    if f == "daily":
-        return start.advance(1, "day")
-    if f == "weekly":
-        return start.advance(1, "week")
-    if f == "monthly":
-        return start.advance(1, "month")
-    if f == "yearly":
-        return start.advance(1, "year")
-    raise ValueError(f"Invalid frequency: {frequency}")
+    unit = _freq_unit(frequency)
+    return start.advance(1, unit)
 
 
-def _dates_for_frequency(start_date: str, end_date: str, frequency: str) -> ee.List:
-    freq = frequency.lower()
-    unit = {"daily": "day", "weekly": "week", "monthly": "month", "yearly": "year"}.get(freq)
-    if unit is None:
-        raise ValueError("frequency must be one of: daily, weekly, monthly, yearly")
+def _make_dates(start: ee.Date, end: ee.Date, frequency: str) -> ee.List:
+    unit = _freq_unit(frequency)
 
-    start_ee = ee.Date(start_date)
-    end_ee = ee.Date(end_date)
-    n = end_ee.difference(start_ee, unit).floor()
-    return ee.List.sequence(0, n).map(lambda i: start_ee.advance(ee.Number(i), unit))
+    n = end.difference(start, unit).ceil()
+
+    return ee.List.sequence(0, n.subtract(1)).map(
+        lambda i: start.advance(ee.Number(i), unit)
+    )
+
+    return ee.List(_iterate(start, ee.List([])))
 
 
 def _apply_lst_scale(img, mult, add, band):
@@ -110,9 +123,6 @@ def _empty(prod: str, start: ee.Date, meta: Dict[str, Any] = None) -> ee.Feature
 
     elif prod == "CHIRPS":
         base["precipitation_mm"] = None
-
-    elif prod == "NDVI_EVI":
-        base.update({"ndvi": None, "evi": None})
 
     elif prod in ("NDVI", "EVI"):
         base[prod.lower()] = None
@@ -175,7 +185,7 @@ _SAT_CONFIG = {
             "collection": "JAXA/GCOM-C/L3/LAND/LST/V3",
             "band": "LST_AVE",
             "scale_m": 5000,
-            "scale": {"type": "linear", "mult": 0.02, "add": 0.0} 
+            "scale": {"type": "linear", "mult": 0.02, "add": 0.0}
         }
     },
 
@@ -209,9 +219,11 @@ _SAT_CONFIG = {
     }
 }
 
+
 # ----------------------------------
 # Core helpers (reused everywhere)
 #-----------------------------------
+
 
 def _ndvi_from_nir_red(nir: ee.Image, red: ee.Image) -> ee.Image:
     return nir.subtract(red).divide(nir.add(red)).rename("NDVI")
@@ -239,9 +251,9 @@ def _evi_from_nir_red_blue(nir: ee.Image, red: ee.Image, blue: ee.Image) -> ee.I
 def _mask_s2(img):
     scl = img.select("SCL")
     mask = (
-        scl.neq(3) 
-        .And(scl.neq(8))  
-        .And(scl.neq(9))  
+        scl.neq(3)
+        .And(scl.neq(8))
+        .And(scl.neq(9))
         .And(scl.neq(10))
         .And(scl.neq(11))
     )
@@ -311,7 +323,6 @@ def _build_lst(satellite, start_date, end_date):
 # Vegetation pipeline
 #----------------------
 
-# Vegetation pipeline
 
 def _build_vegetation(product, satellite, start_date, end_date):
     product = product.upper()
@@ -323,15 +334,10 @@ def _build_vegetation(product, satellite, start_date, end_date):
 
     ic = ee.ImageCollection(cfg["collection"]).filterDate(start_date, end_date)
 
-    # ----------------------------------
-    # Validate product
-    # ----------------------------------
     if product not in ("NDVI", "EVI"):
         raise ValueError(f"Unsupported vegetation product: {product}")
 
-    # ----------------------------------
-    # MODIS (direct products)
-    # ----------------------------------
+    # MODIS 
     if cfg.get("direct"):
 
         band_map = {
@@ -350,19 +356,15 @@ def _build_vegetation(product, satellite, start_date, end_date):
             )
 
         return ic.map(_proc), {
-            "bands": [product], 
+            "bands": [product],
             "scale_m": cfg["scale_m"],
             "satellite": sat,
             "product": product,
             "direct": True
         }
 
-    # ----------------------------------
     # Derived NDVI / EVI
-    # ----------------------------------
     def _proc(img):
-
-        # Masking
         if cfg["mask"] == "SENTINEL2":
             img = _mask_s2(img)
         else:
@@ -390,18 +392,12 @@ def _build_vegetation(product, satellite, start_date, end_date):
         return out.copyProperties(img, ["system:time_start"])
 
     return ic.map(_proc), {
-        "bands": [product], 
+        "bands": [product],
         "scale_m": cfg["scale_m"],
         "satellite": sat,
         "product": product,
         "direct": False
     }
-
-
-
-
-
-
 
 
 # ----------------
@@ -499,8 +495,6 @@ def _compute_chirps(start, period_ic, geometry, scale, meta):
 
 
 
-
-
 # Compute Registry
 _COMPUTE_REGISTRY = {
     "CHIRPS": _compute_chirps,
@@ -536,11 +530,16 @@ def _compute(
 
 
 
+
+
+
+
+
+
 # ----------------------------
 # Composite Build
 # ----------------------------
 
-# LST
 def _lst_composite(start, end, period_ic, meta, reducer):
     band = meta["bands"][0]
     img = getattr(period_ic.select(band), reducer)()
@@ -637,18 +636,9 @@ def _composite_image(product, start, end, period_ic, meta, reducer="mean"):
 
 
 
-
 # ----------------------------
 # Collection Build
 # ----------------------------
-
-def _period_dates(start_date: str, end_date: str, frequency: str) -> Tuple[str, int]:
-    freq = frequency.lower()
-    if freq not in {"daily", "weekly", "monthly", "yearly"}:
-        raise ValueError("frequency must be one of: daily, weekly, monthly, yearly")
-    step_days = {"daily": 1, "weekly": 7, "monthly": 30, "yearly": 365}[freq]
-    return freq, step_days
-
 
 def _empty_img(start: ee.Date, end: ee.Date, freq: str, prod: str) -> ee.Image:
     return (
@@ -675,48 +665,24 @@ def _build_period_img(
     meta: Dict[str, Any],
     roi: Optional[ee.Geometry],
 ) -> ee.Image:
-    """
-    Build one composite image for the period (server-side safe).
-    """
+
     n = period_ic.size()
 
-    if prod == "CHIRPS":
-        band = meta.get("band", "precipitation")
-        if r == "sum":
-            img = period_ic.select(band).sum().rename("precipitation_mm").set({"unit": "mm"})
-        else:
-            img = getattr(period_ic.select(band), r)().rename("precipitation_mm").set({"unit": "mm/day"})
-
-    elif prod in ("NDVI", "EVI"):
-        band = prod
-        img = getattr(period_ic.select(band), r)().rename(band).set({"unit": meta.get("unit", prod)})
-
-    elif prod == "NDVI_EVI":
-        img = getattr(period_ic.select(["NDVI", "EVI"]), r)().rename(["NDVI", "EVI"]).set({"unit": meta.get("unit", "index")})
-
-    elif prod == "LST":
-        band = meta.get("band") or (meta.get("bands") or [None])[0]
-        img0 = getattr(period_ic.select(band), r)().rename(band)
-
-        unit = str(meta.get("unit", "K")).upper()
-        if ("multiply" in meta) or ("add" in meta):
-            m = ee.Number(meta.get("multiply", 1.0))
-            a = ee.Number(meta.get("add", 0.0))
-            img0 = img0.multiply(m).add(a).subtract(273.15)
-        elif unit == "K":
-            img0 = img0.subtract(273.15)
-
-        img = img0.rename("LST_C").set({"unit": "°C"})
-
-    else:
-        band = (meta.get("bands") or [meta.get("band")])[0]
-        img = getattr(period_ic.select(band), r)().rename(band).set({"unit": meta.get("unit")})
+    img = _composite_image(
+        product=prod,
+        start=start,
+        end=end,
+        period_ic=period_ic,
+        meta=meta,
+        reducer=r,
+    )
 
     img = img.set({
         "system:time_start": start.millis(),
         "period_start": start.format("YYYY-MM-dd"),
         "period_end": end.format("YYYY-MM-dd"),
-        "frequency": meta.get("frequency", None) or None,
+        "month" : ee.String(start.format("MMMM")),
+        "frequency": meta.get("frequency"),
         "n_images": n,
         "product": prod,
         "satellite": meta.get("satellite"),
@@ -726,10 +692,13 @@ def _build_period_img(
     if roi is not None:
         img = img.clip(roi)
 
-    return ee.Image(ee.Algorithms.If(n.gt(0), img, _empty_img(start, end, meta.get("frequency", ""), prod)))
-
-
-
+    return ee.Image(
+        ee.Algorithms.If(
+            n.gt(0),
+            img,
+            _empty_img(start, end, meta.get("frequency", ""), prod)
+        )
+    )
 
 # --------------------------------------------------------
 # Raster to vector helper

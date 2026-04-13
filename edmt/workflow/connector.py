@@ -17,13 +17,9 @@ from .builder import (
     _compute,
     _empty,
     _advance_end,
-    _dates_for_frequency,
+    _freq_unit,
     _timeseries_to_df,
-
     _composite_image,
-
-
-    _period_dates,
     _build_period_img,
 )
 
@@ -229,7 +225,6 @@ def CompositeImage(
 
 
 
-
 def CollectionImage(
     product: str,
     start_date: str,
@@ -238,102 +233,51 @@ def CollectionImage(
     satellite: Optional[str] = None,
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
     reducer: ReducerName = "mean",
-    ) -> ee.ImageCollection:
-    """
-    Generates a time-series Earth Engine ImageCollection of composite images.
+) -> ee.ImageCollection:
 
-    This function creates a sequence of reduced composite images (e.g., monthly mean NDVI) 
-    over a specified date range. Each image in the collection represents a specific time 
-    period (frequency) with statistics calculated over the optional Region of Interest (ROI).
-
-    This function:
-    - Initializes the Earth Engine session via `ee_initialized()`.
-    - Converts the input `roi_gdf` to an `ee.Geometry` if provided.
-    - Retrieves the source `ee.ImageCollection` and metadata via `get_satellite_collection`.
-    - Validates the `reducer` parameter based on product type (e.g., allows "sum" for CHIRPS).
-    - Applies projection transformation to the ROI if the satellite is MODIS.
-    - Generates a sequence of timestamps based on `frequency` and `step_days`.
-    - Maps `_build_period_img` over each period to construct individual composite images.
-    - Sorts the resulting collection by `system:time_start`.
-    - Adds a "month" property (string) to each image if frequency is "monthly".
-
-    Args:
-        product (str): The environmental product identifier (e.g., "LST", "NDVI", "CHIRPS").
-        start_date (str): Start date for the time series in 'YYYY-MM-DD' format.
-        end_date (str): End date for the time series in 'YYYY-MM-DD' format.
-        frequency (Frequency, optional): Temporal resolution for the collection. 
-            Options include "daily", "monthly", "yearly". Defaults to "monthly".
-        satellite (str, optional): Satellite platform identifier (e.g., "MODIS", "Landsat8"). 
-            Required for certain products. Defaults to None.
-        roi_gdf (gpd.GeoDataFrame, optional): The Region of Interest as a GeoDataFrame. 
-            If provided, images are reduced/clipped to this geometry. Defaults to None.
-        reducer (ReducerName, optional): Statistical reducer to apply per period. 
-            - For CHIRPS: "sum", "mean", "median", "min", "max".
-            - For others (LST, NDVI, etc.): "mean", "median", "min", "max".
-            Defaults to "mean".
-
-    Returns:
-        ee.ImageCollection:
-            A collection of composite images sorted by time.
-            - Each image represents one time period (e.g., one month).
-            - Images contain reduced band values (e.g., mean NDVI per month).
-            - Includes `system:time_start` property.
-            - Includes "month" property (e.g., "January") if frequency is "monthly".
-
-    Raises:
-        ValueError:
-            - If an invalid `reducer` is selected for the specific product 
-              (e.g., "sum" is not allowed for NDVI).
-            - If metadata is missing required band information (raised by downstream functions).
-
-    Notes:
-        - **Earth Engine Initialization:** Calls `ee_initialized()` internally.
-        - **MODIS Projection:** Automatically transforms ROI geometry to match MODIS 
-          projection if applicable to ensure accurate pixel alignment.
-        - **CHIRPS Reduction:** Use `reducer="sum"` for precipitation totals over the period. 
-          Use "mean" for daily average rates.
-        - **Server-Side Mapping:** The loop over dates is executed server-side using 
-          `ee.List.map`, ensuring scalability for long time series.
-        - **Frequency Step:** The exact step size (days) is determined by `_period_dates` 
-          based on the `frequency` argument.
-    """
     ee_initialized()
+
+    product = _norm_sat(product)
+    freq = _freq_unit(frequency)
+    r = reducer.lower()
 
     roi = gdf_to_ee_geometry(roi_gdf) if roi_gdf is not None else None
 
-    ic, meta = get_satellite_collection(product, start_date, end_date, satellite=satellite)
-    prod = str(meta.get("product", product)).upper()
+    ic, meta = get_satellite_collection(
+        product=product,
+        start_date=start_date,
+        end_date=end_date,
+        satellite=satellite,
+    )
 
-    freq, step_days = _period_dates(start_date, end_date, frequency)
-    r = reducer.lower()
+    prod = product
 
     if prod == "CHIRPS":
-        if r not in ("sum", "mean", "median", "min", "max"):
-            raise ValueError("CHIRPS reducer must be one of: sum, mean, median, min, max")
+        allowed = ("sum", "mean", "median", "min", "max")
     else:
-        if r not in ("mean", "median", "min", "max"):
-            raise ValueError(f"{prod} reducer must be one of: mean, median, min, max")
+        allowed = ("mean", "median", "min", "max")
 
-    if meta.get("product") in ("NDVI", "EVI") and str(meta.get("satellite", "")).upper() == "MODIS":
-      first = ee.Image(ic.first())
-      proj = first.select(meta["bands"][0]).projection()
-      geometry = roi.transform(proj, 1)
-      ic = ic.filterBounds(geometry)
+    if r not in allowed:
+        raise ValueError(f"{prod} reducer must be one of: {', '.join(allowed)}")
 
-    dates = ee.List.sequence(
-        ee.Date(start_date).millis(),
-        ee.Date(end_date).millis(),
-        step_days * 24 * 60 * 60 * 1000,
-    )
+    if prod in ("NDVI", "EVI") and str(meta.get("satellite", "")).upper() == "MODIS" and roi is not None:
+        first = ee.Image(ic.first())
+        proj = first.select(meta["bands"][0]).projection()
+        roi = roi.transform(proj, 1)
+        ic = ic.filterBounds(roi)
+
+    start = ee.Date(start_date)
+    end = ee.Date(end_date)
+
+    dates = _make_dates(start, end, freq)
 
     def _one_period(d):
         start = ee.Date(d)
         end = _advance_end(start, freq)
+
         period_ic = ic.filterDate(start, end)
 
-        meta2 = ee.Dictionary(meta).set("frequency", freq)
-
-        img = _build_period_img(
+        return _build_period_img(
             prod=prod,
             r=r,
             start=start,
@@ -342,7 +286,6 @@ def CollectionImage(
             meta={**meta, "frequency": freq},
             roi=roi,
         )
-        return img
 
     img_coll = ee.ImageCollection(dates.map(_one_period)).sort("system:time_start")
 

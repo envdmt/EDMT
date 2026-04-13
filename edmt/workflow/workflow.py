@@ -2,7 +2,6 @@ from typing import Optional
 import geopandas as gpd
 import pandas as pd
 import ee
-from typing import Literal
 from .connector import (
     ComputeTimeseries,
     ReducerName,
