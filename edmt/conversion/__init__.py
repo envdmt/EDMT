@@ -10,9 +10,6 @@ from .conversion import (
     format_temperature
 )
 
-from .test_conversion import (
-    print_name
-)
 
 __all__ = [
     'sdf_to_gdf', 
