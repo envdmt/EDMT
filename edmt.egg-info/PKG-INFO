@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: edmt
-Version: 1.0.6
+Version: 1.0.7
 Summary: Environmental Data Management Toolbox
 Author-email: "Odero, Kuloba & musasia" <francisodero10@gmail.com>
 License: MIT License
@@ -28,7 +28,6 @@ License: MIT License
 Project-URL: Homepage, https://github.com/envdmt/EDMT/
 Project-URL: Documentation, https://envdmt.github.io/EDMT/
 Keywords: geospatial,gis,earth-engine,remote-sensing,conservation,spatial-analysis,geopandas
-Classifier: Development Status :: 4 - Beta
 Classifier: Intended Audience :: Developers
 Classifier: Intended Audience :: Science/Research
 Classifier: Intended Audience :: Education
@@ -54,7 +53,6 @@ Requires-Dist: fiona<1.10.1,>=1.9.6
 Requires-Dist: tqdm>=4
 Requires-Dist: requests<3,>=2.28
 Requires-Dist: matplotlib>=3.9
-Requires-Dist: mapclassify>=2.7
 Dynamic: license-file
 
 <h1 align="center">EDMT — Environmental Data Management Toolbox</h1>
