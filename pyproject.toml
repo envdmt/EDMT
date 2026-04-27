@@ -12,6 +12,7 @@ license = {file = "LICENSE"}
 authors = [
   {name = "Odero, Kuloba & musasia", email = "francisodero10@gmail.com"},
 ]
+
 classifiers = [
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",

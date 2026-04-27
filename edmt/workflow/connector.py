@@ -27,9 +27,7 @@ from .builder import (
 
 
 
-# ----------------------------
-# ONE public entry function
-# ----------------------------
+# 1 : GET SATELLTE COLLECTION
 
 def get_satellite_collection(
     product,
@@ -111,9 +109,7 @@ def get_satellite_collection(
 
 
 
-# ------------------------------------
-# ONE Compute period feature function
-# ------------------------------------
+# 2 : COMPUTE PERIOD FEATURE
 
 def compute_period_feature(
     product: str,
@@ -194,9 +190,7 @@ def compute_period_feature(
 
 
 
-# ------------------------------------
-# ONE Compute_timeseries function
-# ------------------------------------
+# 3 : COMPUTE TIMESERIES
 
 def ComputeTimeseries(
     product: str,
@@ -339,10 +333,7 @@ def ComputeTimeseries(
 
 
 
-# ------------------------------------
-# ONE CompositeImage function
-# ------------------------------------
-
+# 4 : COMPOSITE IMAGE
 
 def CompositeImage(
     product: str,
@@ -425,9 +416,7 @@ def CompositeImage(
     return img
 
 
-# ------------------------------------
-# ONE CollectionImage function
-# ------------------------------------
+# 5 : COLLECTION IMAGE 
 
 def CollectionImage(
     product: str,
@@ -560,7 +549,63 @@ def CollectionImage(
 
 
 
+# 6 : RASTER TO VECTOR POINTS
 
+def ee_to_points(
+    image: ee.Image, 
+    scale: int = 30, 
+    num_pixels: int = 5000
+) -> gpd.GeoDataFrame:
+    """
+    Sample pixel values from an Earth Engine image and return them as a GeoDataFrame.
+    
+    This function extracts a uniform random subset of pixels from the input ``ee.Image`` 
+    at a specified spatial resolution. Each sampled pixel is converted to a point geometry 
+    with its corresponding band values stored as attributes. The resulting data is 
+    downloaded synchronously and formatted as a ``geopandas.GeoDataFrame`` with 
+    WGS84 (EPSG:4326) projection.
+    
+    Args:
+        image (ee.Image): The input Earth Engine image to sample. Must be a valid, 
+            initialized Earth Engine image object.
+        scale (int, optional): The nominal scale in meters at which to sample the image. 
+            Defaults to ``30``. Should closely match the native resolution of the target 
+            bands for accurate value extraction.
+        num_pixels (int, optional): The maximum number of pixels to sample. Defaults to 
+            ``5000``. Earth Engine will return up to this number (or fewer if the image 
+            contains fewer valid/unmasked pixels).
+            
+    Returns:
+        gpd.GeoDataFrame: A GeoDataFrame where each row represents a sampled pixel. 
+            Columns include the point geometry (named ``geometry``) and one column per 
+            image band containing the sampled values. The coordinate reference system 
+            (CRS) is explicitly set to ``EPSG:4326``.
+            
+    Raises:
+        ee.EEException: If the image is invalid, the scale is unsupported, Earth Engine 
+            computation times out, or the response payload exceeds the ``getInfo()`` limit.
+            
+          
+    Example:
+        >>> import ee
+        >>> import geopandas as gpd
+        >>> ee.Initialize()
+        >>> img = ee.Image('COPERNICUS/S2_SR/20230615T123456').select(['B4', 'B8'])
+        >>> gdf = ee_to_points(img, scale=10, num_pixels=1000)
+        >>> print(gdf.head())
+        >>> print(gdf.crs)  # EPSG:4326
+    """
+    fc = image.sample(
+        scale=scale,
+        numPixels=num_pixels,
+        geometries=True
+    )
+
+    geojson = fc.getInfo()
+    gdf = gpd.GeoDataFrame.from_features(geojson["features"])
+    gdf = gdf.set_crs("EPSG:4326")
+
+    return gdf
 
 
 

@@ -12,7 +12,6 @@ def clean_vars(addl_kwargs={}, **kwargs):
 
 
 def normalize_column(df, col):
-    # print(col)
     for k, v in pd.json_normalize(df.pop(col), sep="__").add_prefix(f"{col}__").items():
         df[k] = v.values
 

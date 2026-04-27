@@ -8,9 +8,8 @@ import shapely
 
 Frequency = Literal["daily", "weekly", "monthly", "yearly"]
 ReducerName = Literal["mean", "median", "sum", "min", "max"]
-# ----------------------------
-# 1 : Main helpers
-# ----------------------------
+
+# 1 : MAIN HELPERS
 
 def ee_initialized(project: str | None = None) -> None:
     """
@@ -51,10 +50,6 @@ def _norm_sat(x: Optional[str]) -> str:
     return (x or "").strip().upper().replace("-", "_").replace(" ", "_")
 
 
-def _copy_time(img: ee.Image) -> ee.Image:
-    return img.copyProperties(img, ["system:time_start"])
-
-
 def _freq_unit(frequency: str) -> str:
     freq_map = {
         "daily": "day",
@@ -91,16 +86,6 @@ def _make_dates(start: ee.Date, end: ee.Date, frequency: str) -> ee.List:
     )
 
 
-def _apply_lst_scale(img, mult, add, band):
-    return (
-        img.select(band)
-           .multiply(mult)
-           .add(add)
-           .rename("LST")
-           .copyProperties(img, ["system:time_start"])
-    )
-
-
 def _timeseries_to_df(fc: ee.FeatureCollection) -> pd.DataFrame:
     feats = fc.getInfo()["features"]
     rows = [f["properties"] for f in feats]
@@ -130,23 +115,7 @@ def _empty(prod: str, start: ee.Date, meta: Dict[str, Any] = None) -> ee.Feature
     return ee.Feature(None, base)
 
 
-def _reduce_stats(img: ee.Image, geometry: ee.Geometry, scale: int) -> ee.Dictionary:
-    geom = geometry.transform(img.projection(), 1)
-
-    return img.reduceRegion(
-        reducer=ee.Reducer.mean().combine(
-            ee.Reducer.minMax(), sharedInputs=True
-        ),
-        geometry=geom,
-        scale=scale,
-        maxPixels=1e13,
-        tileScale=16,
-        bestEffort=True,
-    )
-
-# ----------------------------
-# 2 : Builders (return (ic, meta))
-# ----------------------------
+# 2 : BUILDERS (RETURN (IC, META))
 
 # Master registry
 _PRODUCT_REGISTRY = {
@@ -217,10 +186,7 @@ _SAT_CONFIG = {
 }
 
 
-# ----------------------------------
-# Core helpers (reused everywhere)
-#-----------------------------------
-
+# Core helpers 
 
 def _ndvi_from_nir_red(nir: ee.Image, red: ee.Image) -> ee.Image:
     return nir.subtract(red).divide(nir.add(red)).rename("NDVI")
@@ -292,10 +258,9 @@ def _scale_lst(img, band, scale_cfg):
     else:
         raise ValueError("Unknown scaling type")
 
+# 2.1 : PIPELINE
 
-# -------------
 # LST pipeline
-# -------------
 
 def _build_lst(satellite, start_date, end_date):
     sat = _norm_sat(satellite)
@@ -316,10 +281,7 @@ def _build_lst(satellite, start_date, end_date):
     }
 
 
-# ---------------------
 # Vegetation pipeline
-#----------------------
-
 
 def _build_vegetation(product, satellite, start_date, end_date):
     product = product.upper()
@@ -397,9 +359,7 @@ def _build_vegetation(product, satellite, start_date, end_date):
     }
 
 
-# ----------------
 # CHIRPS pipeline
-# ----------------
 
 def _build_chirps(start_date, end_date):
     ic = (
@@ -414,9 +374,7 @@ def _build_chirps(start_date, end_date):
 
 
 
-# -----------------
-# 3 : Computation
-# -----------------
+# 3 : COMPUTATION
 
 # LST
 def _compute_lst(start, period_ic, geometry, scale, meta, n=None):
@@ -500,9 +458,8 @@ _COMPUTE_REGISTRY = {
     "LST": _compute_lst,
 }
 
-# ------------------
-# Unified Compute
-# -------------------
+
+# 3.1 : UNIFIED COMPUTE
 
 def _compute(
     prod: str,
@@ -527,16 +484,9 @@ def _compute(
 
 
 
+# 4 : COMPOSITE BUILD
 
-
-
-
-
-
-# ----------------------------
-# Composite Build
-# ----------------------------
-
+# lst
 def _lst_composite(start, end, period_ic, meta, reducer):
     band = meta["bands"][0]
     img = getattr(period_ic.select(band), reducer)()
@@ -558,7 +508,7 @@ def _lst_composite(start, end, period_ic, meta, reducer):
     })
 
 
-# NDVI/EVI
+# ndvi/evi
 def _veg_composite(start, end, period_ic, meta, reducer):
     band = meta["bands"][0]
     img = getattr(period_ic.select(band), reducer)()
@@ -573,7 +523,7 @@ def _veg_composite(start, end, period_ic, meta, reducer):
     })
 
 
-# CHIRPS
+# chirps
 def _chirps_composite(start, end, period_ic, meta, reducer):
 
     band = meta["bands"][0]
@@ -623,18 +573,7 @@ def _composite_image(product, start, end, period_ic, meta, reducer="mean"):
     )
 
 
-
-
-
-
-
-
-
-
-
-# ----------------------------
-# Collection Build
-# ----------------------------
+# 5 : COLLECTION BUILD
 
 def _empty_img(start: ee.Date, end: ee.Date, freq: str, prod: str) -> ee.Image:
     return (
@@ -695,30 +634,7 @@ def _build_period_img(
         )
     )
 
-# --------------------------------------------------------
-# Raster to vector helper
-# --------------------------------------------------------
 
-def ee_to_points(
-        image: ee.Image, 
-        scale: int=30, 
-        num_pixels: int = 5000
-    ) -> gpd.GeoDataFrame:
-    """
-    Sample pixels as points and return GeoDataFrame.
-    """
-
-    fc = image.sample(
-        scale=scale,
-        numPixels=num_pixels,
-        geometries=True
-    )
-
-    geojson = fc.getInfo()
-    gdf = gpd.GeoDataFrame.from_features(geojson["features"])
-    gdf = gdf.set_crs("EPSG:4326")
-
-    return gdf
 
 
 

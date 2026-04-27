@@ -14,13 +14,13 @@ from .workflow import (
 )
 
 from .builder import (
-    gdf_to_ee_geometry,
-    ee_to_points
+    gdf_to_ee_geometry
 )
 
+from .connector import ee_to_points
+
 _builder_functions = [
-    "gdf_to_ee_geometry",   
-    "ee_to_points",
+    "gdf_to_ee_geometry",
 ]
 
 _workflow_functions = [
@@ -36,6 +36,7 @@ _workflow_functions = [
     "get_ndvi_image_collection",
     "get_evi_image_collection",
     "get_chirps_image_collection",
+    "ee_to_points"
 ]
 
 

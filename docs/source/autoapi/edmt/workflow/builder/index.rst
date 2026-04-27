@@ -28,21 +28,15 @@ Module Contents
 
 .. py:function:: _norm_sat(x: Optional[str]) -> str
 
-.. py:function:: _copy_time(img: ee.Image) -> ee.Image
-
 .. py:function:: _freq_unit(frequency: str) -> str
 
 .. py:function:: _advance_end(start: ee.Date, frequency: str) -> ee.Date
 
 .. py:function:: _make_dates(start: ee.Date, end: ee.Date, frequency: str) -> ee.List
 
-.. py:function:: _apply_lst_scale(img, mult, add, band)
-
 .. py:function:: _timeseries_to_df(fc: ee.FeatureCollection) -> pandas.DataFrame
 
 .. py:function:: _empty(prod: str, start: ee.Date, meta: Dict[str, Any] = None) -> ee.Feature
-
-.. py:function:: _reduce_stats(img: ee.Image, geometry: ee.Geometry, scale: int) -> ee.Dictionary
 
 .. py:data:: _PRODUCT_REGISTRY
 
@@ -89,9 +83,4 @@ Module Contents
 .. py:function:: _empty_img(start: ee.Date, end: ee.Date, freq: str, prod: str) -> ee.Image
 
 .. py:function:: _build_period_img(prod: str, r: str, start: ee.Date, end: ee.Date, period_ic: ee.ImageCollection, meta: Dict[str, Any], roi: Optional[ee.Geometry]) -> ee.Image
-
-.. py:function:: ee_to_points(image: ee.Image, scale: int = 30, num_pixels: int = 5000) -> geopandas.GeoDataFrame
-
-   Sample pixels as points and return GeoDataFrame.
-
 
