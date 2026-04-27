@@ -1,111 +1,115 @@
 import ee
 import geopandas as gpd
 import pandas as pd
-from typing import Tuple, Dict, Any, Optional
+from typing import Dict, Any, Optional,Literal
+
 from .builder import (
-    ReducerName,
     Frequency,
+    ReducerName,
     ee_initialized,
     gdf_to_ee_geometry,
-    _norm,
+
+    _PRODUCT_REGISTRY,
+    _build_vegetation,
+
+    _norm_sat,
     _build_chirps,
     _build_lst,
-    _build_ndvi,
-    _build_evi,
-    _build_ndvi_evi,
     _compute,
     _empty,
     _advance_end,
-    _dates_for_frequency,
+    _freq_unit,
+    _make_dates,
     _timeseries_to_df,
-    _compute_img,
-    _period_dates,
+    _composite_image,
     _build_period_img,
 )
 
 
 
-# ----------------------------
-# ONE public entry function
-# ----------------------------
+# 1 : GET SATELLTE COLLECTION
+
 def get_satellite_collection(
-    product: str,
-    start_date: str,
-    end_date: str,
-    satellite: Optional[str] = None,
-    ) -> Tuple[ee.ImageCollection, Dict[str, Any]]:
+    product,
+    satellite=None,
+    start_date=None,
+    end_date=None,
+):
     """
-    Retrieves and configures Earth Engine ImageCollections for specific environmental products.
+    Retrieve an Earth Engine ImageCollection and metadata for a supported environmental data product.
 
-    This function serves as the single workflow entry-point for fetching satellite or 
-    climate data collections. It handles product normalization, parameter validation, 
-    and routing to specific builder functions based on the requested data type.
+    This function serves as a unified entry point to access preconfigured satellite or gridded 
+    datasets (e.g., NDVI, LST, precipitation) by delegating to specialized internal pipelines. 
+    It returns both the raw image collection and a dictionary of processing parameters.
 
-    This function:
-    - Normalizes the `product` string to handle case variations or aliases (e.g., "NDVI+EVI").
-    - Validates whether the `satellite` parameter is required based on the product type.
-    - Routes the request to specific internal builder functions (e.g., `_build_lst`, `_build_chirps`).
-    - Constructs an `ee.ImageCollection` filtered by the specified date range.
-    - Generates a metadata dictionary containing band information, units, and scaling factors.
-    - Returns a tuple containing the configured collection and its associated metadata.
+    Parameters
+    ----------
+    product : str
+        Name of the environmental data product. Supported values include:
+        - Vegetation indices: "NDVI", "EVI"
+        - Land Surface Temperature: "LST"
+        - Precipitation: "CHIRPS"
+        (Case-insensitive; aliases are normalized internally.)
+    satellite : str, optional
+        Satellite platform or sensor (e.g., "MODIS", "LANDSAT", "SENTINEL2"). 
+        Required for vegetation and LST products; ignored for grid-based products like CHIRPS.
+    start_date : str, optional
+        Start date in 'YYYY-MM-DD' format. Required if `end_date` is provided.
+    end_date : str, optional
+        End date in 'YYYY-MM-DD' format. Required if `start_date` is provided.
 
-    Args:
-        product (str): The environmental product identifier. Must be one of:
-            - "LST" (Land Surface Temperature)
-            - "NDVI" (Normalized Difference Vegetation Index)
-            - "EVI" (Enhanced Vegetation Index)
-            - "NDVI_EVI" (Combined vegetation indices)
-            - "CHIRPS" (Climate Hazards Group InfraRed Precipitation with Station data)
-        start_date (str): Start date for the collection filter in 'YYYY-MM-DD' format.
-        end_date (str): End date for the collection filter in 'YYYY-MM-DD' format.
-        satellite (str, optional): The satellite platform identifier (e.g., "Landsat8", "MODIS").
-            - Required for: LST, NDVI, EVI, NDVI_EVI.
-            - Ignored for: CHIRPS (precipitation data does not depend on a specific satellite platform).
-            - Defaults to None.
+    Returns
+    -------
+    tuple[ee.ImageCollection, dict]
+        - **ImageCollection**: Filtered and preprocessed Earth Engine image collection.
+        - **meta**: Dictionary containing:
+            - Product-specific scaling factors, band names, and units
+            - Input arguments: `"product"`, `"satellite"`, `"start_date"`, `"end_date"`
 
-    Returns:
-        Tuple[ee.ImageCollection, Dict[str, Any]]:
-            - If successful: a tuple containing:
-                - `ic` (ee.ImageCollection): The filtered Earth Engine ImageCollection.
-                - `meta` (dict): A dictionary containing metadata keys such as:
-                    - "bands": List of available band names.
-                    - "units": Measurement units for the data (e.g., "kelvin", "index").
-                    - "scale": Spatial resolution in meters.
-                    - "scaling_factors": Coefficients required for data calibration (when relevant).
-            
-    Raises:
-        ValueError:
-            - If `product` is not one of the supported identifiers.
-            - If `satellite` is missing for products that require it (all except CHIRPS).
-            - If date formats are invalid (handled by downstream builders).
+    Raises
+    ------
+    ValueError
+        If `product` is not supported or if required arguments are missing for the selected pipeline.
+
+    Notes
+    -----
+    - Date filtering is applied during collection construction.
+    - No cloud masking, quality filtering, or unit conversion is performed beyond what is 
+      defined in the underlying pipeline.
+    - All collections preserve native temporal and spatial metadata for downstream use.
     """
-    prod = _norm(product)
+    
+    product = _norm_sat(product)
 
-    if prod == "CHIRPS":
-        return _build_chirps(start_date, end_date)
+    if product not in _PRODUCT_REGISTRY:
+        raise ValueError(f"Unsupported product: {product}")
 
-    if not satellite:
-        raise ValueError(f"'satellite' is required for product={product} (except CHIRPS).")
+    pipeline = _PRODUCT_REGISTRY[product]
 
-    if prod == "LST":
-        return _build_lst(satellite, start_date, end_date)
+    if pipeline == "vegetation":
+        ic, meta = _build_vegetation(product, satellite, start_date, end_date)
 
-    if prod == "NDVI":
-        return _build_ndvi(satellite, start_date, end_date)
+    elif pipeline == "lst":
+        ic, meta = _build_lst(satellite, start_date, end_date)
 
-    if prod == "EVI":
-        return _build_evi(satellite, start_date, end_date)
+    elif pipeline == "chirps":
+        ic, meta = _build_chirps(start_date, end_date)
 
-    if prod in ("NDVI_EVI", "NDVI+EVI", "NDVIAND_EVI"):
-        return _build_ndvi_evi(satellite, start_date, end_date)
+    else:
+        raise ValueError("Invalid pipeline")
+    
+    meta.update({
+        "product": product,
+        "satellite": satellite,
+        "start_date": start_date,
+        "end_date": end_date,
+    })
 
-    raise ValueError(f"Unsupported product: {product}. Use LST, NDVI, EVI, NDVI_EVI, or CHIRPS.")
+    return ic, meta
 
 
 
-# ------------------------------------
-# ONE Compute period feature function
-# ------------------------------------
+# 2 : COMPUTE PERIOD FEATURE
 
 def compute_period_feature(
     product: str,
@@ -115,56 +119,60 @@ def compute_period_feature(
     frequency: str,
     meta: Dict[str, Any],
     scale: Optional[int] = None,
-    ) -> ee.Feature:
+) -> ee.Feature:
     """
-    Constructs a single Earth Engine Feature representing aggregated statistics for a specific time period.
+    Compute spatial summary statistics for a given environmental product 
+    over a time period and region of interest, returning an Earth Engine Feature.
 
-    This function serves as the universal feature builder for all supported environmental products. 
-    It handles date windowing, spatial reduction, scaling adjustments, and empty collection fallbacks 
-    within a server-side execution context.
+    This function aggregates images in the input collection over a temporal window (defined by `start` 
+    and `frequency`), computes statistics over `geometry`, and packages results into a feature with 
+    standardized properties—including product-specific metadata from `meta`.
 
-    This function:
-    - Normalizes the `start` date and calculates the `end` date based on the specified `frequency`.
-    - Filters the input `collection` to the computed time window.
-    - Determines the spatial resolution (`scale`), prioritizing the argument over metadata defaults.
-    - Computes reduced statistics (e.g., mean, max) over the `geometry` using `_compute`.
-    - Handles empty collections gracefully by returning a placeholder Feature via `_empty`.
-    - Wraps logic in `ee.Algorithms.If` to ensure conditional execution happens server-side.
+    Parameters
+    ----------
+    product : str
+        Environmental product name (e.g., "NDVI", "LST", "CHIRPS"). Used to select appropriate 
+        statistic computation logic.
+    start : ee.Date
+        Start date of the aggregation period.
+    collection : ee.ImageCollection
+        Pre-filtered ImageCollection containing the relevant band(s).
+    geometry : ee.Geometry
+        Region of interest for spatial reduction.
+    frequency : {"daily", "weekly", "monthly", "yearly"}
+        Temporal interval defining the period length. Determines end date.
+    meta : dict
+        Metadata dictionary (typically from `get_satellite_collection`) containing at least:
+        - `"scale_m"`: default spatial resolution (in meters)
+        - `"band"`: primary band name (e.g., "NDVI")
+        - `"unit"`: measurement unit (e.g., "NDVI", "°C", "mm")
+        Additional keys may be used by `_compute`.
+    scale : int, optional
+        Spatial resolution (in meters) for reduction. If omitted, defaults to `meta["scale_m"]`.
 
-    Args:
-        product (str): The environmental product identifier (e.g., "LST", "NDVI", "CHIRPS"). 
-            Case-insensitive (converted to uppercase internally).
-        start (ee.Date): The start date of the aggregation period.
-        collection (ee.ImageCollection): The source Earth Engine ImageCollection containing 
-            the raw imagery data.
-        geometry (ee.Geometry): The spatial region over which to reduce the images 
-            (e.g., a flight path buffer or administrative boundary).
-        frequency (str): The time step frequency used to calculate the end date 
-            (e.g., 'day', 'month', 'year'). Passed to `_advance_end`.
-        meta (Dict[str, Any]): A metadata dictionary containing product-specific configuration. 
-            Expected keys include:
-            - "bands" or "band": Target band names for reduction.
-            - "scale_m": Default spatial resolution in meters.
-            - "unit": Optional unit label for property naming.
-            - "multiply"/"add": Optional scaling factors for calibration (e.g., LST Kelvin conversion).
-        scale (int, optional): Override for the spatial resolution in meters. 
-            If None, defaults to `meta["scale_m"]`. Defaults to None.
+    Returns
+    -------
+    ee.Feature
+        A feature with no geometry and the following properties:
+        - `"date"`: Period start formatted as "YYYY-MM-dd"
+        - `"product"`: Uppercase product name
+        - `"band"`: Band name used (from `meta`)
+        - `"unit"`: Unit of measurement (from `meta`)
+        - `"n_images"`: Number of images in the period
+        - Statistic keys (e.g., `"mean"`, `"median"`, `"min"`, `"max"`) — values are `null` if no data.
 
-    Returns:
-        ee.Feature:
-            - If data exists: A Feature containing the `geometry` and properties with 
-              computed statistics (e.g., "mean_ndvi", "max_lst") for the period.
-            - If collection is empty: A placeholder Feature returned by `_empty` containing 
-              null values or flags indicating missing data for the period.
-            
-    Notes:
-        - **Server-Side Execution:** All logic (filtering, reduction, conditionals) is executed 
-          on Google Earth Engine servers. No client-side loops are used here.
-        - **Dependencies:** Relies on helper functions `_advance_end`, `_compute`, and `_empty` 
-          being defined in the scope.
-        - **Scaling:** Product-specific scaling (e.g., Kelvin to Celsius) is handled inside 
-          `_compute` using factors provided in `meta`.
+    Raises
+    ------
+    ValueError
+        If `scale` is missing and `meta["scale_m"]` is not present or invalid.
+
+    Notes
+    -----
+    - For empty periods (no images), returns a feature with `"n_images": 0` and all statistics as `null`.
+    - Geometry is reprojected to the image’s native CRS before reduction for accuracy.
+    - Designed for use in time-series generation (e.g., mapping over date sequences).
     """
+    
     start = ee.Date(start)
     end = _advance_end(start, frequency)
 
@@ -174,18 +182,17 @@ def compute_period_feature(
         scale = int(meta.get("scale_m"))
 
     period_ic = collection.filterDate(start, end)
+    size = period_ic.size()
     computed = _compute(prod, start, period_ic, geometry, scale, meta)
     empty = _empty(prod, start)
 
-    return ee.Feature(ee.Algorithms.If(period_ic.size().gt(0), computed, empty))
+    return ee.Feature(ee.Algorithms.If(size.gt(0), computed, empty))
 
 
 
-# ------------------------------------
-# ONE Ccompute_timeseries function
-# ------------------------------------
+# 3 : COMPUTE TIMESERIES
 
-def compute_timeseries(
+def ComputeTimeseries(
     product: str,
     start_date: str,
     end_date: str,
@@ -193,60 +200,71 @@ def compute_timeseries(
     roi_gdf: gpd.GeoDataFrame,
     satellite: Optional[str] = None,
     scale: Optional[int] = None,
-    ) -> pd.DataFrame:
+) -> pd.DataFrame:
     """
-    Generates a pandas DataFrame time series from Earth Engine environmental data.
+    Generate a time series of environmental metrics (e.g., NDVI, LST, precipitation) over a region of interest.
 
-    This function orchestrates the end-to-end workflow for extracting temporal 
-    statistics over a specific Region of Interest (ROI). It handles Earth Engine 
-    initialization, geometry conversion, collection filtering, server-side mapping, 
-    and client-side DataFrame cleaning.
+    This function retrieves satellite or gridded data for a specified product, aggregates it over regular 
+    time intervals (daily, weekly, monthly, or yearly), computes spatial statistics,and returns results as 
+    a pandas DataFrame with standardized columns.
 
-    This function:
-    - Initializes the Earth Engine session via `ee_initialized()`.
-    - Validates the input `roi_gdf` and converts it to an `ee.Geometry`.
-    - Retrieves the appropriate `ee.ImageCollection` and metadata via `get_satellite_collection`.
-    - Applies projection transformation for MODIS data to ensure spatial alignment.
-    - Generates a list of dates based on `frequency` and maps `compute_period_feature` 
-      over each period to build an `ee.FeatureCollection`.
-    - Converts the resulting FeatureCollection to a pandas DataFrame.
-    - Filters out rows with missing values (NaNs) based on product-specific columns 
-      (e.g., removes NaNs in "mean" for LST, "precipitation_mm" for CHIRPS).
-    - Adds a human-readable "month" column if the frequency is set to "monthly".
+    Parameters
+    ----------
+    product : str
+        Environmental product to retrieve. Supported values include:
+        - "NDVI", "EVI" (vegetation indices)
+        - "LST" (Land Surface Temperature)
+        - "CHIRPS" (precipitation)
+    start_date : str
+        Start date of the time series in 'YYYY-MM-DD' format.
+    end_date : str
+        End date of the time series in 'YYYY-MM-DD' format.
+    frequency : {"daily", "weekly", "monthly", "yearly"}
+        Temporal aggregation interval.
+    roi_gdf : geopandas.GeoDataFrame
+        Region of interest as a GeoDataFrame containing Polygon or MultiPolygon geometries.
+        Must be provided; cannot be None.
+    satellite : str, optional
+        Satellite platform (e.g., "MODIS", "LANDSAT", "SENTINEL2"). Required for vegetation and LST products.
+        Ignored for grid-based products like CHIRPS.
+    scale : int, optional
+        Spatial resolution (in meters) for reduction. If omitted, a product- and sensor-appropriate default 
+        is used (e.g., 500 m for MODIS LST, 10 m for Sentinel-2).
 
-    Args:
-        product (str): The environmental product identifier (e.g., "LST", "NDVI", "CHIRPS").
-        start_date (str): Start date for the time series in 'YYYY-MM-DD' format.
-        end_date (str): End date for the time series in 'YYYY-MM-DD' format.
-        frequency (str): Temporal aggregation frequency (e.g., "daily", "monthly", "yearly").
-        roi_gdf (gpd.GeoDataFrame): The Region of Interest as a GeoDataFrame. 
-            Must not be None. Used to define the spatial reduction geometry.
-        satellite (str, optional): Satellite platform identifier (e.g., "MODIS", "Landsat8"). 
-            Required for certain products via `get_satellite_collection`. Defaults to None.
-        scale (int, optional): Spatial resolution in meters for reduction. 
-            If None, defaults to product metadata. Defaults to None.
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame with one row per time period, containing:
+        - `"date"`: Period start as "YYYY-MM-dd"
+        - `"product"`: Uppercase product name
+        - `"satellite"`: Satellite name (if applicable)
+        - Statistic columns (e.g., `"mean"`, `"median"`, `"ndvi"`, `"precipitation_mm"`)
+        - `"n_images"`: Number of source images used per period
+        - `"unit"`: Measurement unit (e.g., "NDVI", "°C", "mm")
+        - (Optional) `"month"`: Full month name (e.g., "January") if `frequency="monthly"`
 
-    Returns:
-        pd.DataFrame:
-            A cleaned time series DataFrame indexed by date. 
-            - Contains columns for computed statistics (e.g., "mean", "ndvi", "precipitation_mm").
-            - Rows with missing data (NaNs) are removed based on product-specific logic.
-            - Includes a "month" column (string) if frequency is "monthly".
-            - Index is reset to default integer index.
+        Rows with all-null statistics are removed based on product-specific logic.
 
-    Raises:
-        ValueError: If `roi_gdf` is None or invalid.
+    Raises
+    ------
+    ValueError
+        If `roi_gdf` is not provided.
 
-    Notes:
-        - **MODIS Projection:** Automatically transforms geometry to match MODIS projection 
-          if product is NDVI/EVI and satellite is MODIS.
-        - **NaN Filtering:** Specific columns are checked for null values depending on 
-          the product (e.g., LST checks "mean", CHIRPS checks "precipitation_mm").
-        - **Performance:** Mapping over dates occurs server-side; large date ranges 
-          may increase computation time.
-
+    Notes
+    -----
+    - For MODIS products, the ROI geometry is reprojected to the native sinusoidal projection 
+      to ensure accurate spatial reduction.
+    - The collection is pre-filtered to the ROI using `filterBounds` for performance.
+    - Time periods are generated using calendar-aware intervals (not fixed day counts).
+    - Missing or invalid data points are filtered out post-reduction based on the primary metric:
+        - LST: removes rows where `"mean"` is null
+        - CHIRPS: removes rows where `"precipitation_mm"` is null
+        - Vegetation indices: removes rows where the index column (`"ndvi"`, `"evi"`) is null
+    - Requires an initialized Earth Engine session (`ee.Initialize()`); ensured via `ee_initialized()`.
     """
+
     ee_initialized()
+
     if roi_gdf is None:
         raise ValueError("Provide roi_gdf (Region of Interest)")
 
@@ -259,22 +277,25 @@ def compute_timeseries(
         satellite=satellite,
     )
 
-    if satellite:
-        meta = {**meta, "satellite": satellite.upper()}
-
-    if meta.get("product") in ("NDVI", "EVI") and str(meta.get("satellite", "")).upper() == "MODIS":
-      first = ee.Image(ic.first())
-      proj = first.select(meta["bands"][0]).projection()
-      geometry = geometry.transform(proj, 1)
+    if satellite and satellite.upper() == "MODIS":
+        bands = meta.get("bands", []) or [meta.get("band")]
+        band = bands[0] if bands else None
+        if band:
+            first = ee.Image(ic.first())
+            proj = first.select(band).projection()
+            geometry = geometry.transform(proj, 1)
 
     ic = ic.filterBounds(geometry)
 
-    dates = _dates_for_frequency(start_date, end_date, frequency)
+    start = ee.Date(start_date)
+    end = ee.Date(end_date)
+
+    dates = _make_dates(start, end, frequency)
 
     fc = ee.FeatureCollection(
         dates.map(lambda d: compute_period_feature(
-            product=product,
             start=ee.Date(d),
+            product=product,
             collection=ic,
             geometry=geometry,
             frequency=frequency,
@@ -312,99 +333,92 @@ def compute_timeseries(
 
 
 
-# ------------------------------------
-# ONE get_product_image function
-# ------------------------------------
-def get_product_image(
+# 4 : COMPOSITE IMAGE
+
+def CompositeImage(
     product: str,
     start_date: str,
     end_date: str,
     satellite: Optional[str] = None,
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
-    reducer: ReducerName = "mean",
-    ) -> ee.Image:
+    reducer: str = "mean",
+) -> ee.Image:
     """
-    Generates a single composite Earth Engine Image for a specific environmental product.
+    Generate a single composite Earth Engine image by aggregating a time series of environmental data.
 
-    This function creates a reduced composite image over a specified date range and 
-    optional region of interest. It handles product-specific scaling (e.g., Kelvin to 
-    Celsius for LST), projection transformations for MODIS data, and reducer logic.
+    This function retrieves a filtered ImageCollection for the specified product and time range, 
+    applies a temporal reducer (e.g., mean, median), and optionally clips the result to a region of interest.
 
-    This function:
-    - Initializes the Earth Engine session via `ee_initialized()`.
-    - Converts the input `roi_gdf` to an `ee.Geometry` if provided.
-    - Retrieves the source `ee.ImageCollection` and metadata via `get_satellite_collection`.
-    - Applies projection transformation to the ROI if the satellite is MODIS.
-    - Filters the collection to bounds of the ROI (if provided).
-    - Validates that band information exists in the metadata.
-    - Computes the final composite image using `_compute_img` with the specified reducer.
-    - Returns product-specific units (e.g., °C for LST, mm for CHIRPS sum).
+    Parameters
+    ----------
+    product : str
+        Environmental product name (e.g., "NDVI", "LST", "CHIRPS", "EVI"). Case-insensitive; normalized internally.
+    start_date : str
+        Start date in 'YYYY-MM-DD' format.
+    end_date : str
+        End date in 'YYYY-MM-DD' format.
+    satellite : str, optional
+        Satellite platform (e.g., "MODIS", "LANDSAT", "SENTINEL2"). Required for sensor-based products; 
+        ignored for gridded datasets like CHIRPS.
+    roi_gdf : geopandas.GeoDataFrame, optional
+        Region of interest as a GeoDataFrame. If provided, the output image is clipped to this geometry.
+    reducer : {"mean", "median", "min", "max"}, optional
+        Temporal aggregation method applied across the time series (default: "mean").
 
-    Args:
-        product (str): The environmental product identifier (e.g., "LST", "NDVI", "CHIRPS").
-        start_date (str): Start date for the composite window in 'YYYY-MM-DD' format.
-        end_date (str): End date for the composite window in 'YYYY-MM-DD' format.
-        satellite (str, optional): Satellite platform identifier (e.g., "MODIS", "Landsat8"). 
-            Required for certain products. Defaults to None.
-        roi_gdf (gpd.GeoDataFrame, optional): The Region of Interest as a GeoDataFrame. 
-            If provided, the image reduction is clipped/masked to this geometry. 
-            Defaults to None.
-        reducer (ReducerName, optional): The statistical reducer to apply over the time range. 
-            Options include "mean", "median", "sum", "min", "max". 
-            Note: "sum" is recommended for CHIRPS precipitation totals. 
-            Defaults to "mean".
+    Returns
+    -------
+    ee.Image
+        A single-band (or multi-band) composite image with:
+        - Band name(s) preserved from the source collection (e.g., "NDVI", "LST_C")
+        - Properties including:
+            - `"product"`: normalized product name
+            - `"satellite"`: satellite used (if applicable)
+            - `"start_date"`, `"end_date"`: time range
+            - `"reducer"`: aggregation method
+            - `"unit"`: measurement unit (e.g., "NDVI", "°C", "mm")
 
-    Returns:
-        ee.Image:
-            A single-band or multi-band Earth Engine Image representing the composite.
-            - **LST**: Returns temperature in degrees Celsius (°C).
-            - **NDVI/EVI**: Returns vegetation index values (typically -1 to 1).
-            - **CHIRPS**: Returns precipitation in millimeters (mm). 
-              If `reducer="sum"`, returns total accumulation; otherwise returns daily statistic.
-
-    Raises:
-        ValueError: If the metadata does not contain required band information 
-            ('bands' or 'band' keys missing).
-
-    Notes:
-        - **Earth Engine Initialization:** Calls `ee_initialized()` internally.
-        - **MODIS Projection:** Automatically transforms the ROI geometry to match 
-          the MODIS projection if applicable to ensure accurate pixel alignment.
-        - **Scaling:** Product-specific scaling factors (e.g., LST Kelvin conversion) 
-          are applied within `_compute_img` based on metadata.
-        - **Reducer Logic:** For precipitation (CHIRPS), use `reducer="sum"` to get 
-          total accumulation over the period. For vegetation/temperature, "mean" 
-          is typically preferred.
+    Notes
+    -----
+    - Uses internally to handle product-specific compositing logic.
+    - For MODIS, the ROI geometry is reprojected to the native projection before clipping (if `roi_gdf` is provided).
+    - The input collection is pre-filtered to the ROI using `filterBounds` for efficiency.
+    - No cloud masking or quality filtering is applied beyond what is defined in `get_satellite_collection`.
+    - Requires an initialized Earth Engine session (`ee.Initialize()`); ensured via `ee_initialized()`.
     """
+    product = _norm_sat(product)
+
     ee_initialized()
 
     roi = gdf_to_ee_geometry(roi_gdf) if roi_gdf is not None else None
 
-    ic, meta = get_satellite_collection(product, start_date, end_date, satellite=satellite)
+    ic, meta = get_satellite_collection(
+        product=product,
+        start_date=start_date,
+        end_date=end_date,
+        satellite=satellite,
+    )
 
-    if roi is not None and str(meta.get("satellite", "")).upper() == "MODIS":
-        first = ee.Image(ic.first())
-        b0 = (meta.get("bands") or [meta.get("band")])[0]
-        proj = first.select(b0).projection()
-        roi = roi.transform(proj, 1)
+    start = ee.Date(start_date)
+    end = ee.Date(end_date)
+
+    img = _composite_image(
+        product=product,
+        start=start,
+        end=end,
+        period_ic=ic,
+        meta=meta,
+        reducer=reducer.lower(),
+    )
 
     if roi is not None:
-        ic = ic.filterBounds(roi)
-
-    prod = str(meta.get("product", product)).upper()
-    bands = meta.get("bands") or ([meta.get("band")] if meta.get("band") else [])
-    if not bands:
-        raise ValueError("meta must include 'bands' or 'band'")
-
-    r = reducer.lower()
-
-    img = _compute_img(product, start_date, end_date, ic, meta, roi, r)
+        img = img.clip(roi)
 
     return img
 
 
+# 5 : COLLECTION IMAGE 
 
-def get_product_image_collection(
+def CollectionImage(
     product: str,
     start_date: str,
     end_date: str,
@@ -412,102 +426,109 @@ def get_product_image_collection(
     satellite: Optional[str] = None,
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
     reducer: ReducerName = "mean",
-    ) -> ee.ImageCollection:
+) -> ee.ImageCollection:
     """
-    Generates a time-series Earth Engine ImageCollection of composite images.
+    Generate an Earth Engine ImageCollection of temporally aggregated composites over regular intervals.
 
-    This function creates a sequence of reduced composite images (e.g., monthly mean NDVI) 
-    over a specified date range. Each image in the collection represents a specific time 
-    period (frequency) with statistics calculated over the optional Region of Interest (ROI).
+    This function divides the input date range into periods, aggregates imagery 
+    within each period using a specified reducer, and returns a time-series ImageCollection suitable 
+    for animation, charting, or further analysis.
 
-    This function:
-    - Initializes the Earth Engine session via `ee_initialized()`.
-    - Converts the input `roi_gdf` to an `ee.Geometry` if provided.
-    - Retrieves the source `ee.ImageCollection` and metadata via `get_satellite_collection`.
-    - Validates the `reducer` parameter based on product type (e.g., allows "sum" for CHIRPS).
-    - Applies projection transformation to the ROI if the satellite is MODIS.
-    - Generates a sequence of timestamps based on `frequency` and `step_days`.
-    - Maps `_build_period_img` over each period to construct individual composite images.
-    - Sorts the resulting collection by `system:time_start`.
-    - Adds a "month" property (string) to each image if frequency is "monthly".
+    Parameters
+    ----------
+    product : str
+        Environmental data product. Supported values include:
+        - Vegetation: "NDVI", "EVI"
+        - Temperature: "LST"
+        - Precipitation: "CHIRPS"
+        (Case-insensitive; normalized internally.)
+    start_date : str
+        Start date in 'YYYY-MM-DD' format.
+    end_date : str
+        End date in 'YYYY-MM-DD' format.
+    frequency : {"daily", "weekly", "monthly", "yearly"}, optional
+        Temporal interval for compositing (default: "monthly").
+    satellite : str, optional
+        Satellite platform (e.g., "MODIS", "LANDSAT", "SENTINEL2"). Required for sensor-based products; 
+        ignored for gridded datasets like CHIRPS.
+    roi_gdf : geopandas.GeoDataFrame, optional
+        Region of interest as a GeoDataFrame. If provided, the collection is filtered to this region 
+        and output images are clipped to it.
+    reducer : {"mean", "median", "min", "max", "sum"}, optional
+        Temporal aggregation method. For "CHIRPS", "sum" is allowed (for total precipitation); 
+        other products support only statistical reducers (default: "mean").
 
-    Args:
-        product (str): The environmental product identifier (e.g., "LST", "NDVI", "CHIRPS").
-        start_date (str): Start date for the time series in 'YYYY-MM-DD' format.
-        end_date (str): End date for the time series in 'YYYY-MM-DD' format.
-        frequency (Frequency, optional): Temporal resolution for the collection. 
-            Options include "daily", "monthly", "yearly". Defaults to "monthly".
-        satellite (str, optional): Satellite platform identifier (e.g., "MODIS", "Landsat8"). 
-            Required for certain products. Defaults to None.
-        roi_gdf (gpd.GeoDataFrame, optional): The Region of Interest as a GeoDataFrame. 
-            If provided, images are reduced/clipped to this geometry. Defaults to None.
-        reducer (ReducerName, optional): Statistical reducer to apply per period. 
-            - For CHIRPS: "sum", "mean", "median", "min", "max".
-            - For others (LST, NDVI, etc.): "mean", "median", "min", "max".
-            Defaults to "mean".
+    Returns
+    -------
+    ee.ImageCollection
+        An ImageCollection where each image:
+        - Represents one time period (e.g., January 2023)
+        - Contains band(s) named per the source product
+        - Has properties:
+            - `"system:time_start"`: period start (milliseconds since Unix epoch)
+            - `"period_start"`: formatted as "YYYY-MM-dd"
+            - `"product"`, `"satellite"`, `"frequency"`, `"reducer"`, `"unit"`
+        - (For monthly frequency) Includes a `"month"` property with full month name (e.g., "January")
 
-    Returns:
-        ee.ImageCollection:
-            A collection of composite images sorted by time.
-            - Each image represents one time period (e.g., one month).
-            - Images contain reduced band values (e.g., mean NDVI per month).
-            - Includes `system:time_start` property.
-            - Includes "month" property (e.g., "January") if frequency is "monthly".
+    Raises
+    ------
+    ValueError
+        If an unsupported reducer is specified for the given product (e.g., "sum" for NDVI).
 
-    Raises:
-        ValueError:
-            - If an invalid `reducer` is selected for the specific product 
-              (e.g., "sum" is not allowed for NDVI).
-            - If metadata is missing required band information (raised by downstream functions).
-
-    Notes:
-        - **Earth Engine Initialization:** Calls `ee_initialized()` internally.
-        - **MODIS Projection:** Automatically transforms ROI geometry to match MODIS 
-          projection if applicable to ensure accurate pixel alignment.
-        - **CHIRPS Reduction:** Use `reducer="sum"` for precipitation totals over the period. 
-          Use "mean" for daily average rates.
-        - **Server-Side Mapping:** The loop over dates is executed server-side using 
-          `ee.List.map`, ensuring scalability for long time series.
-        - **Frequency Step:** The exact step size (days) is determined by `_period_dates` 
-          based on the `frequency` argument.
+    Notes
+    -----
+    - For MODIS vegetation products, the ROI geometry is reprojected to the native sinusoidal projection 
+      before filtering and clipping to ensure spatial accuracy.
+    - The collection is pre-filtered to the ROI (if provided) for performance.
+    - Time periods are generated using calendar-aware intervals (not fixed day counts).
+    - CHIRPS supports `"sum"` to compute total precipitation over the period; all other products use 
+      pixel-wise statistics (mean, median, etc.).
+    - Requires an initialized Earth Engine session (`ee.Initialize()`); ensured via `ee_initialized()`.
     """
+
     ee_initialized()
+
+    product = _norm_sat(product)
+    freq = _freq_unit(frequency)
+    r = reducer.lower()
 
     roi = gdf_to_ee_geometry(roi_gdf) if roi_gdf is not None else None
 
-    ic, meta = get_satellite_collection(product, start_date, end_date, satellite=satellite)
-    prod = str(meta.get("product", product)).upper()
+    ic, meta = get_satellite_collection(
+        product=product,
+        start_date=start_date,
+        end_date=end_date,
+        satellite=satellite,
+    )
 
-    freq, step_days = _period_dates(start_date, end_date, frequency)
-    r = reducer.lower()
+    prod = product
 
     if prod == "CHIRPS":
-        if r not in ("sum", "mean", "median", "min", "max"):
-            raise ValueError("CHIRPS reducer must be one of: sum, mean, median, min, max")
+        allowed = ("sum", "mean", "median", "min", "max")
     else:
-        if r not in ("mean", "median", "min", "max"):
-            raise ValueError(f"{prod} reducer must be one of: mean, median, min, max")
+        allowed = ("mean", "median", "min", "max")
 
-    if meta.get("product") in ("NDVI", "EVI") and str(meta.get("satellite", "")).upper() == "MODIS":
-      first = ee.Image(ic.first())
-      proj = first.select(meta["bands"][0]).projection()
-      geometry = roi.transform(proj, 1)
-      ic = ic.filterBounds(geometry)
+    if r not in allowed:
+        raise ValueError(f"{prod} reducer must be one of: {', '.join(allowed)}")
 
-    dates = ee.List.sequence(
-        ee.Date(start_date).millis(),
-        ee.Date(end_date).millis(),
-        step_days * 24 * 60 * 60 * 1000,
-    )
+    if prod in ("NDVI", "EVI") and str(meta.get("satellite", "")).upper() == "MODIS" and roi is not None:
+        first = ee.Image(ic.first())
+        proj = first.select(meta["bands"][0]).projection()
+        roi = roi.transform(proj, 1)
+        ic = ic.filterBounds(roi)
+
+    start = ee.Date(start_date)
+    end = ee.Date(end_date)
+
+    dates = _make_dates(start, end, freq)
 
     def _one_period(d):
         start = ee.Date(d)
         end = _advance_end(start, freq)
+
         period_ic = ic.filterDate(start, end)
 
-        meta2 = ee.Dictionary(meta).set("frequency", freq)
-
-        img = _build_period_img(
+        return _build_period_img(
             prod=prod,
             r=r,
             start=start,
@@ -516,7 +537,6 @@ def get_product_image_collection(
             meta={**meta, "frequency": freq},
             roi=roi,
         )
-        return img
 
     img_coll = ee.ImageCollection(dates.map(_one_period)).sort("system:time_start")
 
@@ -529,7 +549,63 @@ def get_product_image_collection(
 
 
 
+# 6 : RASTER TO VECTOR POINTS
 
+def ee_to_points(
+    image: ee.Image, 
+    scale: int = 30, 
+    num_pixels: int = 5000
+) -> gpd.GeoDataFrame:
+    """
+    Sample pixel values from an Earth Engine image and return them as a GeoDataFrame.
+    
+    This function extracts a uniform random subset of pixels from the input ``ee.Image`` 
+    at a specified spatial resolution. Each sampled pixel is converted to a point geometry 
+    with its corresponding band values stored as attributes. The resulting data is 
+    downloaded synchronously and formatted as a ``geopandas.GeoDataFrame`` with 
+    WGS84 (EPSG:4326) projection.
+    
+    Args:
+        image (ee.Image): The input Earth Engine image to sample. Must be a valid, 
+            initialized Earth Engine image object.
+        scale (int, optional): The nominal scale in meters at which to sample the image. 
+            Defaults to ``30``. Should closely match the native resolution of the target 
+            bands for accurate value extraction.
+        num_pixels (int, optional): The maximum number of pixels to sample. Defaults to 
+            ``5000``. Earth Engine will return up to this number (or fewer if the image 
+            contains fewer valid/unmasked pixels).
+            
+    Returns:
+        gpd.GeoDataFrame: A GeoDataFrame where each row represents a sampled pixel. 
+            Columns include the point geometry (named ``geometry``) and one column per 
+            image band containing the sampled values. The coordinate reference system 
+            (CRS) is explicitly set to ``EPSG:4326``.
+            
+    Raises:
+        ee.EEException: If the image is invalid, the scale is unsupported, Earth Engine 
+            computation times out, or the response payload exceeds the ``getInfo()`` limit.
+            
+          
+    Example:
+        >>> import ee
+        >>> import geopandas as gpd
+        >>> ee.Initialize()
+        >>> img = ee.Image('COPERNICUS/S2_SR/20230615T123456').select(['B4', 'B8'])
+        >>> gdf = ee_to_points(img, scale=10, num_pixels=1000)
+        >>> print(gdf.head())
+        >>> print(gdf.crs)  # EPSG:4326
+    """
+    fc = image.sample(
+        scale=scale,
+        numPixels=num_pixels,
+        geometries=True
+    )
+
+    geojson = fc.getInfo()
+    gdf = gpd.GeoDataFrame.from_features(geojson["features"])
+    gdf = gdf.set_crs("EPSG:4326")
+
+    return gdf
 
 
 

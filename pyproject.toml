@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "edmt"
-version = "1.0.6"
+version = "1.0.7"
 description = "Environmental Data Management Toolbox"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -12,9 +12,8 @@ license = {file = "LICENSE"}
 authors = [
   {name = "Odero, Kuloba & musasia", email = "francisodero10@gmail.com"},
 ]
-classifiers = [
-    "Development Status :: 4 - Beta",
 
+classifiers = [
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Education",
@@ -54,7 +53,6 @@ dependencies = [
   "tqdm>=4",
   "requests>=2.28,<3",
   "matplotlib>=3.9",
-  "mapclassify>=2.7",
 ]
 
 

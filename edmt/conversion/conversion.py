@@ -158,6 +158,7 @@ def sdf_to_gdf(sdf, crs=None):
 
     return gdf
 
+
 def _is_valid_uuid(val) -> bool:
     if pd.isna(val):
         return False
