@@ -20,6 +20,5 @@ __all__ = [
     'convert_speed',
     'convert_distance',
     'convert_temperature',
-    'format_temperature',
-    'print_name'
+    'format_temperature'
     ]
