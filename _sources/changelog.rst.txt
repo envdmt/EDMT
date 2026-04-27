@@ -1,6 +1,11 @@
 Changelog
 =========
 
+New Changes
+----------------
+
+Workflow structure has been improved to better support analysis requests and enhance visual outputs.
+
 Breaking Changes
 ----------------
 

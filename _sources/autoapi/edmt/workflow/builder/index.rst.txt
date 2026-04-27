@@ -11,6 +11,10 @@ edmt.workflow.builder
 Module Contents
 ---------------
 
+.. py:data:: Frequency
+
+.. py:data:: ReducerName
+
 .. py:function:: ee_initialized(project: str | None = None) -> None
 
    Initialize Earth Engine only once.
@@ -22,59 +26,61 @@ Module Contents
 
 .. py:function:: gdf_to_ee_geometry(gdf: geopandas.GeoDataFrame) -> ee.Geometry
 
-.. py:function:: _norm(x: Optional[str]) -> str
+.. py:function:: _norm_sat(x: Optional[str]) -> str
 
-.. py:function:: _copy_time(img: ee.Image) -> ee.Image
+.. py:function:: _freq_unit(frequency: str) -> str
+
+.. py:function:: _advance_end(start: ee.Date, frequency: str) -> ee.Date
+
+.. py:function:: _make_dates(start: ee.Date, end: ee.Date, frequency: str) -> ee.List
+
+.. py:function:: _timeseries_to_df(fc: ee.FeatureCollection) -> pandas.DataFrame
+
+.. py:function:: _empty(prod: str, start: ee.Date, meta: Dict[str, Any] = None) -> ee.Feature
+
+.. py:data:: _PRODUCT_REGISTRY
+
+.. py:data:: _SAT_CONFIG
 
 .. py:function:: _ndvi_from_nir_red(nir: ee.Image, red: ee.Image) -> ee.Image
 
 .. py:function:: _evi_from_nir_red_blue(nir: ee.Image, red: ee.Image, blue: ee.Image) -> ee.Image
 
-.. py:data:: Frequency
+.. py:function:: _mask_s2(img)
 
-.. py:function:: _advance_end(start: ee.Date, frequency: str) -> ee.Date
+.. py:function:: _mask_landsat(img)
 
-.. py:function:: _dates_for_frequency(start_date: str, end_date: str, frequency: str) -> ee.List
+.. py:function:: _sr(img, band)
 
-.. py:function:: _timeseries_to_df(fc: ee.FeatureCollection) -> pandas.DataFrame
+.. py:function:: _scale_lst(img, band, scale_cfg)
 
-.. py:function:: _build_lst(satellite: str, start_date: str, end_date: str) -> Tuple[ee.ImageCollection, Dict[str, Any]]
+.. py:function:: _build_lst(satellite, start_date, end_date)
 
-.. py:function:: _build_ndvi(satellite: str, start_date: str, end_date: str) -> Tuple[ee.ImageCollection, Dict[str, Any]]
+.. py:function:: _build_vegetation(product, satellite, start_date, end_date)
 
-.. py:function:: _build_evi(satellite: str, start_date: str, end_date: str) -> Tuple[ee.ImageCollection, Dict[str, Any]]
+.. py:function:: _build_chirps(start_date, end_date)
 
-.. py:function:: _build_ndvi_evi(satellite: str, start_date: str, end_date: str) -> Tuple[ee.ImageCollection, Dict[str, Any]]
+.. py:function:: _compute_lst(start, period_ic, geometry, scale, meta, n=None)
 
-.. py:function:: _build_chirps(start_date: str, end_date: str) -> Tuple[ee.ImageCollection, Dict[str, Any]]
+.. py:function:: _compute_veg(prod, start, period_ic, geometry, scale, meta)
 
-.. py:function:: _empty(prod: str, start: ee.Date) -> ee.Feature
+.. py:function:: _compute_chirps(start, period_ic, geometry, scale, meta)
+
+.. py:data:: _COMPUTE_REGISTRY
 
 .. py:function:: _compute(prod: str, start: ee.Date, period_ic: ee.ImageCollection, geometry: ee.Geometry, scale: int, meta: Dict[str, Any]) -> ee.Feature
 
-.. py:data:: ReducerName
+.. py:function:: _lst_composite(start, end, period_ic, meta, reducer)
 
-.. py:function:: _compute_img(product: str, start_date: str, end_date: str, ic: ee.ImageCollection, meta: Dict[str, Any], roi: Optional[ee.Geometry] = None, reducer: ReducerName = 'mean') -> ee.Image
+.. py:function:: _veg_composite(start, end, period_ic, meta, reducer)
 
-   Build a single composite ee.Image for a product using (ic, meta) from get_satellite_collection().
+.. py:function:: _chirps_composite(start, end, period_ic, meta, reducer)
 
-   - CHIRPS: reducer='sum' => total mm over period; else statistic of daily mm/day
-   - NDVI/EVI: statistic over index band
-   - NDVI_EVI: statistic over both bands (NDVI & EVI)
-   - LST: statistic over band then convert to °C using meta (DN->K->C or K->C)
+.. py:data:: _COMPOSITE_BUILDERS
 
-
-.. py:function:: _period_dates(start_date: str, end_date: str, frequency: str) -> Tuple[str, int]
+.. py:function:: _composite_image(product, start, end, period_ic, meta, reducer='mean')
 
 .. py:function:: _empty_img(start: ee.Date, end: ee.Date, freq: str, prod: str) -> ee.Image
 
 .. py:function:: _build_period_img(prod: str, r: str, start: ee.Date, end: ee.Date, period_ic: ee.ImageCollection, meta: Dict[str, Any], roi: Optional[ee.Geometry]) -> ee.Image
-
-   Build one composite image for the period (server-side safe).
-
-
-.. py:function:: ee_to_points(image: ee.Image, scale: int = 30, num_pixels: int = 5000) -> geopandas.GeoDataFrame
-
-   Sample pixels as points and return GeoDataFrame.
-
 
