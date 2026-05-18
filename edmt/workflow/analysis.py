@@ -161,11 +161,11 @@ def classify_ndvi_seasons(
 
 
 _DEFAULT_SEASON_LABELS: List[str] = [
-    "Peak Dry Season",
-    "Dry-to-Wet Transition",
+    "Dry Season",
+    "Dry-Wet Transition",
     "Rainfall Onset",
     "Wet Season",
-    "Peak Rainy Season",
+    "Rainy Season",
 ]
 
 
