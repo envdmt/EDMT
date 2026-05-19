@@ -75,11 +75,38 @@ def create_ROI(
 
 
 
+def _otsu_threshold(values: np.ndarray) -> float:
+    """
+    1-D Otsu's method: find the cut-point that maximises
+    between-class variance in `values`.
+    """
+    sorted_vals = np.sort(values)
+    best_thresh = sorted_vals[0]
+    best_var = -np.inf
+
+    for t in sorted_vals[1:]:
+        below = values[values < t]
+        above = values[values >= t]
+
+        if len(below) == 0 or len(above) == 0:
+            continue
+
+        w0, w1 = len(below) / len(values), len(above) / len(values)
+        between_var = w0 * w1 * (below.mean() - above.mean()) ** 2
+
+        if between_var > best_var:
+            best_var = between_var
+            best_thresh = float(t)
+
+    return best_thresh
+
+
 def classify_ndvi_seasons(
     df: pd.DataFrame,
     date_col: str = "date",
     ndvi_col: str = "ndvi",
     threshold: float = None,
+    threshold_method: str = "otsu",
     wet_label: str = "Wet",
     dry_label: str = "Dry",
     agg_func: str = "mean",
@@ -97,9 +124,19 @@ def classify_ndvi_seasons(
     ndvi_col : str, optional
         Name of the NDVI column (default: "ndvi").
     threshold : float, optional
-        NDVI cut-off that separates wet from dry periods.
+        Explicit NDVI cut-off. Overrides `threshold_method` when supplied.
         Months with mean NDVI >= threshold → wet; below → dry.
-        If None (default), the median of all monthly means is used.
+    threshold_method : str, optional
+        Auto-threshold strategy used when `threshold` is None:
+
+        "otsu"   – Maximises between-class variance (default).
+                   Best for global / mixed biomes; handles unequal
+                   season lengths and skewed distributions.
+        "median" – Median of monthly means.
+                   Good when wet and dry months are roughly equal in number.
+        "mean"   – Mean of monthly means.
+                   Sensitive to outlier months; use only on clean data.
+
     wet_label : str, optional
         Label for wet months (default: "Wet").
     dry_label : str, optional
@@ -123,9 +160,15 @@ def classify_ndvi_seasons(
     if agg_func not in _VALID_AGG:
         raise ValueError(f"agg_func must be one of {_VALID_AGG}, got '{agg_func}'.")
 
+    _VALID_METHODS = {"otsu", "median", "mean"}
+    if threshold_method not in _VALID_METHODS:
+        raise ValueError(
+            f"threshold_method must be one of {_VALID_METHODS}, "
+            f"got '{threshold_method}'."
+        )
+
     work = df[[date_col, ndvi_col]].copy()
     work[date_col] = pd.to_datetime(work[date_col])
-
     work["year"]  = work[date_col].dt.year
     work["month"] = work[date_col].dt.month
 
@@ -136,9 +179,7 @@ def classify_ndvi_seasons(
         .rename(columns={ndvi_col: "ndvi_mean"})
     )
 
-    monthly["_period"] = pd.to_datetime(
-        monthly[["year", "month"]].assign(day=1)
-    )
+    monthly["_period"] = pd.to_datetime(monthly[["year", "month"]].assign(day=1))
     monthly = monthly.sort_values("_period").reset_index(drop=True)
     monthly = monthly.drop(columns="_period")
 
@@ -148,15 +189,21 @@ def classify_ndvi_seasons(
         pd.to_datetime(monthly["month"], format="%m").dt.strftime("%B"),
     )
 
-    resolved_threshold: float = (
-        threshold if threshold is not None else float(monthly["ndvi_mean"].median())
-    )
-    monthly["threshold"] = round(resolved_threshold, 6)
+    if threshold is not None:
+        resolved_threshold = float(threshold)
+    else:
+        values = monthly["ndvi_mean"].to_numpy()
+        if threshold_method == "otsu":
+            resolved_threshold = _otsu_threshold(values)
+        elif threshold_method == "median":
+            resolved_threshold = float(np.median(values))
+        else:  # mean
+            resolved_threshold = float(np.mean(values))
 
+    monthly["threshold"] = round(resolved_threshold, 6)
     monthly["season"] = np.where(
         monthly["ndvi_mean"] >= resolved_threshold, wet_label, dry_label
     )
-
     return monthly
 
 
@@ -167,6 +214,10 @@ _DEFAULT_SEASON_LABELS: List[str] = [
     "Wet Season",
     "Rainy Season",
 ]
+
+_WET_LABELS = {"Rainy Season", "Wet Season", "Rainfall Onset"}
+_TRANSITION_LABEL = "Dry-Wet Transition"
+_DRY_LABEL = "Dry Season"
 
 
 def _minmax_normalize(series: pd.Series) -> pd.Series:
@@ -198,6 +249,7 @@ def _aggregate_to_monthly(
     return monthly
 
 
+
 def classify_climate_seasons(
     df_ndvi: pd.DataFrame,
     df_rainfall: pd.DataFrame,
@@ -210,17 +262,27 @@ def classify_climate_seasons(
     lst_col: str = "mean",
     weights: Tuple[float, float, float] = (0.40, 0.35, 0.25),
     category_labels: Optional[List[str]] = None,
+    rainfall_gate_mm: float = 1.0,    
+    transition_gate_mm: float = 15.0,  
 ) -> pd.DataFrame:
     """
-    Merge monthly NDVI, rainfall, and land surface temperature (LST) data,
-    then classify each month into one of five climate seasons using a
-    normalised composite score.
+    Merge monthly NDVI, rainfall, and LST data, then classify each month
+    into one of five climate seasons using a normalised composite score.
 
     Composite score (0 = driest, 1 = wettest)
     ------------------------------------------
     score = w_rain  × rainfall_norm
           + w_ndvi  × ndvi_norm
           + w_temp  × (1 − temp_norm)   ← inverted: high temp → dry
+
+    Rainfall gate (applied after scoring)
+    --------------------------------------
+    Prevents non-dry labels when rainfall is negligible, regardless of
+    what NDVI or LST suggest:
+
+      rainfall_mm < rainfall_gate_mm   → forced "Dry Season"
+      rainfall_mm < transition_gate_mm → capped at "Dry-Wet Transition"
+                                         (only if score-based label is wetter)
 
     Parameters
     ----------
@@ -229,34 +291,47 @@ def classify_climate_seasons(
     df_rainfall : pd.DataFrame
         Weekly or finer precipitation observations (aggregated to monthly sum).
     df_lst : pd.DataFrame
-        Monthly (or finer) LST observations (aggregated to monthly mean).
+        Monthly or finer LST observations (aggregated to monthly mean).
     ndvi_date_col : str
-        Date column name in df_ndvi (default: "date").
+        Date column in df_ndvi (default: "date").
     ndvi_col : str
-        NDVI value column name (default: "ndvi").
+        NDVI value column (default: "ndvi").
     rainfall_date_col : str
-        Date column name in df_rainfall (default: "date").
+        Date column in df_rainfall (default: "date").
     rainfall_col : str
-        Precipitation column name (default: "precipitation_mm").
+        Precipitation column (default: "precipitation_mm").
     lst_date_col : str
-        Date column name in df_lst (default: "date").
+        Date column in df_lst (default: "date").
     lst_col : str
-        LST value column name (default: "mean").
-    weights : tuple of three floats, optional
-        Relative importance of (rainfall, ndvi, temperature).
-        Must sum to 1.0 (default: 0.40, 0.35, 0.25).
+        LST value column (default: "mean").
+    weights : tuple of 3 floats
+        Relative importance of (rainfall, ndvi, temperature). Must sum to 1.0
+        (default: 0.40, 0.35, 0.25).
     category_labels : list of 5 str, optional
         Custom season names ordered driest → wettest.
-        Defaults to: Dry Season, Dry-Warm Transition, Early Rains,
-        Moderate Rains, Heavy Rains.
+    rainfall_gate_mm : float, optional
+        Monthly rainfall (mm) below which a month is forced to "Dry Season",
+        regardless of NDVI or LST (default: 1.0 mm).
+    transition_gate_mm : float, optional
+        Monthly rainfall (mm) below which a month is capped at
+        "Dry-Wet Transition" if the score would place it in a wetter
+        category (default: 5.0 mm).
 
     Returns
     -------
     pd.DataFrame
         Chronologically sorted monthly DataFrame with columns:
         year, month, month_name, rainfall_mm, ndvi_mean, lst_mean,
-        composite_score, season.
+        composite_score, season, season_source.
+
+        season_source: "score" if the label came from the composite score,
+                       "rainfall_gate" if it was overridden.
     """
+    if rainfall_gate_mm > transition_gate_mm:
+        raise ValueError(
+            f"rainfall_gate_mm ({rainfall_gate_mm}) must be ≤ "
+            f"transition_gate_mm ({transition_gate_mm})."
+        )
 
     w_rain, w_ndvi, w_temp = weights
     if not abs(sum(weights) - 1.0) < 1e-6:
@@ -267,8 +342,13 @@ def classify_climate_seasons(
 
     labels = category_labels or _DEFAULT_SEASON_LABELS
     if len(labels) != 5:
-        raise ValueError(f"category_labels must contain exactly 5 labels, got {len(labels)}.")
+        raise ValueError(
+            f"category_labels must contain exactly 5 labels, got {len(labels)}."
+        )
 
+    dry_label        = labels[0] 
+    transition_label = labels[1] 
+    wet_labels       = set(labels[2:]) 
 
     monthly_rainfall = _aggregate_to_monthly(
         df_rainfall, rainfall_date_col, rainfall_col, "sum", "rainfall_mm"
@@ -282,18 +362,13 @@ def classify_climate_seasons(
 
     merged = (
         monthly_rainfall
-        .merge(monthly_ndvi,  on=["year", "month"], how="inner")
-        .merge(monthly_lst,   on=["year", "month"], how="inner")
+        .merge(monthly_ndvi, on=["year", "month"], how="inner")
+        .merge(monthly_lst,  on=["year", "month"], how="inner")
     )
 
     merged["_period"] = pd.to_datetime(merged[["year", "month"]].assign(day=1))
     merged = merged.sort_values("_period").reset_index(drop=True)
-
-    merged.insert(
-        2,
-        "month_name",
-        merged["_period"].dt.strftime("%B"),
-    )
+    merged.insert(2, "month_name", merged["_period"].dt.strftime("%B"))
     merged = merged.drop(columns="_period")
 
     merged["_rain_norm"] = _minmax_normalize(merged["rainfall_mm"])
@@ -313,12 +388,27 @@ def classify_climate_seasons(
         bins=5,
         labels=labels,
         include_lowest=True,
+    ).astype(str)
+
+    merged["season_source"] = "score"
+
+    transition_mask = (
+        (merged["rainfall_mm"] < transition_gate_mm) &
+        (merged["rainfall_mm"] >= rainfall_gate_mm) &
+        (merged["season"].isin(wet_labels))
     )
+    merged.loc[transition_mask, "season"]        = transition_label
+    merged.loc[transition_mask, "season_source"] = "rainfall_gate"
+
+    dry_mask = merged["rainfall_mm"] < rainfall_gate_mm
+    merged.loc[dry_mask, "season"]        = dry_label
+    merged.loc[dry_mask, "season_source"] = "rainfall_gate"
 
     return merged[[
         "year", "month", "month_name",
         "rainfall_mm", "ndvi_mean", "lst_mean",
-        "composite_score", "season",
+        "composite_score", "season", "season_source",
     ]]
+
 
 
