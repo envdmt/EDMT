@@ -75,6 +75,8 @@ def create_ROI(
 
 
 
+NDVI_WET_THRESHOLD: float = 0.5
+
 def _otsu_threshold(values: np.ndarray) -> float:
     """
     1-D Otsu's method: find the cut-point that maximises
@@ -83,30 +85,72 @@ def _otsu_threshold(values: np.ndarray) -> float:
     sorted_vals = np.sort(values)
     best_thresh = sorted_vals[0]
     best_var = -np.inf
-
+ 
     for t in sorted_vals[1:]:
         below = values[values < t]
         above = values[values >= t]
-
+ 
         if len(below) == 0 or len(above) == 0:
             continue
-
+ 
         w0, w1 = len(below) / len(values), len(above) / len(values)
         between_var = w0 * w1 * (below.mean() - above.mean()) ** 2
-
+ 
         if between_var > best_var:
             best_var = between_var
             best_thresh = float(t)
-
+ 
     return best_thresh
+ 
+ 
+def _minmax_normalize_fixed(
+    series: pd.Series,
+    scale_min: float,
+    scale_max: float,
+) -> pd.Series:
+    """
+    Rescale a Series to [0, 1] using a *fixed* global range instead of
+    the data's own min/max.  Values outside [scale_min, scale_max] are
+    clipped before normalisation.
+ 
+    Using fixed bounds prevents the pathological amplification that occurs
+    when all data values occupy a very narrow band (e.g. NDVI 0.094–0.101
+    treated as if it spans the full 0–1 range).
+    """
+    clipped = series.clip(lower=scale_min, upper=scale_max)
+    return (clipped - scale_min) / (scale_max - scale_min)
+ 
+ 
+def _aggregate_to_monthly(
+    df: pd.DataFrame,
+    date_col: str,
+    value_col: str,
+    agg_func: str,
+    out_col: str,
+) -> pd.DataFrame:
+    """Parse dates, extract year/month, and aggregate value_col."""
+    work = df[[date_col, value_col]].copy()
+    work[date_col] = pd.to_datetime(work[date_col])
+    work["year"] = work[date_col].dt.year
+    work["month"] = work[date_col].dt.month
+    monthly = (
+        work.groupby(["year", "month"])[value_col]
+        .agg(agg_func)
+        .reset_index()
+        .rename(columns={value_col: out_col})
+    )
+    return monthly
 
 
-def classify_ndvi_seasons(
+
+# Compute ndvi Seasons  (WET & DRY)
+
+def classify_ndvi_seasons_(
     df: pd.DataFrame,
     date_col: str = "date",
     ndvi_col: str = "ndvi",
     threshold: float = None,
-    threshold_method: str = "otsu",
+    threshold_method: str = "discrete",
     wet_label: str = "Wet",
     dry_label: str = "Dry",
     agg_func: str = "mean",
@@ -114,7 +158,7 @@ def classify_ndvi_seasons(
     """
     Aggregate NDVI observations to monthly means and classify each
     month as a wet or dry period based on a vegetation threshold.
-
+ 
     Parameters
     ----------
     df : pd.DataFrame
@@ -124,19 +168,23 @@ def classify_ndvi_seasons(
     ndvi_col : str, optional
         Name of the NDVI column (default: "ndvi").
     threshold : float, optional
-        Explicit NDVI cut-off. Overrides `threshold_method` when supplied.
+        Explicit NDVI cut-off on the true -1 to +1 scale.
+        Overrides `threshold_method` when supplied.
         Months with mean NDVI >= threshold → wet; below → dry.
+        
     threshold_method : str, optional
         Auto-threshold strategy used when `threshold` is None:
-
-        "otsu"   – Maximises between-class variance (default).
-                   Best for global / mixed biomes; handles unequal
-                   season lengths and skewed distributions.
-        "median" – Median of monthly means.
-                   Good when wet and dry months are roughly equal in number.
-        "mean"   – Mean of monthly means.
-                   Sensitive to outlier months; use only on clean data.
-
+ 
+        "discrete" – Ecological fixed threshold from the NDVI scale
+                     (NDVI_WET_THRESHOLD = 0.25 by default).
+                     **Recommended** — anchors the result to real-world
+                     vegetation meaning regardless of data range. (default)
+        "otsu"     – Maximises between-class variance within the data.
+                     Only meaningful when the data spans a wide dynamic
+                     range (e.g. > 0.15 spread). Avoid for narrow-band data.
+        "median"   – Median of monthly means.
+        "mean"     – Mean of monthly means.
+ 
     wet_label : str, optional
         Label for wet months (default: "Wet").
     dry_label : str, optional
@@ -144,67 +192,97 @@ def classify_ndvi_seasons(
     agg_func : str, optional
         Aggregation function applied per month:
         "mean" | "median" | "max" (default: "mean").
-
+ 
     Returns
     -------
     pd.DataFrame
         Monthly DataFrame ordered chronologically with columns:
-        year, month, month_name, ndvi_mean, threshold, season.
+        year, month, month_name, ndvi_mean, threshold, season,
+        ndvi_vegetation_class.
+ 
+        ndvi_vegetation_class  →  human-readable land-cover interpretation
+        derived from the true NDVI scale (independent of the wet/dry split).
+ 
+    Notes
+    -----
+    The "discrete" method (default) anchors classification to the actual
+    NDVI scale (-1 to +1).  Statistical methods (otsu/median/mean) find a
+    threshold *within* the observed data range, which can produce misleading
+    results when all values are clustered in a narrow band — e.g. labelling
+    a month as "Wet" simply because its NDVI is 0.001 above the rest, even
+    though 0.10 is objectively bare soil by any vegetation index standard.
     """
     if date_col not in df.columns:
         raise KeyError(f"Date column '{date_col}' not found in DataFrame.")
     if ndvi_col not in df.columns:
         raise KeyError(f"NDVI column '{ndvi_col}' not found in DataFrame.")
-
+ 
     _VALID_AGG = {"mean", "median", "max"}
     if agg_func not in _VALID_AGG:
         raise ValueError(f"agg_func must be one of {_VALID_AGG}, got '{agg_func}'.")
-
-    _VALID_METHODS = {"otsu", "median", "mean"}
+ 
+    _VALID_METHODS = {"discrete", "otsu", "median", "mean"}
     if threshold_method not in _VALID_METHODS:
         raise ValueError(
             f"threshold_method must be one of {_VALID_METHODS}, "
             f"got '{threshold_method}'."
         )
-
+ 
     work = df[[date_col, ndvi_col]].copy()
     work[date_col] = pd.to_datetime(work[date_col])
-    work["year"]  = work[date_col].dt.year
+    work["year"] = work[date_col].dt.year
     work["month"] = work[date_col].dt.month
-
+ 
     monthly: pd.DataFrame = (
         work.groupby(["year", "month"])[ndvi_col]
         .agg(agg_func)
         .reset_index()
         .rename(columns={ndvi_col: "ndvi_mean"})
     )
-
+ 
     monthly["_period"] = pd.to_datetime(monthly[["year", "month"]].assign(day=1))
     monthly = monthly.sort_values("_period").reset_index(drop=True)
     monthly = monthly.drop(columns="_period")
-
+ 
     monthly.insert(
         2,
         "month_name",
         pd.to_datetime(monthly["month"], format="%m").dt.strftime("%B"),
     )
-
+ 
     if threshold is not None:
         resolved_threshold = float(threshold)
-    else:
-        values = monthly["ndvi_mean"].to_numpy()
-        if threshold_method == "otsu":
-            resolved_threshold = _otsu_threshold(values)
-        elif threshold_method == "median":
-            resolved_threshold = float(np.median(values))
-        else:  # mean
-            resolved_threshold = float(np.mean(values))
-
+    elif threshold_method == "discrete":
+        resolved_threshold = NDVI_WET_THRESHOLD
+    elif threshold_method == "otsu":
+        resolved_threshold = _otsu_threshold(monthly["ndvi_mean"].to_numpy())
+    elif threshold_method == "median":
+        resolved_threshold = float(np.median(monthly["ndvi_mean"].to_numpy()))
+    else:  # mean
+        resolved_threshold = float(np.mean(monthly["ndvi_mean"].to_numpy()))
+ 
     monthly["threshold"] = round(resolved_threshold, 6)
     monthly["season"] = np.where(
         monthly["ndvi_mean"] >= resolved_threshold, wet_label, dry_label
     )
+ 
+    monthly["ndvi_class"] = pd.cut(
+        monthly["ndvi_mean"],
+        bins=[-1.0, 0.0, 0.10, 0.20, 0.35, 0.50, 0.70, 1.0],
+        labels=[
+            "Water / Non-vegetated",
+            "Bare Soil / Arid",
+            "Very Sparse Vegetation",
+            "Sparse Grassland / Shrubland",
+            "Moderate Vegetation",
+            "Dense Vegetation",
+            "Very Dense / Forest",
+        ],
+        include_lowest=True,
+    ).astype(str)
+ 
     return monthly
+ 
 
 
 _DEFAULT_SEASON_LABELS: List[str] = [
@@ -249,6 +327,7 @@ def _aggregate_to_monthly(
     return monthly
 
 
+# Compute classification of climate seasons
 
 def classify_climate_seasons(
     df_ndvi: pd.DataFrame,
