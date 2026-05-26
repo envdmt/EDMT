@@ -486,7 +486,7 @@ def classify_climate_seasons(
     return merged[[
         "year", "month", "month_name",
         "rainfall_mm", "ndvi_mean", "lst_mean",
-        "composite_score", "season", "season_source",
+        "composite_score", "season"
     ]]
 
 
