@@ -261,7 +261,7 @@ def classify_ndvi_seasons(
     else:  # mean
         resolved_threshold = float(np.mean(monthly["ndvi_mean"].to_numpy()))
  
-    monthly["threshold"] = round(resolved_threshold, 6)
+    # monthly["threshold"] = round(resolved_threshold, 6)
     monthly["season"] = np.where(
         monthly["ndvi_mean"] >= resolved_threshold, wet_label, dry_label
     )
