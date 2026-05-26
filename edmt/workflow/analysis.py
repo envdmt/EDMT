@@ -145,7 +145,7 @@ def _aggregate_to_monthly(
 
 # Compute ndvi Seasons  (WET & DRY)
 
-def classify_ndvi_seasons_(
+def classify_ndvi_seasons(
     df: pd.DataFrame,
     date_col: str = "date",
     ndvi_col: str = "ndvi",
