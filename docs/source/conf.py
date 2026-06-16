@@ -9,7 +9,7 @@ logging.getLogger('nbsphinx').setLevel(logging.DEBUG)
 project = 'EDMT'
 copyright = '2026, EDMT'
 author = 'Odero'
-release = '1.0.6'
+release = '1.0.7'
 
 # General configuration
 extensions = [        
