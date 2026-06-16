@@ -126,3 +126,8 @@ def dict_expand(data,cols):
       expanded_df = pd.concat(dfs_to_join, axis=1)
 
   return df_processed.join(expanded_df).drop(columns=cols, errors='ignore')
+
+
+# generate a EDMT customized QR Code image
+
+
