@@ -60,6 +60,8 @@ Module Contents
 
 .. py:function:: _build_chirps(start_date, end_date)
 
+.. py:function:: _build_flooding(satellite, start_date, end_date)
+
 .. py:function:: _compute_lst(start, period_ic, geometry, scale, meta, n=None)
 
 .. py:function:: _compute_veg(prod, start, period_ic, geometry, scale, meta)

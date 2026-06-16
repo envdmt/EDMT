@@ -123,6 +123,7 @@ _PRODUCT_REGISTRY = {
     "NDVI": "vegetation",
     "EVI": "vegetation",
     "CHIRPS": "chirps",
+    "FLOODING": "flooding",
 }
 
 
@@ -182,6 +183,14 @@ _SAT_CONFIG = {
             "scale_m": 250,
             "direct": True,
         },
+    },
+
+    "FLOODING": {
+        "SENTINEL1": {
+            "collection": "COPERNICUS/S1_GRD",
+            "band": "VH",
+            "scale_m": 10,
+        }
     }
 }
 
@@ -373,6 +382,27 @@ def _build_chirps(start_date, end_date):
     return ic, {"bands": ["precipitation"], "scale_m": 5500}
 
 
+# Flooding pipeline
+
+def _build_flooding(satellite, start_date, end_date):
+    sat = _norm_sat(satellite)
+
+    if sat != "SENTINEL1":
+        raise ValueError(f"Unsupported flooding satellite: {satellite}")
+
+    ic = (
+        ee.ImageCollection(_SAT_CONFIG["FLOODING"]["SENTINEL1"]["collection"])
+        .filterDate(start_date, end_date)
+        .filter(ee.Filter.listContains("transmitterReceiverPolarisation", "VH"))
+        .select(["VH"])
+        .map(lambda img: img.rename("VH").copyProperties(img, ["system:time_start"]))
+    )
+
+    return ic, {
+        "bands": ["VH"],
+        "scale_m": _SAT_CONFIG["FLOODING"]["SENTINEL1"]["scale_m"],
+        "satellite": sat,
+    }
 
 # 3 : COMPUTATION
 
@@ -456,6 +486,7 @@ _COMPUTE_REGISTRY = {
     "NDVI": _compute_veg,
     "EVI": _compute_veg,
     "LST": _compute_lst,
+    "FLOOD":_build_flooding
 }
 
 

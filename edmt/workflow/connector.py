@@ -11,6 +11,7 @@ from .builder import (
 
     _PRODUCT_REGISTRY,
     _build_vegetation,
+    _build_flooding,
 
     _norm_sat,
     _build_chirps,
@@ -91,6 +92,9 @@ def get_satellite_collection(
 
     elif pipeline == "lst":
         ic, meta = _build_lst(satellite, start_date, end_date)
+
+    elif pipeline == "flooding":
+        ic, meta = _build_flooding(satellite, start_date, end_date)
 
     elif pipeline == "chirps":
         ic, meta = _build_chirps(start_date, end_date)
@@ -200,7 +204,7 @@ def ComputeTimeseries(
     roi_gdf: gpd.GeoDataFrame,
     satellite: Optional[str] = None,
     scale: Optional[int] = None,
-) -> pd.DataFrame:
+    ) -> pd.DataFrame:
     """
     Generate a time series of environmental metrics (e.g., NDVI, LST, precipitation) over a region of interest.
 
@@ -315,6 +319,10 @@ def ComputeTimeseries(
     elif prod == "CHIRPS":
         if "precipitation_mm" in df.columns:
             df = df[df["precipitation_mm"].notna()]
+
+    # elif prod == "CHIRPS":
+    #     if "precipitation_mm" in df.columns:
+    #         df = df[df["precipitation_mm"].notna()]
 
     elif prod in ("NDVI", "EVI"):
         key = prod.lower()
