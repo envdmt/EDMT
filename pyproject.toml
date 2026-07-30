@@ -13,11 +13,9 @@ license = { file = "LICENSE" }
 authors = [
     { name = "Francis Odero" , email = "francisodero10@gmail.com" },
     { name = "Kevin Kuloba" },
-    { name = "Musasia" }
 ]
 
 classifiers = [
-    "Development Status :: 4 - Beta",
 
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
@@ -70,6 +68,7 @@ duckdb = [
 ]
 
 dev = [
+    "duckdb>=1.0",
     "pytest>=8",
     "pytest-cov",
     "flake8",
