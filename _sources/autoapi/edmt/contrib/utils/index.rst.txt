@@ -35,12 +35,13 @@ Module Contents
 
    Move specified column(s) to the end of the DataFrame.
 
-   Parameters:
-       df (pd.DataFrame): Input DataFrame.
-       cols (str or list): Column name(s) to move to the end.
+   :param df: Input DataFrame.
+   :type df: pd.DataFrame
+   :param cols: Column name(s) to move to the end.
+   :type cols: str or list
 
-   Returns:
-       pd.DataFrame: DataFrame with columns reordered.
+   :returns: DataFrame with columns reordered.
+   :rtype: pd.DataFrame
 
 
 .. py:function:: dict_expand(data, cols)

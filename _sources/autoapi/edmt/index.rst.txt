@@ -10,7 +10,6 @@ Submodules
 .. toctree::
    :maxdepth: 1
 
-   /autoapi/edmt/_edmt/index
    /autoapi/edmt/analysis/index
    /autoapi/edmt/base/index
    /autoapi/edmt/contrib/index
@@ -25,6 +24,14 @@ Submodules
 
 Package Contents
 ----------------
+
+.. py:function:: list_functions(module_name: str = 'edmt') -> None
+
+   Inspect and print all functions in the specified module and its submodules.
+
+   :param module_name: The name of the root module to inspect (default: "edmt").
+   :type module_name: str, optional
+
 
 .. py:function:: init(silent=False, force=False)
 

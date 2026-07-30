@@ -1,0 +1,12 @@
+{% block submodules %}
+{% if obj.submodules %}
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+   {% for submodule in obj.submodules %}
+   {{ submodule.include_path }}
+   {% endfor %}
+{% endif %}
+{% endblock %}

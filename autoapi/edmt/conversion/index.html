@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../../genindex.html"><link rel="search" title="Search" href="../../../search.html"><link rel="next" title="edmt.conversion.conversion" href="conversion/index.html"><link rel="prev" title="edmt.contrib.utils" href="../contrib/utils/index.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>edmt.conversion - EDMT 1.0.7 documentation</title>
+        <title>edmt.conversion - EDMT 1.0.8 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
@@ -162,7 +162,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">EDMT 1.0.7 documentation</div></a>
+      <a href="../../../index.html"><div class="brand">EDMT 1.0.8 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -183,7 +183,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../../../index.html">
   
-  <span class="sidebar-brand-text">EDMT 1.0.7 documentation</span>
+  <span class="sidebar-brand-text">EDMT 1.0.8 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -199,7 +199,6 @@
 <ul class="current">
 <li class="toctree-l1 current has-children"><a class="reference internal" href="../../index.html">API Reference</a><input aria-label="Toggle navigation of API Reference" checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
 <li class="toctree-l2 current has-children"><a class="reference internal" href="../index.html">edmt</a><input aria-label="Toggle navigation of edmt" checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="../_edmt/index.html">edmt._edmt</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../analysis/index.html">edmt.analysis</a></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../base/index.html">edmt.base</a><input aria-label="Toggle navigation of edmt.base" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="../base/base/index.html">edmt.base.base</a></li>
@@ -285,6 +284,254 @@
 </ul>
 </div>
 </section>
+<section id="package-contents">
+<h2>Package Contents<a class="headerlink" href="#package-contents" title="Link to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.conversion.sdf_to_gdf">
+<span class="sig-prename descclassname"><span class="pre">edmt.conversion.</span></span><span class="sig-name descname"><span class="pre">sdf_to_gdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sdf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">crs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edmt.conversion.sdf_to_gdf" title="Link to this definition">¶</a></dt>
+<dd><p>Converts a spatial DataFrame to a GeoDataFrame with optional CRS assignment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sdf</strong> (<em>pd.DataFrame</em>) -- Input spatial DataFrame containing geometry column.</p></li>
+<li><p><strong>crs</strong> (<em>str</em><em> or </em><em>int</em><em>, </em><em>optional</em>) -- Coordinate Reference System. Defaults to EPSG:4326.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A cleaned GeoDataFrame with valid geometries.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>gpd.GeoDataFrame</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> -- If input is not a DataFrame or is empty.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.conversion.generate_uuid">
+<span class="sig-prename descclassname"><span class="pre">edmt.conversion.</span></span><span class="sig-name descname"><span class="pre">generate_uuid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uuid_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'uuid'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detect_uuid_cols</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detect_contains</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Ellipsis</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">('uuid',)</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#edmt.conversion.generate_uuid" title="Link to this definition">¶</a></dt>
+<dd><p>Ensure a pandas DataFrame contains a column of valid UUIDs, creating or repairing as needed.</p>
+<p>This function adds a new UUID column or validates/repairs an existing one. It can optionally
+detect existing UUID-like columns to avoid duplication and control column placement.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>pd.DataFrame</em>) -- Input DataFrame to process.</p></li>
+<li><p><strong>force</strong> (<em>bool</em><em>, </em><em>optional</em>) -- If True, always generate new UUIDs—even if a valid UUID column already exists
+(default: False).</p></li>
+<li><p><strong>index</strong> (<em>bool</em><em>, </em><em>optional</em>) -- If True, place the UUID column at the beginning of the DataFrame; otherwise,
+place it at the end (default: False).</p></li>
+<li><p><strong>uuid_col</strong> (<em>str</em><em>, </em><em>optional</em>) -- Name of the target UUID column (default: &quot;uuid&quot;).</p></li>
+<li><p><strong>detect_uuid_cols</strong> (<em>bool</em><em>, </em><em>optional</em>) -- If True and <cite>force=False</cite>, scan for existing columns that appear to contain UUIDs
+(based on name and content) to avoid redundant generation (default: True).</p></li>
+<li><p><strong>detect_contains</strong> (<em>tuple</em><em> of </em><em>str</em><em>, </em><em>optional</em>) -- Substrings used to identify potential UUID columns by name when <cite>detect_uuid_cols=True</cite>
+(default: (&quot;uuid&quot;,)).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A copy of the input DataFrame with a valid UUID column named <cite>uuid_col</cite>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> -- If input is not a DataFrame or if the DataFrame is empty.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>A value is considered a valid UUID if it is a string matching the standard UUID format
+(e.g., &quot;f47ac10b-58cc-4372-a567-0e02b2c3d479&quot;).</p></li>
+<li><p>When <cite>force=False</cite> and a UUID-like column is detected (by name and content), the function
+reuses it but repairs any invalid entries by replacing them with new UUIDs.</p></li>
+<li><p>The output DataFrame is always a copy; the original is not modified.</p></li>
+<li><p>Column ordering is explicitly controlled: UUID column is moved to front if <cite>index=True</cite>,
+otherwise to the back.</p></li>
+</ul>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Alice&quot;</span><span class="p">,</span> <span class="s2">&quot;Bob&quot;</span><span class="p">]})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df_with_uuid</span> <span class="o">=</span> <span class="n">generate_uuid</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="s2">&quot;uuid&quot;</span> <span class="ow">in</span> <span class="n">df_with_uuid</span><span class="o">.</span><span class="n">columns</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">df_existing</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s2">&quot;uuid&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;invalid&quot;</span><span class="p">,</span> <span class="s2">&quot;7af3ea7c-5a14-48c2-a3c2-b014488c0216&quot;</span><span class="p">],</span> <span class="s2">&quot;val&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fixed</span> <span class="o">=</span> <span class="n">generate_uuid</span><span class="p">(</span><span class="n">df_existing</span><span class="p">)</span>
+<span class="go"># First entry replaced with valid UUID; second preserved</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.conversion.generate_cmap">
+<span class="sig-prename descclassname"><span class="pre">edmt.conversion.</span></span><span class="sig-name descname"><span class="pre">generate_cmap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="conversion/index.html#edmt.conversion.conversion.ArrayLike" title="edmt.conversion.conversion.ArrayLike"><span class="pre">ArrayLike</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_divisions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'viridis'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#edmt.conversion.generate_cmap" title="Link to this definition">¶</a></dt>
+<dd><p>Generate range labels and corresponding hex colors from a colormap.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>array-like</em>) -- Numeric data used to determine the value range.</p></li>
+<li><p><strong>num_divisions</strong> (<em>int</em>) -- Number of intervals to divide the data range into.</p></li>
+<li><p><strong>cmap</strong> (<em>str</em><em>, </em><em>default=&quot;viridis&quot;</em>) -- Name of the matplotlib colormap.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>labels :</dt><dd><p>Range labels formatted as &quot;min - max&quot;.</p>
+</dd>
+<dt>colors :</dt><dd><p>Hexadecimal color codes corresponding to each range.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[list[str], list[str]]</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> -- If num_divisions is less than 1 or data is empty.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.conversion.get_utm_epsg">
+<span class="sig-prename descclassname"><span class="pre">edmt.conversion.</span></span><span class="sig-name descname"><span class="pre">get_utm_epsg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">longitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edmt.conversion.get_utm_epsg" title="Link to this definition">¶</a></dt>
+<dd><p>Generates UTM EPSG code based on longitude.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>longitude</strong> (<em>float</em>) -- Longitude value to determine UTM zone.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>EPSG code as a string.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>KeyError</strong> -- If longitude is not provided.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.conversion.convert_time">
+<span class="sig-prename descclassname"><span class="pre">edmt.conversion.</span></span><span class="sig-name descname"><span class="pre">convert_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit_from</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit_to</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#edmt.conversion.convert_time" title="Link to this definition">¶</a></dt>
+<dd><p>Converts a given time value between different units.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>time_value</strong> (<em>float</em>) -- The numerical value of the time.</p></li>
+<li><p><strong>unit_from</strong> (<em>str</em>) -- The original unit of time.</p></li>
+<li><p><strong>unit_to</strong> (<em>str</em>) -- The target unit to convert to.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The converted time value rounded to 3 decimal places.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> -- If units are unsupported or value is invalid.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.conversion.convert_speed">
+<span class="sig-prename descclassname"><span class="pre">edmt.conversion.</span></span><span class="sig-name descname"><span class="pre">convert_speed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">speed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit_from</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit_to</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#edmt.conversion.convert_speed" title="Link to this definition">¶</a></dt>
+<dd><p>Converts speed between different units.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>speed</strong> (<em>float</em>) -- Input speed value.</p></li>
+<li><p><strong>unit_from</strong> (<em>str</em>) -- Original unit.</p></li>
+<li><p><strong>unit_to</strong> (<em>str</em>) -- Target unit.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Converted speed value.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> -- If unit is unsupported.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.conversion.convert_distance">
+<span class="sig-prename descclassname"><span class="pre">edmt.conversion.</span></span><span class="sig-name descname"><span class="pre">convert_distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit_from</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit_to</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#edmt.conversion.convert_distance" title="Link to this definition">¶</a></dt>
+<dd><p>Converts distance values between metric and imperial units.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>value</strong> (<em>float</em>) -- Input distance value.</p></li>
+<li><p><strong>from_type</strong> (<em>str</em>) -- Original unit.</p></li>
+<li><p><strong>to_type</strong> (<em>str</em>) -- Target unit.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Converted distance value.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> -- If unit is unsupported.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.conversion.convert_temperature">
+<span class="sig-prename descclassname"><span class="pre">edmt.conversion.</span></span><span class="sig-name descname"><span class="pre">convert_temperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit_from</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit_to</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#edmt.conversion.convert_temperature" title="Link to this definition">¶</a></dt>
+<dd><p>Converts temperature between different scales.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>value</strong> (<em>float</em>) -- Input temperature value.</p></li>
+<li><p><strong>unit_from</strong> (<em>str</em>) -- Original unit. Supported: C, F, K (also °C, °F, °K).</p></li>
+<li><p><strong>unit_to</strong> (<em>str</em>) -- Target unit. Supported: C, F, K (also °C, °F, °K).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Converted temperature value (rounded to 3 decimals).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> -- If unit is unsupported or Kelvin is invalid (&lt; 0).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.conversion.format_temperature">
+<span class="sig-prename descclassname"><span class="pre">edmt.conversion.</span></span><span class="sig-name descname"><span class="pre">format_temperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">symbol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#edmt.conversion.format_temperature" title="Link to this definition">¶</a></dt>
+<dd><p>Formats a temperature value with unit, e.g. '23.5 °C' or '296.6 K'.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>value</strong> (<em>float</em>) -- Temperature value.</p></li>
+<li><p><strong>unit</strong> (<em>str</em>) -- Unit to display (C, F, K).</p></li>
+<li><p><strong>symbol</strong> (<em>bool</em>) -- If True, uses °C/°F, and K without degree symbol.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Formatted temperature string.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
 </section>
 
         </article>
@@ -344,6 +591,18 @@
             <ul>
 <li><a class="reference internal" href="#">edmt.conversion</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#package-contents">Package Contents</a><ul>
+<li><a class="reference internal" href="#edmt.conversion.sdf_to_gdf"><code class="docutils literal notranslate"><span class="pre">sdf_to_gdf()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.conversion.generate_uuid"><code class="docutils literal notranslate"><span class="pre">generate_uuid()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.conversion.generate_cmap"><code class="docutils literal notranslate"><span class="pre">generate_cmap()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.conversion.get_utm_epsg"><code class="docutils literal notranslate"><span class="pre">get_utm_epsg()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.conversion.convert_time"><code class="docutils literal notranslate"><span class="pre">convert_time()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.conversion.convert_speed"><code class="docutils literal notranslate"><span class="pre">convert_speed()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.conversion.convert_distance"><code class="docutils literal notranslate"><span class="pre">convert_distance()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.conversion.convert_temperature"><code class="docutils literal notranslate"><span class="pre">convert_temperature()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.conversion.format_temperature"><code class="docutils literal notranslate"><span class="pre">format_temperature()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -355,7 +614,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=116d2e10"></script>
+</div><script src="../../../_static/documentation_options.js?v=08eb7b35"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

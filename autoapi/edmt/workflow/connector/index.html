@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../../../genindex.html"><link rel="search" title="Search" href="../../../../search.html"><link rel="next" title="edmt.workflow.workflow" href="../workflow/index.html"><link rel="prev" title="edmt.workflow.builder" href="../builder/index.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>edmt.workflow.connector - EDMT 1.0.7 documentation</title>
+        <title>edmt.workflow.connector - EDMT 1.0.8 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
@@ -162,7 +162,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">EDMT 1.0.7 documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">EDMT 1.0.8 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -183,7 +183,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../../../../index.html">
   
-  <span class="sidebar-brand-text">EDMT 1.0.7 documentation</span>
+  <span class="sidebar-brand-text">EDMT 1.0.8 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -199,7 +199,6 @@
 <ul class="current">
 <li class="toctree-l1 current has-children"><a class="reference internal" href="../../../index.html">API Reference</a><input aria-label="Toggle navigation of API Reference" checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
 <li class="toctree-l2 current has-children"><a class="reference internal" href="../../index.html">edmt</a><input aria-label="Toggle navigation of edmt" checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="../../_edmt/index.html">edmt._edmt</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../analysis/index.html">edmt.analysis</a></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../base/index.html">edmt.base</a><input aria-label="Toggle navigation of edmt.base" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../base/base/index.html">edmt.base.base</a></li>
@@ -286,28 +285,22 @@
 <p>This function serves as a unified entry point to access preconfigured satellite or gridded
 datasets (e.g., NDVI, LST, precipitation) by delegating to specialized internal pipelines.
 It returns both the raw image collection and a dictionary of processing parameters.</p>
-<section id="parameters">
-<h3>Parameters<a class="headerlink" href="#parameters" title="Link to this heading">¶</a></h3>
-<dl class="simple">
-<dt>product<span class="classifier">str</span></dt><dd><p>Name of the environmental data product. Supported values include:
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>product</strong> (<em>str</em>) -- Name of the environmental data product. Supported values include:
 - Vegetation indices: &quot;NDVI&quot;, &quot;EVI&quot;
 - Land Surface Temperature: &quot;LST&quot;
 - Precipitation: &quot;CHIRPS&quot;
-(Case-insensitive; aliases are normalized internally.)</p>
+(Case-insensitive; aliases are normalized internally.)</p></li>
+<li><p><strong>satellite</strong> (<em>str</em><em>, </em><em>optional</em>) -- Satellite platform or sensor (e.g., &quot;MODIS&quot;, &quot;LANDSAT&quot;, &quot;SENTINEL2&quot;).
+Required for vegetation and LST products; ignored for grid-based products like CHIRPS.</p></li>
+<li><p><strong>start_date</strong> (<em>str</em><em>, </em><em>optional</em>) -- Start date in 'YYYY-MM-DD' format. Required if <cite>end_date</cite> is provided.</p></li>
+<li><p><strong>end_date</strong> (<em>str</em><em>, </em><em>optional</em>) -- End date in 'YYYY-MM-DD' format. Required if <cite>start_date</cite> is provided.</p></li>
+</ul>
 </dd>
-<dt>satellite<span class="classifier">str, optional</span></dt><dd><p>Satellite platform or sensor (e.g., &quot;MODIS&quot;, &quot;LANDSAT&quot;, &quot;SENTINEL2&quot;).
-Required for vegetation and LST products; ignored for grid-based products like CHIRPS.</p>
-</dd>
-<dt>start_date<span class="classifier">str, optional</span></dt><dd><p>Start date in 'YYYY-MM-DD' format. Required if <cite>end_date</cite> is provided.</p>
-</dd>
-<dt>end_date<span class="classifier">str, optional</span></dt><dd><p>End date in 'YYYY-MM-DD' format. Required if <cite>start_date</cite> is provided.</p>
-</dd>
-</dl>
-</section>
-<section id="returns">
-<h3>Returns<a class="headerlink" href="#returns" title="Link to this heading">¶</a></h3>
-<dl class="simple">
-<dt>tuple[ee.ImageCollection, dict]</dt><dd><ul class="simple">
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
 <li><p><strong>ImageCollection</strong>: Filtered and preprocessed Earth Engine image collection.</p></li>
 <li><dl class="simple">
 <dt><strong>meta</strong>: Dictionary containing:</dt><dd><ul>
@@ -318,25 +311,22 @@ Required for vegetation and LST products; ignored for grid-based products like C
 </dl>
 </li>
 </ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[ee.ImageCollection, dict]</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> -- If <cite>product</cite> is not supported or if required arguments are missing for the selected pipeline.</p>
 </dd>
 </dl>
-</section>
-<section id="raises">
-<h3>Raises<a class="headerlink" href="#raises" title="Link to this heading">¶</a></h3>
-<dl class="simple">
-<dt>ValueError</dt><dd><p>If <cite>product</cite> is not supported or if required arguments are missing for the selected pipeline.</p>
-</dd>
-</dl>
-</section>
-<section id="notes">
-<h3>Notes<a class="headerlink" href="#notes" title="Link to this heading">¶</a></h3>
+<p class="rubric">Notes</p>
 <ul class="simple">
 <li><p>Date filtering is applied during collection construction.</p></li>
 <li><p>No cloud masking, quality filtering, or unit conversion is performed beyond what is
 defined in the underlying pipeline.</p></li>
 <li><p>All collections preserve native temporal and spatial metadata for downstream use.</p></li>
 </ul>
-</section>
 </dd></dl>
 
 <dl class="py function">
@@ -347,34 +337,25 @@ over a time period and region of interest, returning an Earth Engine Feature.</p
 <p>This function aggregates images in the input collection over a temporal window (defined by <cite>start</cite>
 and <cite>frequency</cite>), computes statistics over <cite>geometry</cite>, and packages results into a feature with
 standardized properties—including product-specific metadata from <cite>meta</cite>.</p>
-<section id="id1">
-<h3>Parameters<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
-<dl class="simple">
-<dt>product<span class="classifier">str</span></dt><dd><p>Environmental product name (e.g., &quot;NDVI&quot;, &quot;LST&quot;, &quot;CHIRPS&quot;). Used to select appropriate
-statistic computation logic.</p>
-</dd>
-<dt>start<span class="classifier">ee.Date</span></dt><dd><p>Start date of the aggregation period.</p>
-</dd>
-<dt>collection<span class="classifier">ee.ImageCollection</span></dt><dd><p>Pre-filtered ImageCollection containing the relevant band(s).</p>
-</dd>
-<dt>geometry<span class="classifier">ee.Geometry</span></dt><dd><p>Region of interest for spatial reduction.</p>
-</dd>
-<dt>frequency<span class="classifier">{&quot;daily&quot;, &quot;weekly&quot;, &quot;monthly&quot;, &quot;yearly&quot;}</span></dt><dd><p>Temporal interval defining the period length. Determines end date.</p>
-</dd>
-<dt>meta<span class="classifier">dict</span></dt><dd><p>Metadata dictionary (typically from <cite>get_satellite_collection</cite>) containing at least:
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>product</strong> (<em>str</em>) -- Environmental product name (e.g., &quot;NDVI&quot;, &quot;LST&quot;, &quot;CHIRPS&quot;). Used to select appropriate
+statistic computation logic.</p></li>
+<li><p><strong>start</strong> (<em>ee.Date</em>) -- Start date of the aggregation period.</p></li>
+<li><p><strong>collection</strong> (<em>ee.ImageCollection</em>) -- Pre-filtered ImageCollection containing the relevant band(s).</p></li>
+<li><p><strong>geometry</strong> (<em>ee.Geometry</em>) -- Region of interest for spatial reduction.</p></li>
+<li><p><strong>frequency</strong> (<em>{&quot;daily&quot;</em><em>, </em><em>&quot;weekly&quot;</em><em>, </em><em>&quot;monthly&quot;</em><em>, </em><em>&quot;yearly&quot;}</em>) -- Temporal interval defining the period length. Determines end date.</p></li>
+<li><p><strong>meta</strong> (<em>dict</em>) -- Metadata dictionary (typically from <cite>get_satellite_collection</cite>) containing at least:
 - <cite>&quot;scale_m&quot;</cite>: default spatial resolution (in meters)
 - <cite>&quot;band&quot;</cite>: primary band name (e.g., &quot;NDVI&quot;)
 - <cite>&quot;unit&quot;</cite>: measurement unit (e.g., &quot;NDVI&quot;, &quot;°C&quot;, &quot;mm&quot;)
-Additional keys may be used by <cite>_compute</cite>.</p>
+Additional keys may be used by <cite>_compute</cite>.</p></li>
+<li><p><strong>scale</strong> (<em>int</em><em>, </em><em>optional</em>) -- Spatial resolution (in meters) for reduction. If omitted, defaults to <cite>meta[&quot;scale_m&quot;]</cite>.</p></li>
+</ul>
 </dd>
-<dt>scale<span class="classifier">int, optional</span></dt><dd><p>Spatial resolution (in meters) for reduction. If omitted, defaults to <cite>meta[&quot;scale_m&quot;]</cite>.</p>
-</dd>
-</dl>
-</section>
-<section id="id2">
-<h3>Returns<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
-<dl class="simple">
-<dt>ee.Feature</dt><dd><p>A feature with no geometry and the following properties:
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A feature with no geometry and the following properties:
 - <cite>&quot;date&quot;</cite>: Period start formatted as &quot;YYYY-MM-dd&quot;
 - <cite>&quot;product&quot;</cite>: Uppercase product name
 - <cite>&quot;band&quot;</cite>: Band name used (from <cite>meta</cite>)
@@ -382,23 +363,19 @@ Additional keys may be used by <cite>_compute</cite>.</p>
 - <cite>&quot;n_images&quot;</cite>: Number of images in the period
 - Statistic keys (e.g., <cite>&quot;mean&quot;</cite>, <cite>&quot;median&quot;</cite>, <cite>&quot;min&quot;</cite>, <cite>&quot;max&quot;</cite>) — values are <cite>null</cite> if no data.</p>
 </dd>
-</dl>
-</section>
-<section id="id3">
-<h3>Raises<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
-<dl class="simple">
-<dt>ValueError</dt><dd><p>If <cite>scale</cite> is missing and <cite>meta[&quot;scale_m&quot;]</cite> is not present or invalid.</p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ee.Feature</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> -- If <cite>scale</cite> is missing and <cite>meta[&quot;scale_m&quot;]</cite> is not present or invalid.</p>
 </dd>
 </dl>
-</section>
-<section id="id4">
-<h3>Notes<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h3>
+<p class="rubric">Notes</p>
 <ul class="simple">
 <li><p>For empty periods (no images), returns a feature with <cite>&quot;n_images&quot;: 0</cite> and all statistics as <cite>null</cite>.</p></li>
 <li><p>Geometry is reprojected to the image’s native CRS before reduction for accuracy.</p></li>
 <li><p>Designed for use in time-series generation (e.g., mapping over date sequences).</p></li>
 </ul>
-</section>
 </dd></dl>
 
 <dl class="py function">
@@ -408,35 +385,26 @@ Additional keys may be used by <cite>_compute</cite>.</p>
 <p>This function retrieves satellite or gridded data for a specified product, aggregates it over regular
 time intervals (daily, weekly, monthly, or yearly), computes spatial statistics,and returns results as
 a pandas DataFrame with standardized columns.</p>
-<section id="id5">
-<h3>Parameters<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h3>
-<dl class="simple">
-<dt>product<span class="classifier">str</span></dt><dd><p>Environmental product to retrieve. Supported values include:
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>product</strong> (<em>str</em>) -- Environmental product to retrieve. Supported values include:
 - &quot;NDVI&quot;, &quot;EVI&quot; (vegetation indices)
 - &quot;LST&quot; (Land Surface Temperature)
-- &quot;CHIRPS&quot; (precipitation)</p>
+- &quot;CHIRPS&quot; (precipitation)</p></li>
+<li><p><strong>start_date</strong> (<em>str</em>) -- Start date of the time series in 'YYYY-MM-DD' format.</p></li>
+<li><p><strong>end_date</strong> (<em>str</em>) -- End date of the time series in 'YYYY-MM-DD' format.</p></li>
+<li><p><strong>frequency</strong> (<em>{&quot;daily&quot;</em><em>, </em><em>&quot;weekly&quot;</em><em>, </em><em>&quot;monthly&quot;</em><em>, </em><em>&quot;yearly&quot;}</em>) -- Temporal aggregation interval.</p></li>
+<li><p><strong>roi_gdf</strong> (<em>geopandas.GeoDataFrame</em>) -- Region of interest as a GeoDataFrame containing Polygon or MultiPolygon geometries.
+Must be provided; cannot be None.</p></li>
+<li><p><strong>satellite</strong> (<em>str</em><em>, </em><em>optional</em>) -- Satellite platform (e.g., &quot;MODIS&quot;, &quot;LANDSAT&quot;, &quot;SENTINEL2&quot;). Required for vegetation and LST products.
+Ignored for grid-based products like CHIRPS.</p></li>
+<li><p><strong>scale</strong> (<em>int</em><em>, </em><em>optional</em>) -- Spatial resolution (in meters) for reduction. If omitted, a product- and sensor-appropriate default
+is used (e.g., 500 m for MODIS LST, 10 m for Sentinel-2).</p></li>
+</ul>
 </dd>
-<dt>start_date<span class="classifier">str</span></dt><dd><p>Start date of the time series in 'YYYY-MM-DD' format.</p>
-</dd>
-<dt>end_date<span class="classifier">str</span></dt><dd><p>End date of the time series in 'YYYY-MM-DD' format.</p>
-</dd>
-<dt>frequency<span class="classifier">{&quot;daily&quot;, &quot;weekly&quot;, &quot;monthly&quot;, &quot;yearly&quot;}</span></dt><dd><p>Temporal aggregation interval.</p>
-</dd>
-<dt>roi_gdf<span class="classifier">geopandas.GeoDataFrame</span></dt><dd><p>Region of interest as a GeoDataFrame containing Polygon or MultiPolygon geometries.
-Must be provided; cannot be None.</p>
-</dd>
-<dt>satellite<span class="classifier">str, optional</span></dt><dd><p>Satellite platform (e.g., &quot;MODIS&quot;, &quot;LANDSAT&quot;, &quot;SENTINEL2&quot;). Required for vegetation and LST products.
-Ignored for grid-based products like CHIRPS.</p>
-</dd>
-<dt>scale<span class="classifier">int, optional</span></dt><dd><p>Spatial resolution (in meters) for reduction. If omitted, a product- and sensor-appropriate default
-is used (e.g., 500 m for MODIS LST, 10 m for Sentinel-2).</p>
-</dd>
-</dl>
-</section>
-<section id="id6">
-<h3>Returns<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h3>
-<dl>
-<dt>pd.DataFrame</dt><dd><p>A DataFrame with one row per time period, containing:
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>A DataFrame with one row per time period, containing:
 - <cite>&quot;date&quot;</cite>: Period start as &quot;YYYY-MM-dd&quot;
 - <cite>&quot;product&quot;</cite>: Uppercase product name
 - <cite>&quot;satellite&quot;</cite>: Satellite name (if applicable)
@@ -445,18 +413,16 @@ is used (e.g., 500 m for MODIS LST, 10 m for Sentinel-2).</p>
 - <cite>&quot;unit&quot;</cite>: Measurement unit (e.g., &quot;NDVI&quot;, &quot;°C&quot;, &quot;mm&quot;)
 - (Optional) <cite>&quot;month&quot;</cite>: Full month name (e.g., &quot;January&quot;) if <cite>frequency=&quot;monthly&quot;</cite></p>
 <p>Rows with all-null statistics are removed based on product-specific logic.</p>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> -- If <cite>roi_gdf</cite> is not provided.</p>
 </dd>
 </dl>
-</section>
-<section id="id7">
-<h3>Raises<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h3>
-<dl class="simple">
-<dt>ValueError</dt><dd><p>If <cite>roi_gdf</cite> is not provided.</p>
-</dd>
-</dl>
-</section>
-<section id="id8">
-<h3>Notes<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h3>
+<p class="rubric">Notes</p>
 <ul class="simple">
 <li><p>For MODIS products, the ROI geometry is reprojected to the native sinusoidal projection
 to ensure accurate spatial reduction.</p></li>
@@ -473,7 +439,6 @@ to ensure accurate spatial reduction.</p></li>
 </li>
 <li><p>Requires an initialized Earth Engine session (<cite>ee.Initialize()</cite>); ensured via <cite>ee_initialized()</cite>.</p></li>
 </ul>
-</section>
 </dd></dl>
 
 <dl class="py function">
@@ -482,28 +447,20 @@ to ensure accurate spatial reduction.</p></li>
 <dd><p>Generate a single composite Earth Engine image by aggregating a time series of environmental data.</p>
 <p>This function retrieves a filtered ImageCollection for the specified product and time range,
 applies a temporal reducer (e.g., mean, median), and optionally clips the result to a region of interest.</p>
-<section id="id9">
-<h3>Parameters<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h3>
-<dl class="simple">
-<dt>product<span class="classifier">str</span></dt><dd><p>Environmental product name (e.g., &quot;NDVI&quot;, &quot;LST&quot;, &quot;CHIRPS&quot;, &quot;EVI&quot;). Case-insensitive; normalized internally.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>product</strong> (<em>str</em>) -- Environmental product name (e.g., &quot;NDVI&quot;, &quot;LST&quot;, &quot;CHIRPS&quot;, &quot;EVI&quot;). Case-insensitive; normalized internally.</p></li>
+<li><p><strong>start_date</strong> (<em>str</em>) -- Start date in 'YYYY-MM-DD' format.</p></li>
+<li><p><strong>end_date</strong> (<em>str</em>) -- End date in 'YYYY-MM-DD' format.</p></li>
+<li><p><strong>satellite</strong> (<em>str</em><em>, </em><em>optional</em>) -- Satellite platform (e.g., &quot;MODIS&quot;, &quot;LANDSAT&quot;, &quot;SENTINEL2&quot;). Required for sensor-based products;
+ignored for gridded datasets like CHIRPS.</p></li>
+<li><p><strong>roi_gdf</strong> (<em>geopandas.GeoDataFrame</em><em>, </em><em>optional</em>) -- Region of interest as a GeoDataFrame. If provided, the output image is clipped to this geometry.</p></li>
+<li><p><strong>reducer</strong> (<em>{&quot;mean&quot;</em><em>, </em><em>&quot;median&quot;</em><em>, </em><em>&quot;min&quot;</em><em>, </em><em>&quot;max&quot;}</em><em>, </em><em>optional</em>) -- Temporal aggregation method applied across the time series (default: &quot;mean&quot;).</p></li>
+</ul>
 </dd>
-<dt>start_date<span class="classifier">str</span></dt><dd><p>Start date in 'YYYY-MM-DD' format.</p>
-</dd>
-<dt>end_date<span class="classifier">str</span></dt><dd><p>End date in 'YYYY-MM-DD' format.</p>
-</dd>
-<dt>satellite<span class="classifier">str, optional</span></dt><dd><p>Satellite platform (e.g., &quot;MODIS&quot;, &quot;LANDSAT&quot;, &quot;SENTINEL2&quot;). Required for sensor-based products;
-ignored for gridded datasets like CHIRPS.</p>
-</dd>
-<dt>roi_gdf<span class="classifier">geopandas.GeoDataFrame, optional</span></dt><dd><p>Region of interest as a GeoDataFrame. If provided, the output image is clipped to this geometry.</p>
-</dd>
-<dt>reducer<span class="classifier">{&quot;mean&quot;, &quot;median&quot;, &quot;min&quot;, &quot;max&quot;}, optional</span></dt><dd><p>Temporal aggregation method applied across the time series (default: &quot;mean&quot;).</p>
-</dd>
-</dl>
-</section>
-<section id="id10">
-<h3>Returns<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h3>
-<dl>
-<dt>ee.Image</dt><dd><p>A single-band (or multi-band) composite image with:
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>A single-band (or multi-band) composite image with:
 - Band name(s) preserved from the source collection (e.g., &quot;NDVI&quot;, &quot;LST_C&quot;)
 - Properties including:</p>
 <blockquote>
@@ -515,11 +472,13 @@ ignored for gridded datasets like CHIRPS.</p>
 <li><p><cite>&quot;unit&quot;</cite>: measurement unit (e.g., &quot;NDVI&quot;, &quot;°C&quot;, &quot;mm&quot;)</p></li>
 </ul>
 </div></blockquote>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ee.Image</p>
 </dd>
 </dl>
-</section>
-<section id="id11">
-<h3>Notes<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h3>
+<p class="rubric">Notes</p>
 <ul class="simple">
 <li><p>Uses internally to handle product-specific compositing logic.</p></li>
 <li><p>For MODIS, the ROI geometry is reprojected to the native projection before clipping (if <cite>roi_gdf</cite> is provided).</p></li>
@@ -527,7 +486,6 @@ ignored for gridded datasets like CHIRPS.</p>
 <li><p>No cloud masking or quality filtering is applied beyond what is defined in <cite>get_satellite_collection</cite>.</p></li>
 <li><p>Requires an initialized Earth Engine session (<cite>ee.Initialize()</cite>); ensured via <cite>ee_initialized()</cite>.</p></li>
 </ul>
-</section>
 </dd></dl>
 
 <dl class="py function">
@@ -537,36 +495,27 @@ ignored for gridded datasets like CHIRPS.</p>
 <p>This function divides the input date range into periods, aggregates imagery
 within each period using a specified reducer, and returns a time-series ImageCollection suitable
 for animation, charting, or further analysis.</p>
-<section id="id12">
-<h3>Parameters<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h3>
-<dl class="simple">
-<dt>product<span class="classifier">str</span></dt><dd><p>Environmental data product. Supported values include:
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>product</strong> (<em>str</em>) -- Environmental data product. Supported values include:
 - Vegetation: &quot;NDVI&quot;, &quot;EVI&quot;
 - Temperature: &quot;LST&quot;
 - Precipitation: &quot;CHIRPS&quot;
-(Case-insensitive; normalized internally.)</p>
+(Case-insensitive; normalized internally.)</p></li>
+<li><p><strong>start_date</strong> (<em>str</em>) -- Start date in 'YYYY-MM-DD' format.</p></li>
+<li><p><strong>end_date</strong> (<em>str</em>) -- End date in 'YYYY-MM-DD' format.</p></li>
+<li><p><strong>frequency</strong> (<em>{&quot;daily&quot;</em><em>, </em><em>&quot;weekly&quot;</em><em>, </em><em>&quot;monthly&quot;</em><em>, </em><em>&quot;yearly&quot;}</em><em>, </em><em>optional</em>) -- Temporal interval for compositing (default: &quot;monthly&quot;).</p></li>
+<li><p><strong>satellite</strong> (<em>str</em><em>, </em><em>optional</em>) -- Satellite platform (e.g., &quot;MODIS&quot;, &quot;LANDSAT&quot;, &quot;SENTINEL2&quot;). Required for sensor-based products;
+ignored for gridded datasets like CHIRPS.</p></li>
+<li><p><strong>roi_gdf</strong> (<em>geopandas.GeoDataFrame</em><em>, </em><em>optional</em>) -- Region of interest as a GeoDataFrame. If provided, the collection is filtered to this region
+and output images are clipped to it.</p></li>
+<li><p><strong>reducer</strong> (<em>{&quot;mean&quot;</em><em>, </em><em>&quot;median&quot;</em><em>, </em><em>&quot;min&quot;</em><em>, </em><em>&quot;max&quot;</em><em>, </em><em>&quot;sum&quot;}</em><em>, </em><em>optional</em>) -- Temporal aggregation method. For &quot;CHIRPS&quot;, &quot;sum&quot; is allowed (for total precipitation);
+other products support only statistical reducers (default: &quot;mean&quot;).</p></li>
+</ul>
 </dd>
-<dt>start_date<span class="classifier">str</span></dt><dd><p>Start date in 'YYYY-MM-DD' format.</p>
-</dd>
-<dt>end_date<span class="classifier">str</span></dt><dd><p>End date in 'YYYY-MM-DD' format.</p>
-</dd>
-<dt>frequency<span class="classifier">{&quot;daily&quot;, &quot;weekly&quot;, &quot;monthly&quot;, &quot;yearly&quot;}, optional</span></dt><dd><p>Temporal interval for compositing (default: &quot;monthly&quot;).</p>
-</dd>
-<dt>satellite<span class="classifier">str, optional</span></dt><dd><p>Satellite platform (e.g., &quot;MODIS&quot;, &quot;LANDSAT&quot;, &quot;SENTINEL2&quot;). Required for sensor-based products;
-ignored for gridded datasets like CHIRPS.</p>
-</dd>
-<dt>roi_gdf<span class="classifier">geopandas.GeoDataFrame, optional</span></dt><dd><p>Region of interest as a GeoDataFrame. If provided, the collection is filtered to this region
-and output images are clipped to it.</p>
-</dd>
-<dt>reducer<span class="classifier">{&quot;mean&quot;, &quot;median&quot;, &quot;min&quot;, &quot;max&quot;, &quot;sum&quot;}, optional</span></dt><dd><p>Temporal aggregation method. For &quot;CHIRPS&quot;, &quot;sum&quot; is allowed (for total precipitation);
-other products support only statistical reducers (default: &quot;mean&quot;).</p>
-</dd>
-</dl>
-</section>
-<section id="id13">
-<h3>Returns<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h3>
-<dl>
-<dt>ee.ImageCollection</dt><dd><p>An ImageCollection where each image:
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>An ImageCollection where each image:
 - Represents one time period (e.g., January 2023)
 - Contains band(s) named per the source product
 - Has properties:</p>
@@ -580,18 +529,16 @@ other products support only statistical reducers (default: &quot;mean&quot;).</p
 <ul class="simple">
 <li><p>(For monthly frequency) Includes a <cite>&quot;month&quot;</cite> property with full month name (e.g., &quot;January&quot;)</p></li>
 </ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ee.ImageCollection</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> -- If an unsupported reducer is specified for the given product (e.g., &quot;sum&quot; for NDVI).</p>
 </dd>
 </dl>
-</section>
-<section id="id14">
-<h3>Raises<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h3>
-<dl class="simple">
-<dt>ValueError</dt><dd><p>If an unsupported reducer is specified for the given product (e.g., &quot;sum&quot; for NDVI).</p>
-</dd>
-</dl>
-</section>
-<section id="id15">
-<h3>Notes<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h3>
+<p class="rubric">Notes</p>
 <ul class="simple">
 <li><p>For MODIS vegetation products, the ROI geometry is reprojected to the native sinusoidal projection
 before filtering and clipping to ensure spatial accuracy.</p></li>
@@ -601,7 +548,6 @@ before filtering and clipping to ensure spatial accuracy.</p></li>
 pixel-wise statistics (mean, median, etc.).</p></li>
 <li><p>Requires an initialized Earth Engine session (<cite>ee.Initialize()</cite>); ensured via <cite>ee_initialized()</cite>.</p></li>
 </ul>
-</section>
 </dd></dl>
 
 <dl class="py function">
@@ -613,31 +559,38 @@ at a specified spatial resolution. Each sampled pixel is converted to a point ge
 with its corresponding band values stored as attributes. The resulting data is
 downloaded synchronously and formatted as a <code class="docutils literal notranslate"><span class="pre">geopandas.GeoDataFrame</span></code> with
 WGS84 (EPSG:4326) projection.</p>
-<dl>
-<dt>Args:</dt><dd><dl class="simple">
-<dt>image (ee.Image): The input Earth Engine image to sample. Must be a valid,</dt><dd><p>initialized Earth Engine image object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>image</strong> (<em>ee.Image</em>) -- The input Earth Engine image to sample. Must be a valid,
+initialized Earth Engine image object.</p></li>
+<li><p><strong>scale</strong> (<em>int</em><em>, </em><em>optional</em>) -- The nominal scale in meters at which to sample the image.
+Defaults to <code class="docutils literal notranslate"><span class="pre">30</span></code>. Should closely match the native resolution of the target
+bands for accurate value extraction.</p></li>
+<li><p><strong>num_pixels</strong> (<em>int</em><em>, </em><em>optional</em>) -- The maximum number of pixels to sample. Defaults to
+<code class="docutils literal notranslate"><span class="pre">5000</span></code>. Earth Engine will return up to this number (or fewer if the image
+contains fewer valid/unmasked pixels).</p></li>
+</ul>
 </dd>
-<dt>scale (int, optional): The nominal scale in meters at which to sample the image.</dt><dd><p>Defaults to <code class="docutils literal notranslate"><span class="pre">30</span></code>. Should closely match the native resolution of the target
-bands for accurate value extraction.</p>
-</dd>
-<dt>num_pixels (int, optional): The maximum number of pixels to sample. Defaults to</dt><dd><p><code class="docutils literal notranslate"><span class="pre">5000</span></code>. Earth Engine will return up to this number (or fewer if the image
-contains fewer valid/unmasked pixels).</p>
-</dd>
-</dl>
-</dd>
-<dt>Returns:</dt><dd><dl class="simple">
-<dt>gpd.GeoDataFrame: A GeoDataFrame where each row represents a sampled pixel.</dt><dd><p>Columns include the point geometry (named <code class="docutils literal notranslate"><span class="pre">geometry</span></code>) and one column per
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A GeoDataFrame where each row represents a sampled pixel.</dt><dd><p>Columns include the point geometry (named <code class="docutils literal notranslate"><span class="pre">geometry</span></code>) and one column per
 image band containing the sampled values. The coordinate reference system
 (CRS) is explicitly set to <code class="docutils literal notranslate"><span class="pre">EPSG:4326</span></code>.</p>
 </dd>
 </dl>
+</p>
 </dd>
-<dt>Raises:</dt><dd><dl class="simple">
-<dt>ee.EEException: If the image is invalid, the scale is unsupported, Earth Engine</dt><dd><p>computation times out, or the response payload exceeds the <code class="docutils literal notranslate"><span class="pre">getInfo()</span></code> limit.</p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>gpd.GeoDataFrame</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ee.EEException</strong> -- If the image is invalid, the scale is unsupported, Earth Engine
+computation times out, or the response payload exceeds the <code class="docutils literal notranslate"><span class="pre">getInfo()</span></code> limit.</p>
 </dd>
 </dl>
-</dd>
-<dt>Example:</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">ee</span>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">ee</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">geopandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gpd</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">ee</span><span class="o">.</span><span class="n">Initialize</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">img</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="s1">&#39;COPERNICUS/S2_SR/20230615T123456&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;B4&#39;</span><span class="p">,</span> <span class="s1">&#39;B8&#39;</span><span class="p">])</span>
@@ -646,8 +599,6 @@ image band containing the sampled values. The coordinate reference system
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">gdf</span><span class="o">.</span><span class="n">crs</span><span class="p">)</span>  <span class="c1"># EPSG:4326</span>
 </pre></div>
 </div>
-</dd>
-</dl>
 </dd></dl>
 
 </section>
@@ -729,7 +680,7 @@ image band containing the sampled values. The coordinate reference system
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=116d2e10"></script>
+</div><script src="../../../../_static/documentation_options.js?v=08eb7b35"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

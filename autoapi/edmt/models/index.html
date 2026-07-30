@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../../genindex.html"><link rel="search" title="Search" href="../../../search.html"><link rel="next" title="edmt.models.drones" href="drones/index.html"><link rel="prev" title="edmt.mapping.carto" href="../mapping/carto/index.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>edmt.models - EDMT 1.0.7 documentation</title>
+        <title>edmt.models - EDMT 1.0.8 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
@@ -162,7 +162,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">EDMT 1.0.7 documentation</div></a>
+      <a href="../../../index.html"><div class="brand">EDMT 1.0.8 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -183,7 +183,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../../../index.html">
   
-  <span class="sidebar-brand-text">EDMT 1.0.7 documentation</span>
+  <span class="sidebar-brand-text">EDMT 1.0.8 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -199,7 +199,6 @@
 <ul class="current">
 <li class="toctree-l1 current has-children"><a class="reference internal" href="../../index.html">API Reference</a><input aria-label="Toggle navigation of API Reference" checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
 <li class="toctree-l2 current has-children"><a class="reference internal" href="../index.html">edmt</a><input aria-label="Toggle navigation of edmt" checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="../_edmt/index.html">edmt._edmt</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../analysis/index.html">edmt.analysis</a></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../base/index.html">edmt.base</a><input aria-label="Toggle navigation of edmt.base" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="../base/base/index.html">edmt.base.base</a></li>
@@ -285,6 +284,217 @@
 </ul>
 </div>
 </section>
+<section id="package-contents">
+<h2>Package Contents<a class="headerlink" href="#package-contents" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="edmt.models.Airdata">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edmt.models.</span></span><span class="sig-name descname"><span class="pre">Airdata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">api_key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_auth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edmt.models.Airdata" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../base/base/index.html#edmt.base.base.AirdataBaseClass" title="edmt.base.base.AirdataBaseClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">edmt.base.base.AirdataBaseClass</span></code></a></p>
+<p>Client for interacting with the Airdata API.
+Handles authentication and provides methods to fetch various data types
+such as flights,flight groups, drones, batteries, and pilots.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="edmt.models.Airdata.AccessGroups">
+<span class="sig-name descname"><span class="pre">AccessGroups</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">endpoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#edmt.models.Airdata.AccessGroups" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edmt.models.Airdata.AccessItems">
+<span class="sig-name descname"><span class="pre">AccessItems</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">endpoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#edmt.models.Airdata.AccessItems" title="Link to this definition">¶</a></dt>
+<dd><p>Sends a GET request to the specified API endpoint and returns normalized data as a DataFrame.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>endpoint</strong> (<em>str</em>) -- The full API path including query parameters.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A DataFrame containing the retrieved data, or None if the request fails.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[pd.DataFrame]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edmt.models.Airdata.get_drones">
+<span class="sig-name descname"><span class="pre">get_drones</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#edmt.models.Airdata.get_drones" title="Link to this definition">¶</a></dt>
+<dd><p>Fetch drone data from the Airdata API based on the provided query parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>A DataFrame containing the retrieved flight data.</dt><dd><p>If the request fails or no data is found, returns an empty DataFrame.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edmt.models.Airdata.get_batteries">
+<span class="sig-name descname"><span class="pre">get_batteries</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#edmt.models.Airdata.get_batteries" title="Link to this definition">¶</a></dt>
+<dd><p>Fetch batteries data from the Airdata API based on the provided query parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>A DataFrame containing the retrieved flight data.</dt><dd><p>If the request fails or no data is found, returns an empty DataFrame.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edmt.models.Airdata.get_pilots">
+<span class="sig-name descname"><span class="pre">get_pilots</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#edmt.models.Airdata.get_pilots" title="Link to this definition">¶</a></dt>
+<dd><p>Fetch pilots data from the Airdata API based on the provided query parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>A DataFrame containing the retrieved flight data.</dt><dd><p>If the request fails or no data is found, returns an empty DataFrame.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edmt.models.Airdata.get_flightgroups">
+<span class="sig-name descname"><span class="pre">get_flightgroups</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sort_by</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ascending</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#edmt.models.Airdata.get_flightgroups" title="Link to this definition">¶</a></dt>
+<dd><p>Fetch Flight Groups data from the Airdata API based on query parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sort_by</strong> (<em>str</em><em>, </em><em>optional</em>) -- Field to sort by. Valid values are 'title' and 'created'.
+If None, no sorting is applied.</p></li>
+<li><p><strong>ascending</strong> (<em>bool</em>) -- Whether to sort in ascending order. Defaults to True.</p></li>
+<li><p><strong>id</strong> (<em>str</em><em>, </em><em>optional</em>) -- Specific ID of a flight group to fetch.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>DataFrame containing retrieved flight data.</dt><dd><p>Returns empty DataFrame if request fails or no data found.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edmt.models.Airdata.get_flights">
+<span class="sig-name descname"><span class="pre">get_flights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">since</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">until</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">created_after</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">battery_ids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pilot_ids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">organizations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">location</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_pages</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">15</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#edmt.models.Airdata.get_flights" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieve paginated flight records from the Airdata API.</p>
+<p>Fetches flight data by automatically handling offset-based pagination across
+multiple API requests. Continues until no more results are returned or the
+maximum page limit is reached.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>since</strong> (<em>str</em><em>, </em><em>optional</em>) -- Filter flights that started on or after this ISO 8601 timestamp</p></li>
+<li><p><strong>until</strong> (<em>str</em><em>, </em><em>optional</em>) -- Filter flights that started before this ISO 8601 timestamp.</p></li>
+<li><p><strong>created_after</strong> (<em>str</em><em>, </em><em>optional</em>) -- Include only flights created after this ISO 8601 timestamp.</p></li>
+<li><p><strong>battery_ids</strong> (<em>str</em><em> or </em><em>list</em><em>, </em><em>optional</em>) -- Filter by specific battery ID(s). Accepts either a comma-separated
+string or a list of strings</p></li>
+<li><p><strong>pilot_ids</strong> (<em>str</em><em> or </em><em>list</em><em>, </em><em>optional</em>) -- Filter by specific pilot ID(s).</p></li>
+<li><p><strong>organizations</strong> (<em>str</em><em> or </em><em>list</em><em>, </em><em>optional</em>) -- Filter flights by participant organization(s). Accepts either a
+single organization name or a list of organization names. Only
+flights with at least one participant belonging to one of the
+specified organizations are returned.</p></li>
+<li><p><strong>location</strong> (<em>list</em><em>, </em><em>optional</em>) -- Geographic center point for radius-based search as
+<code class="docutils literal notranslate"><span class="pre">[latitude,</span> <span class="pre">longitude]</span></code>.</p></li>
+<li><p><strong>limit</strong> (<em>int</em><em>, </em><em>optional</em>) -- Number of records per page. Must be ≤ 100. Defaults to 100.</p></li>
+<li><p><strong>max_pages</strong> (<em>int</em><em>, </em><em>optional</em>) -- Maximum number of pages to retrieve. Prevents excessive API usage.
+Defaults to 100.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>A DataFrame containing all retrieved flight records with standardized
+columns. Returns an empty DataFrame if:</p>
+<ul class="simple">
+<li><p>No flights match the query parameters</p></li>
+<li><p>API returns an error</p></li>
+<li><p>Authentication fails</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> -- If <code class="docutils literal notranslate"><span class="pre">location</span></code> is provided but doesn't contain exactly two numeric
+elements (latitude and longitude).</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.models.get_flight_routes">
+<span class="sig-prename descclassname"><span class="pre">edmt.models.</span></span><span class="sig-name descname"><span class="pre">get_flight_routes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_ids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_workers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lon_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'longitude'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lat_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'latitude'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'time(millisecond)'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">crs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'EPSG:4326'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">geopandas.GeoDataFrame</span></span></span><a class="headerlink" href="#edmt.models.get_flight_routes" title="Link to this definition">¶</a></dt>
+<dd><p>Extract flight routes from a DataFrame containing flight metadata and CSV URLs.</p>
+<p>This function processes each flight record in the input DataFrame, retrieves
+the associated CSV file containing flight data, and computes the flight route
+as a LineString geometry. It supports filtering by specific flight IDs and
+parallel processing for efficiency.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>pd.DataFrame</em>) -- DataFrame containing flight metadata, including a column
+named 'csvLink' with URLs to CSV files.</p></li>
+<li><p><strong>filter_ids</strong> (<em>list</em><em>, </em><em>optional</em>) -- List of flight IDs to process. If provided,
+only flights with IDs in this list will be processed.</p></li>
+<li><p><strong>max_workers</strong> (<em>int</em><em>, </em><em>optional</em>) -- Number of parallel download threads.</p></li>
+<li><p><strong>lon_col</strong> (<em>str</em><em>, </em><em>optional</em>) -- Column name for longitude.</p></li>
+<li><p><strong>lat_col</strong> (<em>str</em><em>, </em><em>optional</em>) -- Column name for latitude.</p></li>
+<li><p><strong>time_col</strong> (<em>str</em><em>, </em><em>optional</em>) -- Column name for timestamp.</p></li>
+<li><p><strong>crs</strong> (<em>str</em><em>, </em><em>optional</em>) -- Coordinate Reference System for the output GeoDataFrame.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A GeoDataFrame with one row per flight, containing the</dt><dd><p>flight metadata and a LineString geometry representing the flight route.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>gpd.GeoDataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.models.airPoint">
+<span class="sig-prename descclassname"><span class="pre">edmt.models.</span></span><span class="sig-name descname"><span class="pre">airPoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edmt.models.airPoint" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.models.airLine">
+<span class="sig-prename descclassname"><span class="pre">edmt.models.</span></span><span class="sig-name descname"><span class="pre">airLine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edmt.models.airLine" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.models.airSegment">
+<span class="sig-prename descclassname"><span class="pre">edmt.models.</span></span><span class="sig-name descname"><span class="pre">airSegment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edmt.models.airSegment" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
 </section>
 
         </article>
@@ -344,6 +554,23 @@
             <ul>
 <li><a class="reference internal" href="#">edmt.models</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#package-contents">Package Contents</a><ul>
+<li><a class="reference internal" href="#edmt.models.Airdata"><code class="docutils literal notranslate"><span class="pre">Airdata</span></code></a><ul>
+<li><a class="reference internal" href="#edmt.models.Airdata.AccessGroups"><code class="docutils literal notranslate"><span class="pre">Airdata.AccessGroups()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.models.Airdata.AccessItems"><code class="docutils literal notranslate"><span class="pre">Airdata.AccessItems()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.models.Airdata.get_drones"><code class="docutils literal notranslate"><span class="pre">Airdata.get_drones()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.models.Airdata.get_batteries"><code class="docutils literal notranslate"><span class="pre">Airdata.get_batteries()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.models.Airdata.get_pilots"><code class="docutils literal notranslate"><span class="pre">Airdata.get_pilots()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.models.Airdata.get_flightgroups"><code class="docutils literal notranslate"><span class="pre">Airdata.get_flightgroups()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.models.Airdata.get_flights"><code class="docutils literal notranslate"><span class="pre">Airdata.get_flights()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#edmt.models.get_flight_routes"><code class="docutils literal notranslate"><span class="pre">get_flight_routes()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.models.airPoint"><code class="docutils literal notranslate"><span class="pre">airPoint()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.models.airLine"><code class="docutils literal notranslate"><span class="pre">airLine()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.models.airSegment"><code class="docutils literal notranslate"><span class="pre">airSegment()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -355,7 +582,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=116d2e10"></script>
+</div><script src="../../../_static/documentation_options.js?v=08eb7b35"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

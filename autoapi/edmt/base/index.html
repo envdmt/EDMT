@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../../genindex.html"><link rel="search" title="Search" href="../../../search.html"><link rel="next" title="edmt.base.base" href="base/index.html"><link rel="prev" title="edmt.analysis" href="../analysis/index.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>edmt.base - EDMT 1.0.7 documentation</title>
+        <title>edmt.base - EDMT 1.0.8 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
@@ -162,7 +162,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">EDMT 1.0.7 documentation</div></a>
+      <a href="../../../index.html"><div class="brand">EDMT 1.0.8 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -183,7 +183,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../../../index.html">
   
-  <span class="sidebar-brand-text">EDMT 1.0.7 documentation</span>
+  <span class="sidebar-brand-text">EDMT 1.0.8 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -199,7 +199,6 @@
 <ul class="current">
 <li class="toctree-l1 current has-children"><a class="reference internal" href="../../index.html">API Reference</a><input aria-label="Toggle navigation of API Reference" checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
 <li class="toctree-l2 current has-children"><a class="reference internal" href="../index.html">edmt</a><input aria-label="Toggle navigation of edmt" checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="../_edmt/index.html">edmt._edmt</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../analysis/index.html">edmt.analysis</a></li>
 <li class="toctree-l3 current has-children current-page"><a class="current reference internal" href="#">edmt.base</a><input aria-label="Toggle navigation of edmt.base" checked="" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="base/index.html">edmt.base.base</a></li>
@@ -285,6 +284,75 @@
 </ul>
 </div>
 </section>
+<section id="package-contents">
+<h2>Package Contents<a class="headerlink" href="#package-contents" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="edmt.base.AirdataBaseClass">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">edmt.base.</span></span><span class="sig-name descname"><span class="pre">AirdataBaseClass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">api_key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_auth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edmt.base.AirdataBaseClass" title="Link to this definition">¶</a></dt>
+<dd><dl class="py attribute">
+<dt class="sig sig-object py" id="edmt.base.AirdataBaseClass.api_key">
+<span class="sig-name descname"><span class="pre">api_key</span></span><a class="headerlink" href="#edmt.base.AirdataBaseClass.api_key" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edmt.base.AirdataBaseClass.base_url">
+<span class="sig-name descname"><span class="pre">base_url</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'api.airdata.com'</span></span><a class="headerlink" href="#edmt.base.AirdataBaseClass.base_url" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edmt.base.AirdataBaseClass.authenticated">
+<span class="sig-name descname"><span class="pre">authenticated</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#edmt.base.AirdataBaseClass.authenticated" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="edmt.base.AirdataBaseClass.auth_header">
+<span class="sig-name descname"><span class="pre">auth_header</span></span><a class="headerlink" href="#edmt.base.AirdataBaseClass.auth_header" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="edmt.base.AirdataBaseClass.authenticate">
+<span class="sig-name descname"><span class="pre">authenticate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">validate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edmt.base.AirdataBaseClass.authenticate" title="Link to this definition">¶</a></dt>
+<dd><p>Authenticates with the API by calling /version or /flights.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.base.ExtractCSV">
+<span class="sig-prename descclassname"><span class="pre">edmt.base.</span></span><span class="sig-name descname"><span class="pre">ExtractCSV</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">row</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">pandas.Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_retries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">15</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#edmt.base.ExtractCSV" title="Link to this definition">¶</a></dt>
+<dd><p>Fetches a CSV file from a URL specified in a given column of a metadata record.</p>
+<p>This function retrieves a CSV file from the URL found in the specified column (<cite>col</cite>)
+of the input <cite>row</cite>, parses it into a pandas DataFrame, and returns the result.
+It includes retry logic with exponential backoff to handle transient network errors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>row</strong> (<em>dict</em><em> or </em><em>pandas.Series</em>) -- A metadata record containing a URL string in the
+column specified by <cite>col</cite>.</p></li>
+<li><p><strong>col</strong> (<em>str</em>) -- The key or column name in <cite>row</cite> that contains the URL to the CSV file.</p></li>
+<li><p><strong>max_retries</strong> (<em>int</em><em>, </em><em>optional</em>) -- Maximum number of retry attempts in case of failure.
+Defaults to 3.</p></li>
+<li><p><strong>timeout</strong> (<em>int</em><em> or </em><em>float</em><em>, </em><em>optional</em>) -- Timeout for each HTTP request in seconds.
+Defaults to 15 seconds.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>A pandas DataFrame containing the parsed CSV data if successful.</p></li>
+<li><p><cite>None</cite> if the URL is missing, invalid, or if all retry attempts fail.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas.DataFrame or None</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>None</strong> -- </p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
 </section>
 
         </article>
@@ -344,6 +412,18 @@
             <ul>
 <li><a class="reference internal" href="#">edmt.base</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#package-contents">Package Contents</a><ul>
+<li><a class="reference internal" href="#edmt.base.AirdataBaseClass"><code class="docutils literal notranslate"><span class="pre">AirdataBaseClass</span></code></a><ul>
+<li><a class="reference internal" href="#edmt.base.AirdataBaseClass.api_key"><code class="docutils literal notranslate"><span class="pre">AirdataBaseClass.api_key</span></code></a></li>
+<li><a class="reference internal" href="#edmt.base.AirdataBaseClass.base_url"><code class="docutils literal notranslate"><span class="pre">AirdataBaseClass.base_url</span></code></a></li>
+<li><a class="reference internal" href="#edmt.base.AirdataBaseClass.authenticated"><code class="docutils literal notranslate"><span class="pre">AirdataBaseClass.authenticated</span></code></a></li>
+<li><a class="reference internal" href="#edmt.base.AirdataBaseClass.auth_header"><code class="docutils literal notranslate"><span class="pre">AirdataBaseClass.auth_header</span></code></a></li>
+<li><a class="reference internal" href="#edmt.base.AirdataBaseClass.authenticate"><code class="docutils literal notranslate"><span class="pre">AirdataBaseClass.authenticate()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#edmt.base.ExtractCSV"><code class="docutils literal notranslate"><span class="pre">ExtractCSV()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -355,7 +435,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=116d2e10"></script>
+</div><script src="../../../_static/documentation_options.js?v=08eb7b35"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

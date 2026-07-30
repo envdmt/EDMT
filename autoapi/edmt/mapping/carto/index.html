@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../../../genindex.html"><link rel="search" title="Search" href="../../../../search.html"><link rel="next" title="edmt.models" href="../../models/index.html"><link rel="prev" title="edmt.mapping" href="../index.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>edmt.mapping.carto - EDMT 1.0.7 documentation</title>
+        <title>edmt.mapping.carto - EDMT 1.0.8 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
@@ -162,7 +162,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">EDMT 1.0.7 documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">EDMT 1.0.8 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -183,7 +183,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../../../../index.html">
   
-  <span class="sidebar-brand-text">EDMT 1.0.7 documentation</span>
+  <span class="sidebar-brand-text">EDMT 1.0.8 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -199,7 +199,6 @@
 <ul class="current">
 <li class="toctree-l1 current has-children"><a class="reference internal" href="../../../index.html">API Reference</a><input aria-label="Toggle navigation of API Reference" checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
 <li class="toctree-l2 current has-children"><a class="reference internal" href="../../index.html">edmt</a><input aria-label="Toggle navigation of edmt" checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="../../_edmt/index.html">edmt._edmt</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../analysis/index.html">edmt.analysis</a></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../base/index.html">edmt.base</a><input aria-label="Toggle navigation of edmt.base" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../base/base/index.html">edmt.base.base</a></li>
@@ -280,41 +279,28 @@
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">¶</a></h2>
 <dl class="py function">
-<dt class="sig sig-object py" id="edmt.mapping.carto._load_font">
-<span class="sig-prename descclassname"><span class="pre">edmt.mapping.carto.</span></span><span class="sig-name descname"><span class="pre">_load_font</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#edmt.mapping.carto._load_font" title="Link to this definition">¶</a></dt>
-<dd><p>Safely load a TrueType font with a fallback.</p>
-</dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="edmt.mapping.carto.make_qr">
 <span class="sig-prename descclassname"><span class="pre">edmt.mapping.carto.</span></span><span class="sig-name descname"><span class="pre">make_qr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">short_url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">180</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">foreground</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'#1B3A2D'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">background</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'white'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">muted</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'#555555'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">PIL.Image.Image</span></span></span><a class="headerlink" href="#edmt.mapping.carto.make_qr" title="Link to this definition">¶</a></dt>
 <dd><p>Generate a QR code image with a label and optional short URL.</p>
-<section id="parameters">
-<h3>Parameters<a class="headerlink" href="#parameters" title="Link to this heading">¶</a></h3>
-<dl class="simple">
-<dt>url<span class="classifier">str</span></dt><dd><p>URL to encode in the QR code.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>url</strong> (<em>str</em>) -- URL to encode in the QR code.</p></li>
+<li><p><strong>label</strong> (<em>str</em>) -- Title displayed below the QR code.</p></li>
+<li><p><strong>short_url</strong> (<em>str</em><em>, </em><em>optional</em>) -- Shortened URL displayed below the label.</p></li>
+<li><p><strong>size</strong> (<em>int</em><em>, </em><em>default=180</em>) -- Width and height of the QR code in pixels.</p></li>
+<li><p><strong>foreground</strong> (<em>str</em><em>, </em><em>default='#1B3A2D'</em>) -- QR code and label color.</p></li>
+<li><p><strong>background</strong> (<em>str</em><em>, </em><em>default='white'</em>) -- Background color.</p></li>
+<li><p><strong>muted</strong> (<em>str</em><em>, </em><em>default='#555555'</em>) -- Color of the short URL text.</p></li>
+</ul>
 </dd>
-<dt>label<span class="classifier">str</span></dt><dd><p>Title displayed below the QR code.</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>QR code image with annotations.</p>
 </dd>
-<dt>short_url<span class="classifier">str, optional</span></dt><dd><p>Shortened URL displayed below the label.</p>
-</dd>
-<dt>size<span class="classifier">int, default=180</span></dt><dd><p>Width and height of the QR code in pixels.</p>
-</dd>
-<dt>foreground<span class="classifier">str, default='#1B3A2D'</span></dt><dd><p>QR code and label color.</p>
-</dd>
-<dt>background<span class="classifier">str, default='white'</span></dt><dd><p>Background color.</p>
-</dd>
-<dt>muted<span class="classifier">str, default='#555555'</span></dt><dd><p>Color of the short URL text.</p>
-</dd>
-</dl>
-</section>
-<section id="returns">
-<h3>Returns<a class="headerlink" href="#returns" title="Link to this heading">¶</a></h3>
-<dl class="simple">
-<dt>PIL.Image.Image</dt><dd><p>QR code image with annotations.</p>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>PIL.Image.Image</p>
 </dd>
 </dl>
-</section>
 </dd></dl>
 
 </section>
@@ -377,7 +363,6 @@
             <ul>
 <li><a class="reference internal" href="#">edmt.mapping.carto</a><ul>
 <li><a class="reference internal" href="#module-contents">Module Contents</a><ul>
-<li><a class="reference internal" href="#edmt.mapping.carto._load_font"><code class="docutils literal notranslate"><span class="pre">_load_font()</span></code></a></li>
 <li><a class="reference internal" href="#edmt.mapping.carto.make_qr"><code class="docutils literal notranslate"><span class="pre">make_qr()</span></code></a></li>
 </ul>
 </li>
@@ -392,7 +377,7 @@
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=116d2e10"></script>
+</div><script src="../../../../_static/documentation_options.js?v=08eb7b35"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

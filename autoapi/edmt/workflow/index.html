@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../../genindex.html"><link rel="search" title="Search" href="../../../search.html"><link rel="next" title="edmt.workflow.analysis" href="analysis/index.html"><link rel="prev" title="edmt.plotting" href="../plotting/index.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>edmt.workflow - EDMT 1.0.7 documentation</title>
+        <title>edmt.workflow - EDMT 1.0.8 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
@@ -162,7 +162,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">EDMT 1.0.7 documentation</div></a>
+      <a href="../../../index.html"><div class="brand">EDMT 1.0.8 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -183,7 +183,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../../../index.html">
   
-  <span class="sidebar-brand-text">EDMT 1.0.7 documentation</span>
+  <span class="sidebar-brand-text">EDMT 1.0.8 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -199,7 +199,6 @@
 <ul class="current">
 <li class="toctree-l1 current has-children"><a class="reference internal" href="../../index.html">API Reference</a><input aria-label="Toggle navigation of API Reference" checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
 <li class="toctree-l2 current has-children"><a class="reference internal" href="../index.html">edmt</a><input aria-label="Toggle navigation of edmt" checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="../_edmt/index.html">edmt._edmt</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../analysis/index.html">edmt.analysis</a></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../base/index.html">edmt.base</a><input aria-label="Toggle navigation of edmt.base" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="../base/base/index.html">edmt.base.base</a></li>
@@ -288,6 +287,334 @@
 </ul>
 </div>
 </section>
+<section id="package-contents">
+<h2>Package Contents<a class="headerlink" href="#package-contents" title="Link to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.workflow.gdf_to_ee_geometry">
+<span class="sig-prename descclassname"><span class="pre">edmt.workflow.</span></span><span class="sig-name descname"><span class="pre">gdf_to_ee_geometry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ee.Geometry</span></span></span><a class="headerlink" href="#edmt.workflow.gdf_to_ee_geometry" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.workflow.ee_to_points">
+<span class="sig-prename descclassname"><span class="pre">edmt.workflow.</span></span><span class="sig-name descname"><span class="pre">ee_to_points</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ee.Image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_pixels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5000</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">geopandas.GeoDataFrame</span></span></span><a class="headerlink" href="#edmt.workflow.ee_to_points" title="Link to this definition">¶</a></dt>
+<dd><p>Sample pixel values from an Earth Engine image and return them as a GeoDataFrame.</p>
+<p>This function extracts a uniform random subset of pixels from the input <code class="docutils literal notranslate"><span class="pre">ee.Image</span></code>
+at a specified spatial resolution. Each sampled pixel is converted to a point geometry
+with its corresponding band values stored as attributes. The resulting data is
+downloaded synchronously and formatted as a <code class="docutils literal notranslate"><span class="pre">geopandas.GeoDataFrame</span></code> with
+WGS84 (EPSG:4326) projection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>image</strong> (<em>ee.Image</em>) -- The input Earth Engine image to sample. Must be a valid,
+initialized Earth Engine image object.</p></li>
+<li><p><strong>scale</strong> (<em>int</em><em>, </em><em>optional</em>) -- The nominal scale in meters at which to sample the image.
+Defaults to <code class="docutils literal notranslate"><span class="pre">30</span></code>. Should closely match the native resolution of the target
+bands for accurate value extraction.</p></li>
+<li><p><strong>num_pixels</strong> (<em>int</em><em>, </em><em>optional</em>) -- The maximum number of pixels to sample. Defaults to
+<code class="docutils literal notranslate"><span class="pre">5000</span></code>. Earth Engine will return up to this number (or fewer if the image
+contains fewer valid/unmasked pixels).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A GeoDataFrame where each row represents a sampled pixel.</dt><dd><p>Columns include the point geometry (named <code class="docutils literal notranslate"><span class="pre">geometry</span></code>) and one column per
+image band containing the sampled values. The coordinate reference system
+(CRS) is explicitly set to <code class="docutils literal notranslate"><span class="pre">EPSG:4326</span></code>.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>gpd.GeoDataFrame</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ee.EEException</strong> -- If the image is invalid, the scale is unsupported, Earth Engine
+computation times out, or the response payload exceeds the <code class="docutils literal notranslate"><span class="pre">getInfo()</span></code> limit.</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">ee</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">geopandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gpd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ee</span><span class="o">.</span><span class="n">Initialize</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">img</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="s1">&#39;COPERNICUS/S2_SR/20230615T123456&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="s1">&#39;B4&#39;</span><span class="p">,</span> <span class="s1">&#39;B8&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gdf</span> <span class="o">=</span> <span class="n">ee_to_points</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">num_pixels</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">gdf</span><span class="o">.</span><span class="n">head</span><span class="p">())</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">gdf</span><span class="o">.</span><span class="n">crs</span><span class="p">)</span>  <span class="c1"># EPSG:4326</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.workflow.compute_evi_timeseries">
+<span class="sig-prename descclassname"><span class="pre">edmt.workflow.</span></span><span class="sig-name descname"><span class="pre">compute_evi_timeseries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">satellite</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Sentinel2'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequency</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'monthly'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roi_gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#edmt.workflow.compute_evi_timeseries" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.workflow.compute_lst_timeseries">
+<span class="sig-prename descclassname"><span class="pre">edmt.workflow.</span></span><span class="sig-name descname"><span class="pre">compute_lst_timeseries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">satellite</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'MODIS'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequency</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'monthly'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roi_gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#edmt.workflow.compute_lst_timeseries" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.workflow.compute_ndvi_timeseries">
+<span class="sig-prename descclassname"><span class="pre">edmt.workflow.</span></span><span class="sig-name descname"><span class="pre">compute_ndvi_timeseries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">satellite</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'LANDSAT8'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequency</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'monthly'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roi_gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#edmt.workflow.compute_ndvi_timeseries" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.workflow.compute_chirps_timeseries">
+<span class="sig-prename descclassname"><span class="pre">edmt.workflow.</span></span><span class="sig-name descname"><span class="pre">compute_chirps_timeseries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequency</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'monthly'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roi_gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#edmt.workflow.compute_chirps_timeseries" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.workflow.get_lst_image">
+<span class="sig-prename descclassname"><span class="pre">edmt.workflow.</span></span><span class="sig-name descname"><span class="pre">get_lst_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">satellite</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roi_gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reducer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builder/index.html#edmt.workflow.builder.ReducerName" title="edmt.workflow.builder.ReducerName"><span class="pre">edmt.workflow.builder.ReducerName</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mean'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ee.Image</span></span></span><a class="headerlink" href="#edmt.workflow.get_lst_image" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.workflow.get_ndvi_image">
+<span class="sig-prename descclassname"><span class="pre">edmt.workflow.</span></span><span class="sig-name descname"><span class="pre">get_ndvi_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">satellite</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roi_gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reducer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builder/index.html#edmt.workflow.builder.ReducerName" title="edmt.workflow.builder.ReducerName"><span class="pre">edmt.workflow.builder.ReducerName</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mean'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ee.Image</span></span></span><a class="headerlink" href="#edmt.workflow.get_ndvi_image" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.workflow.get_evi_image">
+<span class="sig-prename descclassname"><span class="pre">edmt.workflow.</span></span><span class="sig-name descname"><span class="pre">get_evi_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">satellite</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roi_gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reducer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builder/index.html#edmt.workflow.builder.ReducerName" title="edmt.workflow.builder.ReducerName"><span class="pre">edmt.workflow.builder.ReducerName</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mean'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ee.Image</span></span></span><a class="headerlink" href="#edmt.workflow.get_evi_image" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.workflow.get_chirps_image">
+<span class="sig-prename descclassname"><span class="pre">edmt.workflow.</span></span><span class="sig-name descname"><span class="pre">get_chirps_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roi_gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reducer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builder/index.html#edmt.workflow.builder.ReducerName" title="edmt.workflow.builder.ReducerName"><span class="pre">edmt.workflow.builder.ReducerName</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'max'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ee.Image</span></span></span><a class="headerlink" href="#edmt.workflow.get_chirps_image" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.workflow.get_lst_image_collection">
+<span class="sig-prename descclassname"><span class="pre">edmt.workflow.</span></span><span class="sig-name descname"><span class="pre">get_lst_image_collection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">satellite</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequency</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builder/index.html#edmt.workflow.builder.Frequency" title="edmt.workflow.builder.Frequency"><span class="pre">edmt.workflow.builder.Frequency</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'monthly'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roi_gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reducer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builder/index.html#edmt.workflow.builder.ReducerName" title="edmt.workflow.builder.ReducerName"><span class="pre">edmt.workflow.builder.ReducerName</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mean'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ee.ImageCollection</span></span></span><a class="headerlink" href="#edmt.workflow.get_lst_image_collection" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.workflow.get_ndvi_image_collection">
+<span class="sig-prename descclassname"><span class="pre">edmt.workflow.</span></span><span class="sig-name descname"><span class="pre">get_ndvi_image_collection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">satellite</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequency</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builder/index.html#edmt.workflow.builder.Frequency" title="edmt.workflow.builder.Frequency"><span class="pre">edmt.workflow.builder.Frequency</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'monthly'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roi_gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reducer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builder/index.html#edmt.workflow.builder.ReducerName" title="edmt.workflow.builder.ReducerName"><span class="pre">edmt.workflow.builder.ReducerName</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mean'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ee.ImageCollection</span></span></span><a class="headerlink" href="#edmt.workflow.get_ndvi_image_collection" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.workflow.get_evi_image_collection">
+<span class="sig-prename descclassname"><span class="pre">edmt.workflow.</span></span><span class="sig-name descname"><span class="pre">get_evi_image_collection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">satellite</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequency</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builder/index.html#edmt.workflow.builder.Frequency" title="edmt.workflow.builder.Frequency"><span class="pre">edmt.workflow.builder.Frequency</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'monthly'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roi_gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reducer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builder/index.html#edmt.workflow.builder.ReducerName" title="edmt.workflow.builder.ReducerName"><span class="pre">edmt.workflow.builder.ReducerName</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mean'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ee.ImageCollection</span></span></span><a class="headerlink" href="#edmt.workflow.get_evi_image_collection" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.workflow.get_chirps_image_collection">
+<span class="sig-prename descclassname"><span class="pre">edmt.workflow.</span></span><span class="sig-name descname"><span class="pre">get_chirps_image_collection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequency</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builder/index.html#edmt.workflow.builder.Frequency" title="edmt.workflow.builder.Frequency"><span class="pre">edmt.workflow.builder.Frequency</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'monthly'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roi_gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reducer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builder/index.html#edmt.workflow.builder.ReducerName" title="edmt.workflow.builder.ReducerName"><span class="pre">edmt.workflow.builder.ReducerName</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'max'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ee.ImageCollection</span></span></span><a class="headerlink" href="#edmt.workflow.get_chirps_image_collection" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.workflow.create_ROI">
+<span class="sig-prename descclassname"><span class="pre">edmt.workflow.</span></span><span class="sig-name descname"><span class="pre">create_ROI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extent_km</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'AOI'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">geopandas.GeoDataFrame</span></span></span><a class="headerlink" href="#edmt.workflow.create_ROI" title="Link to this definition">¶</a></dt>
+<dd><p>Create a square bounding box polygon centered on a WGS84 coordinate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>latitude</strong> (<em>float</em>) -- Center latitude in decimal degrees (WGS84 / EPSG:4326).</p></li>
+<li><p><strong>longitude</strong> (<em>float</em>) -- Center longitude in decimal degrees (WGS84 / EPSG:4326).</p></li>
+<li><p><strong>extent_km</strong> (<em>float</em><em>, </em><em>optional</em>) -- Full side length of the bounding box in kilometres (default: 100).
+e.g. 10 → 10 km × 10 km box centered on the coordinate.</p></li>
+<li><p><strong>name</strong> (<em>str</em><em>, </em><em>optional</em>) -- Label for the polygon feature (default: &quot;AOI&quot;).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Single-row GeoDataFrame (EPSG:4326) with columns:
+name, latitude, longitude, extent_km, geometry.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>gpd.GeoDataFrame</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<dl class="simple">
+<dt>Degree-to-metre conversion uses the WGS84 approximation:</dt><dd><p>1° latitude  ≈ 111 320 m  (constant)
+1° longitude ≈ 111 320 × cos(lat) m  (varies with latitude)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.workflow.classify_ndvi_seasons">
+<span class="sig-prename descclassname"><span class="pre">edmt.workflow.</span></span><span class="sig-name descname"><span class="pre">classify_ndvi_seasons</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'date'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ndvi_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'ndvi'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'discrete'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wet_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Wet'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Dry'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">agg_func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mean'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#edmt.workflow.classify_ndvi_seasons" title="Link to this definition">¶</a></dt>
+<dd><p>Aggregate NDVI observations to monthly means and classify each
+month as a wet or dry period based on a vegetation threshold.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> (<em>pd.DataFrame</em>) -- Input DataFrame containing at minimum a date and NDVI column.</p></li>
+<li><p><strong>date_col</strong> (<em>str</em><em>, </em><em>optional</em>) -- Name of the date column (default: &quot;date&quot;).</p></li>
+<li><p><strong>ndvi_col</strong> (<em>str</em><em>, </em><em>optional</em>) -- Name of the NDVI column (default: &quot;ndvi&quot;).</p></li>
+<li><p><strong>threshold</strong> (<em>float</em><em>, </em><em>optional</em>) -- Explicit NDVI cut-off on the true -1 to +1 scale.
+Overrides <cite>threshold_method</cite> when supplied.
+Months with mean NDVI &gt;= threshold → wet; below → dry.</p></li>
+<li><p><strong>threshold_method</strong> (<em>str</em><em>, </em><em>optional</em>) -- <p>Auto-threshold strategy used when <cite>threshold</cite> is None:</p>
+<dl class="simple">
+<dt>&quot;discrete&quot; – Ecological fixed threshold from the NDVI scale</dt><dd><p>(NDVI_WET_THRESHOLD = 0.25 by default).
+<strong>Recommended</strong> — anchors the result to real-world
+vegetation meaning regardless of data range. (default)</p>
+</dd>
+<dt>&quot;otsu&quot;     – Maximises between-class variance within the data.</dt><dd><p>Only meaningful when the data spans a wide dynamic
+range (e.g. &gt; 0.15 spread). Avoid for narrow-band data.</p>
+</dd>
+</dl>
+<p>&quot;median&quot;   – Median of monthly means.
+&quot;mean&quot;     – Mean of monthly means.</p>
+</p></li>
+<li><p><strong>wet_label</strong> (<em>str</em><em>, </em><em>optional</em>) -- Label for wet months (default: &quot;Wet&quot;).</p></li>
+<li><p><strong>dry_label</strong> (<em>str</em><em>, </em><em>optional</em>) -- Label for dry months (default: &quot;Dry&quot;).</p></li>
+<li><p><strong>agg_func</strong> (<em>str</em><em>, </em><em>optional</em>) -- Aggregation function applied per month:
+&quot;mean&quot; | &quot;median&quot; | &quot;max&quot; (default: &quot;mean&quot;).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>Monthly DataFrame ordered chronologically with columns:
+year, month, month_name, ndvi_mean, threshold, season,
+ndvi_vegetation_class.</p>
+<p>ndvi_vegetation_class  →  human-readable land-cover interpretation
+derived from the true NDVI scale (independent of the wet/dry split).</p>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The &quot;discrete&quot; method (default) anchors classification to the actual
+NDVI scale (-1 to +1).  Statistical methods (otsu/median/mean) find a
+threshold <em>within</em> the observed data range, which can produce misleading
+results when all values are clustered in a narrow band — e.g. labelling
+a month as &quot;Wet&quot; simply because its NDVI is 0.001 above the rest, even
+though 0.10 is objectively bare soil by any vegetation index standard.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.workflow.classify_climate_seasons">
+<span class="sig-prename descclassname"><span class="pre">edmt.workflow.</span></span><span class="sig-name descname"><span class="pre">classify_climate_seasons</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df_ndvi</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df_rainfall</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df_lst</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ndvi_date_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'date'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ndvi_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'ndvi'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rainfall_date_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'date'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rainfall_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'precipitation_mm'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lst_date_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'date'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lst_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'mean'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(0.4,</span> <span class="pre">0.35,</span> <span class="pre">0.25)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">category_labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rainfall_gate_mm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transition_gate_mm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">15.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="headerlink" href="#edmt.workflow.classify_climate_seasons" title="Link to this definition">¶</a></dt>
+<dd><p>Merge monthly NDVI, rainfall, and LST data, then classify each month
+into one of five climate seasons using a normalised composite score.</p>
+<section id="composite-score-0-driest-1-wettest">
+<h3>Composite score (0 = driest, 1 = wettest)<a class="headerlink" href="#composite-score-0-driest-1-wettest" title="Link to this heading">¶</a></h3>
+<dl class="simple">
+<dt>score = w_rain  × rainfall_norm</dt><dd><ul class="simple">
+<li><p>w_ndvi  × ndvi_norm</p></li>
+<li><p>w_temp  × (1 − temp_norm)   ← inverted: high temp → dry</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+<section id="rainfall-gate-applied-after-scoring">
+<h3>Rainfall gate (applied after scoring)<a class="headerlink" href="#rainfall-gate-applied-after-scoring" title="Link to this heading">¶</a></h3>
+<p>Prevents non-dry labels when rainfall is negligible, regardless of
+what NDVI or LST suggest:</p>
+<blockquote>
+<div><p>rainfall_mm &lt; rainfall_gate_mm   → forced &quot;Dry Season&quot;
+rainfall_mm &lt; transition_gate_mm → capped at &quot;Dry-Wet Transition&quot;</p>
+<blockquote>
+<div><p>(only if score-based label is wetter)</p>
+</div></blockquote>
+</div></blockquote>
+<dl class="field-list">
+<dt class="field-odd">param df_ndvi<span class="colon">:</span></dt>
+<dd class="field-odd"><p>16-day or finer NDVI observations (aggregated to monthly mean).</p>
+</dd>
+<dt class="field-even">type df_ndvi<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.DataFrame</p>
+</dd>
+<dt class="field-odd">param df_rainfall<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Weekly or finer precipitation observations (aggregated to monthly sum).</p>
+</dd>
+<dt class="field-even">type df_rainfall<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.DataFrame</p>
+</dd>
+<dt class="field-odd">param df_lst<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Monthly or finer LST observations (aggregated to monthly mean).</p>
+</dd>
+<dt class="field-even">type df_lst<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.DataFrame</p>
+</dd>
+<dt class="field-odd">param ndvi_date_col<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Date column in df_ndvi (default: &quot;date&quot;).</p>
+</dd>
+<dt class="field-even">type ndvi_date_col<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+<dt class="field-odd">param ndvi_col<span class="colon">:</span></dt>
+<dd class="field-odd"><p>NDVI value column (default: &quot;ndvi&quot;).</p>
+</dd>
+<dt class="field-even">type ndvi_col<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+<dt class="field-odd">param rainfall_date_col<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Date column in df_rainfall (default: &quot;date&quot;).</p>
+</dd>
+<dt class="field-even">type rainfall_date_col<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+<dt class="field-odd">param rainfall_col<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Precipitation column (default: &quot;precipitation_mm&quot;).</p>
+</dd>
+<dt class="field-even">type rainfall_col<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+<dt class="field-odd">param lst_date_col<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Date column in df_lst (default: &quot;date&quot;).</p>
+</dd>
+<dt class="field-even">type lst_date_col<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+<dt class="field-odd">param lst_col<span class="colon">:</span></dt>
+<dd class="field-odd"><p>LST value column (default: &quot;mean&quot;).</p>
+</dd>
+<dt class="field-even">type lst_col<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+<dt class="field-odd">param weights<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Relative importance of (rainfall, ndvi, temperature). Must sum to 1.0
+(default: 0.40, 0.35, 0.25).</p>
+</dd>
+<dt class="field-even">type weights<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple of 3 floats</p>
+</dd>
+<dt class="field-odd">param category_labels<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Custom season names ordered driest → wettest.</p>
+</dd>
+<dt class="field-even">type category_labels<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of 5 str, optional</p>
+</dd>
+<dt class="field-odd">param rainfall_gate_mm<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Monthly rainfall (mm) below which a month is forced to &quot;Dry Season&quot;,
+regardless of NDVI or LST (default: 1.0 mm).</p>
+</dd>
+<dt class="field-even">type rainfall_gate_mm<span class="colon">:</span></dt>
+<dd class="field-even"><p>float, optional</p>
+</dd>
+<dt class="field-odd">param transition_gate_mm<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Monthly rainfall (mm) below which a month is capped at
+&quot;Dry-Wet Transition&quot; if the score would place it in a wetter
+category (default: 5.0 mm).</p>
+</dd>
+<dt class="field-even">type transition_gate_mm<span class="colon">:</span></dt>
+<dd class="field-even"><p>float, optional</p>
+</dd>
+<dt class="field-odd">returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Chronologically sorted monthly DataFrame with columns:
+year, month, month_name, rainfall_mm, ndvi_mean, lst_mean,
+composite_score, season, season_source.</p>
+<dl class="simple">
+<dt>season_source: &quot;score&quot; if the label came from the composite score,</dt><dd><p>&quot;rainfall_gate&quot; if it was overridden.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">rtype<span class="colon">:</span></dt>
+<dd class="field-even"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+</section>
 </section>
 
         </article>
@@ -347,6 +674,26 @@
             <ul>
 <li><a class="reference internal" href="#">edmt.workflow</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#package-contents">Package Contents</a><ul>
+<li><a class="reference internal" href="#edmt.workflow.gdf_to_ee_geometry"><code class="docutils literal notranslate"><span class="pre">gdf_to_ee_geometry()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.workflow.ee_to_points"><code class="docutils literal notranslate"><span class="pre">ee_to_points()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.workflow.compute_evi_timeseries"><code class="docutils literal notranslate"><span class="pre">compute_evi_timeseries()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.workflow.compute_lst_timeseries"><code class="docutils literal notranslate"><span class="pre">compute_lst_timeseries()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.workflow.compute_ndvi_timeseries"><code class="docutils literal notranslate"><span class="pre">compute_ndvi_timeseries()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.workflow.compute_chirps_timeseries"><code class="docutils literal notranslate"><span class="pre">compute_chirps_timeseries()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.workflow.get_lst_image"><code class="docutils literal notranslate"><span class="pre">get_lst_image()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.workflow.get_ndvi_image"><code class="docutils literal notranslate"><span class="pre">get_ndvi_image()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.workflow.get_evi_image"><code class="docutils literal notranslate"><span class="pre">get_evi_image()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.workflow.get_chirps_image"><code class="docutils literal notranslate"><span class="pre">get_chirps_image()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.workflow.get_lst_image_collection"><code class="docutils literal notranslate"><span class="pre">get_lst_image_collection()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.workflow.get_ndvi_image_collection"><code class="docutils literal notranslate"><span class="pre">get_ndvi_image_collection()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.workflow.get_evi_image_collection"><code class="docutils literal notranslate"><span class="pre">get_evi_image_collection()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.workflow.get_chirps_image_collection"><code class="docutils literal notranslate"><span class="pre">get_chirps_image_collection()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.workflow.create_ROI"><code class="docutils literal notranslate"><span class="pre">create_ROI()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.workflow.classify_ndvi_seasons"><code class="docutils literal notranslate"><span class="pre">classify_ndvi_seasons()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.workflow.classify_climate_seasons"><code class="docutils literal notranslate"><span class="pre">classify_climate_seasons()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -358,7 +705,7 @@
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=116d2e10"></script>
+</div><script src="../../../_static/documentation_options.js?v=08eb7b35"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>
