@@ -7,7 +7,6 @@ from .drones import (
     airSegment
 )
 
-
 __all__ = [
     "Airdata",
     "_flight_polyline",
@@ -16,3 +15,8 @@ __all__ = [
     "airLine",
     "airSegment"
 ]
+
+for _name in __all__:
+    globals()[_name].__module__ = __name__
+
+    

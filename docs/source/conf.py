@@ -9,27 +9,38 @@ logging.getLogger('nbsphinx').setLevel(logging.DEBUG)
 project = 'EDMT'
 copyright = '2026, EDMT'
 author = 'Odero'
-release = '1.0.6'
+release = '1.0.8'
 
-# General configuration
 extensions = [        
     'autoapi.extension',
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.napoleon",
 ]
 
 nb_execution_mode = "off"
-
-# Path to your source code
 autoapi_dirs = ['../../edmt']
 templates_path = ['_templates']
 autoapi_template_dir = '_templates/autoapi'
 exclude_patterns = []
-
 language = 'Python'
 
-# Options for HTML output
 html_theme = 'furo'
 html_static_path = ['_static']
 
-# Optional: Include private members
-autoapi_options = ['members', 'undoc-members', 'private-members']
+autoapi_options = [
+    'undoc-members',
+    'show-inheritance',
+    'imported-members',
+]
+
 autoapi_keep_files = True
+
+autoapi_python_use_implicit_namespaces = True  
+autoapi_python_imported_members = True   
+
+autoapi_add_toctree_entry = False
+
+
+autoapi_ignore = [
+]

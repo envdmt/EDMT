@@ -51,8 +51,7 @@ _analysis_functions = [
     "classify_climate_seasons"
 ]
 
-__all__ = [
-    _builder_functions,
-    _workflow_functions,
-    _analysis_functions
-]
+__all__ = _builder_functions + _workflow_functions + _analysis_functions
+
+for _name in __all__:
+    globals()[_name].__module__ = __name__

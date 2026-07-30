@@ -43,74 +43,58 @@ Module Contents
 
    Converts a spatial DataFrame to a GeoDataFrame with optional CRS assignment.
 
-   Args:
-       sdf (pd.DataFrame): Input spatial DataFrame containing geometry column.
-       crs (str or int, optional): Coordinate Reference System. Defaults to EPSG:4326.
+   :param sdf: Input spatial DataFrame containing geometry column.
+   :type sdf: pd.DataFrame
+   :param crs: Coordinate Reference System. Defaults to EPSG:4326.
+   :type crs: str or int, optional
 
-   Returns:
-       gpd.GeoDataFrame: A cleaned GeoDataFrame with valid geometries.
+   :returns: A cleaned GeoDataFrame with valid geometries.
+   :rtype: gpd.GeoDataFrame
 
-   Raises:
-       ValueError: If input is not a DataFrame or is empty.
-
-
-
-.. py:function:: _is_valid_uuid(val) -> bool
-
-.. py:function:: _find_uuid_like_column(df: pandas.DataFrame, contains: tuple[str, Ellipsis] = ('uuid', )) -> Optional[str]
-
-   Return the first column name that looks like it contains a uuid marker.
-   E.g. 'uuid', 'UUID', 'user_uuid', 'myUuid', etc.
+   :raises ValueError: If input is not a DataFrame or is empty.
 
 
 .. py:function:: generate_uuid(df: pandas.DataFrame, *, force: bool = False, index: bool = False, uuid_col: str = 'uuid', detect_uuid_cols: bool = True, detect_contains: tuple[str, Ellipsis] = ('uuid', )) -> pandas.DataFrame
 
    Ensure a pandas DataFrame contains a column of valid UUIDs, creating or repairing as needed.
 
-   This function adds a new UUID column or validates/repairs an existing one. It can optionally 
+   This function adds a new UUID column or validates/repairs an existing one. It can optionally
    detect existing UUID-like columns to avoid duplication and control column placement.
 
-   Parameters
-   ----------
-   df : pd.DataFrame
-       Input DataFrame to process.
-   force : bool, optional
-       If True, always generate new UUIDs—even if a valid UUID column already exists 
-       (default: False).
-   index : bool, optional
-       If True, place the UUID column at the beginning of the DataFrame; otherwise, 
-       place it at the end (default: False).
-   uuid_col : str, optional
-       Name of the target UUID column (default: "uuid").
-   detect_uuid_cols : bool, optional
-       If True and `force=False`, scan for existing columns that appear to contain UUIDs 
-       (based on name and content) to avoid redundant generation (default: True).
-   detect_contains : tuple of str, optional
-       Substrings used to identify potential UUID columns by name when `detect_uuid_cols=True` 
-       (default: ("uuid",)).
+   :param df: Input DataFrame to process.
+   :type df: pd.DataFrame
+   :param force: If True, always generate new UUIDs—even if a valid UUID column already exists
+                 (default: False).
+   :type force: bool, optional
+   :param index: If True, place the UUID column at the beginning of the DataFrame; otherwise,
+                 place it at the end (default: False).
+   :type index: bool, optional
+   :param uuid_col: Name of the target UUID column (default: "uuid").
+   :type uuid_col: str, optional
+   :param detect_uuid_cols: If True and `force=False`, scan for existing columns that appear to contain UUIDs
+                            (based on name and content) to avoid redundant generation (default: True).
+   :type detect_uuid_cols: bool, optional
+   :param detect_contains: Substrings used to identify potential UUID columns by name when `detect_uuid_cols=True`
+                           (default: ("uuid",)).
+   :type detect_contains: tuple of str, optional
 
-   Returns
-   -------
-   pd.DataFrame
-       A copy of the input DataFrame with a valid UUID column named `uuid_col`.
+   :returns: A copy of the input DataFrame with a valid UUID column named `uuid_col`.
+   :rtype: pd.DataFrame
 
-   Raises
-   ------
-   ValueError
-       If input is not a DataFrame or if the DataFrame is empty.
+   :raises ValueError: If input is not a DataFrame or if the DataFrame is empty.
 
-   Notes
-   -----
-   - A value is considered a valid UUID if it is a string matching the standard UUID format 
+   .. rubric:: Notes
+
+   - A value is considered a valid UUID if it is a string matching the standard UUID format
      (e.g., "f47ac10b-58cc-4372-a567-0e02b2c3d479").
-   - When `force=False` and a UUID-like column is detected (by name and content), the function 
+   - When `force=False` and a UUID-like column is detected (by name and content), the function
      reuses it but repairs any invalid entries by replacing them with new UUIDs.
    - The output DataFrame is always a copy; the original is not modified.
-   - Column ordering is explicitly controlled: UUID column is moved to front if `index=True`, 
+   - Column ordering is explicitly controlled: UUID column is moved to front if `index=True`,
      otherwise to the back.
 
-   Examples
-   --------
+   .. rubric:: Examples
+
    >>> df = pd.DataFrame({"name": ["Alice", "Bob"]})
    >>> df_with_uuid = generate_uuid(df)
    >>> "uuid" in df_with_uuid.columns
@@ -125,128 +109,117 @@ Module Contents
 
    Generate range labels and corresponding hex colors from a colormap.
 
-   Parameters
-   ----------
-   data : array-like
-       Numeric data used to determine the value range.
-   num_divisions : int
-       Number of intervals to divide the data range into.
-   cmap : str, default="viridis"
-       Name of the matplotlib colormap.
+   :param data: Numeric data used to determine the value range.
+   :type data: array-like
+   :param num_divisions: Number of intervals to divide the data range into.
+   :type num_divisions: int
+   :param cmap: Name of the matplotlib colormap.
+   :type cmap: str, default="viridis"
 
-   Returns
-   -------
-   tuple[list[str], list[str]]
-       labels :
-           Range labels formatted as "min - max".
-       colors :
-           Hexadecimal color codes corresponding to each range.
+   :returns:
 
-   Raises
-   ------
-   ValueError
-       If num_divisions is less than 1 or data is empty.
+             labels :
+                 Range labels formatted as "min - max".
+             colors :
+                 Hexadecimal color codes corresponding to each range.
+   :rtype: tuple[list[str], list[str]]
+
+   :raises ValueError: If num_divisions is less than 1 or data is empty.
 
 
 .. py:function:: get_utm_epsg(longitude=None)
 
    Generates UTM EPSG code based on longitude.
 
-   Args:
-       longitude (float): Longitude value to determine UTM zone.
+   :param longitude: Longitude value to determine UTM zone.
+   :type longitude: float
 
-   Returns:
-       str: EPSG code as a string.
+   :returns: EPSG code as a string.
+   :rtype: str
 
-   Raises:
-       KeyError: If longitude is not provided.
-
+   :raises KeyError: If longitude is not provided.
 
 
 .. py:function:: convert_time(value: float, unit_from: str, unit_to: str) -> float
 
    Converts a given time value between different units.
 
-   Args:
-       time_value (float): The numerical value of the time.
-       unit_from (str): The original unit of time.
-       unit_to (str): The target unit to convert to.
+   :param time_value: The numerical value of the time.
+   :type time_value: float
+   :param unit_from: The original unit of time.
+   :type unit_from: str
+   :param unit_to: The target unit to convert to.
+   :type unit_to: str
 
-   Returns:
-       float: The converted time value rounded to 3 decimal places.
+   :returns: The converted time value rounded to 3 decimal places.
+   :rtype: float
 
-   Raises:
-       ValueError: If units are unsupported or value is invalid.
-
+   :raises ValueError: If units are unsupported or value is invalid.
 
 
 .. py:function:: convert_speed(speed: float, unit_from: str, unit_to: str) -> float
 
    Converts speed between different units.
 
-   Args:
-       speed (float): Input speed value.
-       unit_from (str): Original unit.
-       unit_to (str): Target unit.
+   :param speed: Input speed value.
+   :type speed: float
+   :param unit_from: Original unit.
+   :type unit_from: str
+   :param unit_to: Target unit.
+   :type unit_to: str
 
-   Returns:
-       float: Converted speed value.
+   :returns: Converted speed value.
+   :rtype: float
 
-   Raises:
-       ValueError: If unit is unsupported.
-
+   :raises ValueError: If unit is unsupported.
 
 
 .. py:function:: convert_distance(value: float, unit_from: str, unit_to: str) -> float
 
    Converts distance values between metric and imperial units.
 
-   Args:
-       value (float): Input distance value.
-       from_type (str): Original unit.
-       to_type (str): Target unit.
+   :param value: Input distance value.
+   :type value: float
+   :param from_type: Original unit.
+   :type from_type: str
+   :param to_type: Target unit.
+   :type to_type: str
 
-   Returns:
-       float: Converted distance value.
+   :returns: Converted distance value.
+   :rtype: float
 
-   Raises:
-       ValueError: If unit is unsupported.
+   :raises ValueError: If unit is unsupported.
 
-
-
-.. py:function:: _norm_temp_unit(unit: str) -> str
-
-.. py:function:: _to_celsius(value: float, unit_from: str) -> float
-
-.. py:function:: _from_celsius(c: float, unit_to: str) -> float
 
 .. py:function:: convert_temperature(value: float, unit_from: str, unit_to: str) -> float
 
    Converts temperature between different scales.
 
-   Args:
-       value (float): Input temperature value.
-       unit_from (str): Original unit. Supported: C, F, K (also °C, °F, °K).
-       unit_to (str): Target unit. Supported: C, F, K (also °C, °F, °K).
+   :param value: Input temperature value.
+   :type value: float
+   :param unit_from: Original unit. Supported: C, F, K (also °C, °F, °K).
+   :type unit_from: str
+   :param unit_to: Target unit. Supported: C, F, K (also °C, °F, °K).
+   :type unit_to: str
 
-   Returns:
-       float: Converted temperature value (rounded to 3 decimals).
+   :returns: Converted temperature value (rounded to 3 decimals).
+   :rtype: float
 
-   Raises:
-       ValueError: If unit is unsupported or Kelvin is invalid (< 0).
-
+   :raises ValueError: If unit is unsupported or Kelvin is invalid (< 0).
 
 
 .. py:function:: format_temperature(value: float, unit: str, symbol: bool = True) -> str
 
    Formats a temperature value with unit, e.g. '23.5 °C' or '296.6 K'.
 
-   Args:
-       value (float): Temperature value.
-       unit (str): Unit to display (C, F, K).
-       symbol (bool): If True, uses °C/°F, and K without degree symbol.
+   :param value: Temperature value.
+   :type value: float
+   :param unit: Unit to display (C, F, K).
+   :type unit: str
+   :param symbol: If True, uses °C/°F, and K without degree symbol.
+   :type symbol: bool
 
-   Returns:
-       str: Formatted temperature string.
+   :returns: Formatted temperature string.
+   :rtype: str
 
 

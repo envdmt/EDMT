@@ -1,15 +1,5 @@
-from edmt import (
-    analysis, 
-    base, 
-    contrib, 
-    conversion, 
-    mapping, 
-    models, 
-    plotting,
-    workflow
-    )
 from ._edmt import list_functions
-import importlib.metadata
+import importlib
 
 ASCII = r"""
  ___ ___  __  __ _____ 
@@ -22,6 +12,27 @@ __initialized = False
 
 # Package version
 __version__ = importlib.metadata.version("edmt")
+
+
+
+_MODULES = {
+    "analysis",
+    "base",
+    "contrib",
+    "conversion",
+    "mapping",
+    "models",
+    "plotting",
+    "workflow",
+}
+
+def __getattr__(name):
+    if name in _MODULES:
+        module = importlib.import_module(f".{name}", __name__)
+        globals()[name] = module
+        return module
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 
 def init(silent=False, force=False):
