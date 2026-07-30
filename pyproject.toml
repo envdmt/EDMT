@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "edmt"
-version = "1.0.8.2b1"
+version = "1.0.8"
 description = "Environmental Data Management Toolbox for geospatial, conservation, Earth Engine, Airdata and environmental analytics."
 readme = "README.md"
 requires-python = ">=3.10"
