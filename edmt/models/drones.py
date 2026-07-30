@@ -330,9 +330,9 @@ class Airdata(AirdataBaseClass):
                     if isinstance(participant, dict)
                 )
 
-        if "participants.data" in df.columns:
-            df = df[df["participants.data"].apply(has_matching_organization)].reset_index(drop=True)
-            
+            if "participants.data" in df.columns:
+                df = df[df["participants.data"].apply(has_matching_organization)].reset_index(drop=True)
+
         if "time" in df.columns:
             df["checktime"] = pd.to_datetime(df["time"], errors="coerce").dt.tz_localize(None)
         return append_cols(df, cols="checktime")
