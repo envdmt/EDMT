@@ -71,9 +71,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
-          pip install pytest pandas geopandas shapely requests pyproj tqdm
-          pip install -e .
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
 
       - name: Run tests
         run: pytest tests/ --verbose
