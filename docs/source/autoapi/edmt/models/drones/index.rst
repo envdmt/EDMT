@@ -19,6 +19,7 @@ Module Contents
 
 .. py:class:: Airdata(api_key: str, skip_auth: bool = False)
 
+   Bases: :py:obj:`edmt.base.base.AirdataBaseClass`
 
 
    Client for interacting with the Airdata API.
@@ -33,11 +34,11 @@ Module Contents
 
       Sends a GET request to the specified API endpoint and returns normalized data as a DataFrame.
 
-      Parameters:
-          endpoint (str): The full API path including query parameters.
+      :param endpoint: The full API path including query parameters.
+      :type endpoint: str
 
-      Returns:
-          Optional[pd.DataFrame]: A DataFrame containing the retrieved data, or None if the request fails.
+      :returns: A DataFrame containing the retrieved data, or None if the request fails.
+      :rtype: Optional[pd.DataFrame]
 
 
 
@@ -46,9 +47,11 @@ Module Contents
       Fetch drone data from the Airdata API based on the provided query parameters.
 
 
-      Returns:
-          pd.DataFrame: A DataFrame containing the retrieved flight data. 
-                      If the request fails or no data is found, returns an empty DataFrame.
+      :returns:
+
+                A DataFrame containing the retrieved flight data.
+                            If the request fails or no data is found, returns an empty DataFrame.
+      :rtype: pd.DataFrame
 
 
 
@@ -57,9 +60,11 @@ Module Contents
       Fetch batteries data from the Airdata API based on the provided query parameters.
 
 
-      Returns:
-          pd.DataFrame: A DataFrame containing the retrieved flight data. 
-                      If the request fails or no data is found, returns an empty DataFrame.
+      :returns:
+
+                A DataFrame containing the retrieved flight data.
+                            If the request fails or no data is found, returns an empty DataFrame.
+      :rtype: pd.DataFrame
 
 
 
@@ -68,9 +73,11 @@ Module Contents
       Fetch pilots data from the Airdata API based on the provided query parameters.
 
 
-      Returns:
-          pd.DataFrame: A DataFrame containing the retrieved flight data. 
-                      If the request fails or no data is found, returns an empty DataFrame.
+      :returns:
+
+                A DataFrame containing the retrieved flight data.
+                            If the request fails or no data is found, returns an empty DataFrame.
+      :rtype: pd.DataFrame
 
 
 
@@ -78,19 +85,23 @@ Module Contents
 
       Fetch Flight Groups data from the Airdata API based on query parameters.
 
-      Parameters:
-          sort_by (str, optional): Field to sort by. Valid values are 'title' and 'created'.
-              If None, no sorting is applied.
-          ascending (bool): Whether to sort in ascending order. Defaults to True.
-          id (str, optional): Specific ID of a flight group to fetch.
+      :param sort_by: Field to sort by. Valid values are 'title' and 'created'.
+                      If None, no sorting is applied.
+      :type sort_by: str, optional
+      :param ascending: Whether to sort in ascending order. Defaults to True.
+      :type ascending: bool
+      :param id: Specific ID of a flight group to fetch.
+      :type id: str, optional
 
-      Returns:
-          pd.DataFrame: DataFrame containing retrieved flight data.
-              Returns empty DataFrame if request fails or no data found.
+      :returns:
+
+                DataFrame containing retrieved flight data.
+                    Returns empty DataFrame if request fails or no data found.
+      :rtype: pd.DataFrame
 
 
 
-   .. py:method:: get_flights(since: Optional[str] = None, until: Optional[str] = None, created_after: Optional[str] = None, battery_ids: Optional[Union[str, List[str]]] = None, pilot_ids: Optional[Union[str, List[str]]] = None, location: Optional[List[float]] = None, limit: int = 100, max_pages: int = 100, delay: float = 0.1, timeout: int = 15) -> pandas.DataFrame
+   .. py:method:: get_flights(since: Optional[str] = None, until: Optional[str] = None, created_after: Optional[str] = None, battery_ids: Optional[Union[str, List[str]]] = None, pilot_ids: Optional[Union[str, List[str]]] = None, organizations: Optional[Union[str, List[str]]] = None, location: Optional[List[float]] = None, limit: int = 100, max_pages: int = 100, delay: float = 0.1, timeout: int = 15) -> pandas.DataFrame
 
       Retrieve paginated flight records from the Airdata API.
 
@@ -98,83 +109,42 @@ Module Contents
       multiple API requests. Continues until no more results are returned or the
       maximum page limit is reached.
 
-      Args:
-          since (str, optional): 
-              Filter flights that started on or after this ISO 8601 timestamp
-          until (str, optional): 
-              Filter flights that started before this ISO 8601 timestamp.
-          created_after (str, optional): 
-              Include only flights created after this ISO 8601 timestamp.
-          battery_ids (str or list, optional): 
-              Filter by specific battery ID(s). Accepts either a comma-separated 
-              string or a list of strings
-          pilot_ids (str or list, optional): 
-              Filter by specific pilot ID(s).
-          location (list, optional): 
-              Geographic center point for radius-based search as 
-              ``[latitude, longitude]``.
-          limit (int, optional): 
-              Number of records per page. Must be ≤ 100. Defaults to 100.
-          max_pages (int, optional): 
-              Maximum number of pages to retrieve. Prevents excessive API usage. 
-              Defaults to 100.
+      :param since: Filter flights that started on or after this ISO 8601 timestamp
+      :type since: str, optional
+      :param until: Filter flights that started before this ISO 8601 timestamp.
+      :type until: str, optional
+      :param created_after: Include only flights created after this ISO 8601 timestamp.
+      :type created_after: str, optional
+      :param battery_ids: Filter by specific battery ID(s). Accepts either a comma-separated
+                          string or a list of strings
+      :type battery_ids: str or list, optional
+      :param pilot_ids: Filter by specific pilot ID(s).
+      :type pilot_ids: str or list, optional
+      :param organizations: Filter flights by participant organization(s). Accepts either a
+                            single organization name or a list of organization names. Only
+                            flights with at least one participant belonging to one of the
+                            specified organizations are returned.
+      :type organizations: str or list, optional
+      :param location: Geographic center point for radius-based search as
+                       ``[latitude, longitude]``.
+      :type location: list, optional
+      :param limit: Number of records per page. Must be ≤ 100. Defaults to 100.
+      :type limit: int, optional
+      :param max_pages: Maximum number of pages to retrieve. Prevents excessive API usage.
+                        Defaults to 100.
+      :type max_pages: int, optional
 
-      Returns:
-          pd.DataFrame: 
-              A DataFrame containing all retrieved flight records with standardized 
-              columns. Returns an empty DataFrame if:
-              
-              - No flights match the query parameters
-              - API returns an error
-              - Authentication fails
+      :returns:     A DataFrame containing all retrieved flight records with standardized
+                    columns. Returns an empty DataFrame if:
 
-      Raises:
-          ValueError: 
-              If ``location`` is provided but doesn't contain exactly two numeric 
-              elements (latitude and longitude).
+                    - No flights match the query parameters
+                    - API returns an error
+                    - Authentication fails
+      :rtype: pd.DataFrame
 
+      :raises ValueError: If ``location`` is provided but doesn't contain exactly two numeric
+          elements (latitude and longitude).
 
-
-.. py:function:: _flight_polyline(row, link_col='csvLink', lon_col='longitude', lat_col='latitude', time_col='time(millisecond)', max_retries=3, timeout=15)
-
-   Processes a single flight metadata record by downloading its telemetry CSV, 
-   cleaning the trajectory data, and constructing a geographic LineString.
-
-   This function:
-   - Fetches a CSV file from the 'csvLink' field in `row` using `AirdataCSV`.
-   - Validates that the required columns (`lon_col`, `lat_col`, `time_col`) exist.
-   - Filters out invalid coordinates (e.g., (0, 0)).
-   - Sorts points by timestamp and ensures at least two valid points remain.
-   - Constructs a `shapely.geometry.LineString` from the cleaned coordinates.
-   - Computes the total geodesic distance (in meters) along the trajectory using the WGS84 ellipsoid.
-   - Returns a dictionary containing the original flight metadata (excluding 'csvLink'), 
-     enriched with geometry and derived metrics.
-
-   Args:
-       row (pandas.Series or dict): A flight metadata record expected to contain 
-           a valid URL under the key 'csvLink' and a unique identifier under 'id'.
-       lon_col (str, optional): Column name for longitude values in the CSV. 
-           Defaults to "longitude".
-       lat_col (str, optional): Column name for latitude values in the CSV. 
-           Defaults to "latitude".
-       time_col (str, optional): Column name for timestamp values (in milliseconds). 
-           Defaults to "time(millisecond)".
-       max_retries (int, optional): Maximum number of download retry attempts. 
-           Passed to `AirdataCSV`. Defaults to 3.
-       timeout (int or float, optional): Request timeout (in seconds) for CSV download. 
-           Passed to `AirdataCSV`. Defaults to 15.
-
-   Returns:
-       dict or None:
-           - If successful: a dictionary with the following keys:
-               - All original metadata fields from `row` (except 'csvLink'),
-               - "id": flight identifier,
-               - "geometry": `shapely.geometry.LineString` of the flight path,
-               - "flight_distance_m": total geodesic distance in meters (float),
-               - "flight_time_max_ms": maximum timestamp in the cleaned CSV (int/float).
-           - `None` if the URL is missing/invalid, required columns are absent, 
-             fewer than two valid points remain after cleaning, or an unhandled 
-             exception occurs during processing.
 
 
 .. py:function:: get_flight_routes(df: pandas.DataFrame, filter_ids: Optional[List] = None, max_workers: int = 8, lon_col: str = 'longitude', lat_col: str = 'latitude', time_col: str = 'time(millisecond)', crs: str = 'EPSG:4326') -> geopandas.GeoDataFrame
@@ -186,20 +156,28 @@ Module Contents
    as a LineString geometry. It supports filtering by specific flight IDs and
    parallel processing for efficiency.
 
-   Args:
-       df (pd.DataFrame): DataFrame containing flight metadata, including a column
-           named 'csvLink' with URLs to CSV files.
-       filter_ids (list, optional): List of flight IDs to process. If provided,
-           only flights with IDs in this list will be processed.   
-       max_workers (int, optional): Number of parallel download threads.
+   :param df: DataFrame containing flight metadata, including a column
+              named 'csvLink' with URLs to CSV files.
+   :type df: pd.DataFrame
+   :param filter_ids: List of flight IDs to process. If provided,
+                      only flights with IDs in this list will be processed.
+   :type filter_ids: list, optional
+   :param max_workers: Number of parallel download threads.
+   :type max_workers: int, optional
+   :param lon_col: Column name for longitude.
+   :type lon_col: str, optional
+   :param lat_col: Column name for latitude.
+   :type lat_col: str, optional
+   :param time_col: Column name for timestamp.
+   :type time_col: str, optional
+   :param crs: Coordinate Reference System for the output GeoDataFrame.
+   :type crs: str, optional
 
-       lon_col (str, optional): Column name for longitude.
-       lat_col (str, optional): Column name for latitude.
-       time_col (str, optional): Column name for timestamp.
-       crs (str, optional): Coordinate Reference System for the output GeoDataFrame.   
-   Returns:
-       gpd.GeoDataFrame: A GeoDataFrame with one row per flight, containing the
-           flight metadata and a LineString geometry representing the flight route.
+   :returns:
+
+             A GeoDataFrame with one row per flight, containing the
+                 flight metadata and a LineString geometry representing the flight route.
+   :rtype: gpd.GeoDataFrame
 
 
 .. py:function:: airPoint(*args, **kwargs)

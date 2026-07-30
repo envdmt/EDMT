@@ -10,7 +10,6 @@ from .conversion import (
     format_temperature
 )
 
-
 __all__ = [
     'sdf_to_gdf', 
     'generate_uuid',
@@ -22,3 +21,8 @@ __all__ = [
     'convert_temperature',
     'format_temperature'
     ]
+
+
+for _name in __all__:
+    globals()[_name].__module__ = __name__
+

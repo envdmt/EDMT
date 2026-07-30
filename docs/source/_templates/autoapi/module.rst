@@ -1,52 +1,46 @@
-{% block body %}
+{{ fullname | replace("edmt.", "EDMT.") | capitalize }}
+{{ "=" * (fullname | replace("edmt.", "EDMT.") | capitalize | length) }}
 
-{% if classes %}
-Classes
--------
+.. automodule:: {{ fullname }}
+   :no-members:
 
-.. autosummary::
-   :toctree:
-   :template: class.rst
-
-   {% for class in classes %}
-   {{ class }}
-   {% endfor %}
-
-{% endif %}
-
-{% if functions %}
-Functions
----------
-
-.. autosummary::
-   :toctree:
-   :template: function.rst
-
-   {% for function in functions %}
-   {{ function }}
-   {% endfor %}
-
-{% endif %}
-
+{% block attributes %}
 {% if attributes %}
 Attributes
 ----------
 
 .. autosummary::
    :toctree:
-   :template: attribute.rst
-
-   {% for attribute in attributes %}
-   {{ attribute }}
+   {% for item in attributes %}
+   {{ fullname }}.{{ item }}
    {% endfor %}
-
 {% endif %}
-
 {% endblock %}
 
-.. toctree::
-   :hidden:
 
-   ../index
-   ../installation
-   ../autoapi/index
+
+{% block functions %}
+{% if functions %}
+Functions
+---------
+
+.. autosummary::
+   :toctree:
+   {% for item in functions %}
+   {{ fullname }}.{{ item }}
+   {% endfor %}
+{% endif %}
+{% endblock %}
+
+{% block classes %}
+{% if classes %}
+Classes
+-------
+
+.. autosummary::
+   :toctree:
+   {% for item in classes %}
+   {{ fullname }}.{{ item }}
+   {% endfor %}
+{% endif %}
+{% endblock %}
