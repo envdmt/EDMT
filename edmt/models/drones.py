@@ -191,6 +191,7 @@ class Airdata(AirdataBaseClass):
         created_after: Optional[str] = None,
         battery_ids: Optional[Union[str, List[str]]] = None,
         pilot_ids: Optional[Union[str, List[str]]] = None,
+        organizations: Optional[Union[str, List[str]]] = None,
         location: Optional[List[float]] = None,
         limit: int = 100,
         max_pages: int = 100,
@@ -215,6 +216,11 @@ class Airdata(AirdataBaseClass):
                 string or a list of strings
             pilot_ids (str or list, optional): 
                 Filter by specific pilot ID(s).
+            organizations (str or list, optional):
+                Filter flights by participant organization(s). Accepts either a
+                single organization name or a list of organization names. Only
+                flights with at least one participant belonging to one of the
+                specified organizations are returned.
             location (list, optional): 
                 Geographic center point for radius-based search as 
                 ``[latitude, longitude]``.
@@ -307,6 +313,26 @@ class Airdata(AirdataBaseClass):
             return pd.DataFrame()
 
         df = pd.concat(all_data, ignore_index=True)
+
+        if organizations is not None:
+            if isinstance(organizations, str):
+                organizations = [organizations]
+
+            organizations = {org.lower() for org in organizations}
+
+            def has_matching_organization(participants):
+                if not isinstance(participants, list):
+                    return False
+
+                return any(
+                    participant.get("organization", "").lower() in organizations
+                    for participant in participants
+                    if isinstance(participant, dict)
+                )
+
+        if "participants.data" in df.columns:
+            df = df[df["participants.data"].apply(has_matching_organization)].reset_index(drop=True)
+            
         if "time" in df.columns:
             df["checktime"] = pd.to_datetime(df["time"], errors="coerce").dt.tz_localize(None)
         return append_cols(df, cols="checktime")
