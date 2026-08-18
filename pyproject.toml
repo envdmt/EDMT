@@ -12,7 +12,7 @@ license = { file = "LICENSE" }
 
 authors = [
     { name = "Francis Odero" , email = "francisodero10@gmail.com" },
-    { name = "Kevin Kuloba" },
+    { name = "Eugene Kuloba" },
 ]
 
 classifiers = [
