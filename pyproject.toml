@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "edmt"
-version = "1.0.8"
+version = "1.0.9"
 description = "Environmental Data Management Toolbox for geospatial, conservation, Earth Engine, Airdata and environmental analytics."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -54,6 +54,7 @@ dependencies = [
     "earthengine-api>=0.1.324",
     "geopandas>=1.0",
     "pandas>=2.2",
+    "duckdb>=1.0",
     "fiona>=1.9",
     "requests>=2.31",
     "tqdm>=4.66",
@@ -63,12 +64,7 @@ dependencies = [
 
 [project.optional-dependencies]
 
-duckdb = [
-    "duckdb>=1.0"
-]
-
 dev = [
-    "duckdb>=1.0",
     "pytest>=8",
     "pytest-cov",
     "flake8",
@@ -83,7 +79,6 @@ docs = [
 ]
 
 all = [
-    "duckdb>=1.0",
     "pytest>=8",
     "pytest-cov",
     "flake8",
