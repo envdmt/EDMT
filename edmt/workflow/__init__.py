@@ -2,7 +2,10 @@ from .builder import (
     gdf_to_ee_geometry
 )
 
-from .connector import ee_to_points
+from .connector import (
+    ee_to_points,
+    get_landcover
+)
 
 from .workflow import (
     compute_evi_timeseries,
@@ -42,6 +45,7 @@ _workflow_functions = [
     "get_ndvi_image_collection",
     "get_evi_image_collection",
     "get_chirps_image_collection",
+    "get_landcover",
     "ee_to_points"
 ]
 

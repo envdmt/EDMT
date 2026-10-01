@@ -12,6 +12,7 @@ from .builder import (
     _PRODUCT_REGISTRY,
     _build_vegetation,
     _build_flooding,
+    _build_landcover,
 
     _norm_sat,
     _build_chirps,
@@ -556,8 +557,45 @@ def CollectionImage(
     return img_coll
 
 
+# 6 : Landcover
 
-# 6 : RASTER TO VECTOR POINTS
+def get_landcover(roi_gdf: gpd.GeoDataFrame) -> ee.Image:
+    """
+    Retrieve the ESA land cover classification image clipped to a specified region of interest.
+    
+    This function serves as a convenience wrapper around ``_build_landcover()``, 
+    pre-configured to use the ``"ESA"`` land cover product. It extracts the primary 
+    land cover image from the configured Earth Engine collection, selects the 
+    classification band(s), and returns the result clipped to the provided ROI.
+    
+    Args:
+        roi_gdf (gpd.GeoDataFrame): GeoDataFrame defining the region of interest. 
+            Must contain at least one valid geometry and be compatible with 
+            ``edmt.workflow.gdf_to_ee_geometry()``.
+            
+    Returns:
+        ee.Image: A single-band Earth Engine image containing the ESA land cover 
+            classification values, spatially clipped to the ROI. Pixel values 
+            correspond to the standard ESA land cover class indices.
+            
+    Raises:
+        ValueError: If the ``"ESA"`` land cover configuration is missing from 
+            ``_SAT_CONFIG``.
+        Exception: Propagates geometry conversion, collection access, or 
+            Earth Engine clipping errors.
+            
+    
+          
+    Example:
+        >>> import geopandas as gpd
+        >>> roi = gpd.read_file("path/to/study_area.gpkg")
+        >>> lc_img = get_landcover(roi)
+        >>> # Trigger server-side computation and inspect metadata
+        >>> print(lc_img.bandNames().getInfo())
+    """
+    return _build_landcover("ESA", roi_gdf)
+
+# 7 : RASTER TO VECTOR POINTS
 
 def ee_to_points(
     image: ee.Image, 

@@ -191,6 +191,21 @@ _SAT_CONFIG = {
             "band": "VH",
             "scale_m": 10,
         }
+    },
+
+    "SOIL_MOISTURE" : {
+
+    },
+
+    "FIRE_INCIDENTS" : {
+
+    },
+
+    "LANDCOVER" : {
+        "ESA": {
+            "collection": "ESA/WorldCover/v100",
+            "bands": "Map"
+        },
     }
 }
 
@@ -667,7 +682,25 @@ def _build_period_img(
 
 
 
+# Landcover
 
+
+def _build_landcover(satellite: str, roi_gdf: gpd.GeoDataFrame) -> ee.Image:
+  sat = _norm_sat(satellite)
+  cfg = _SAT_CONFIG["LANDCOVER"].get(sat)
+
+  geometry = gdf_to_ee_geometry(roi_gdf)
+
+  if not cfg:
+        raise ValueError(f"Unsupported land cover satellite: {satellite}")
+
+  ic = ee.ImageCollection(cfg["collection"])
+  landcover_image = ic.first()
+  landcover_map_band = landcover_image.select(
+      _SAT_CONFIG["LANDCOVER"]["ESA"]["bands"]
+  )
+
+  return landcover_map_band.clip(geometry)
 
 
 
