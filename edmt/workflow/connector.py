@@ -617,12 +617,6 @@ def get_soilmoisture(roi_gdf: gpd.GeoDataFrame) -> ee.Image:
             values (``val_5_15cm_mean``), spatially clipped to the ROI.
             Values are in grams of water per kilogram of soil (g/kg).
             
-          
-    Example:
-        >>> import geopandas as gpd
-        >>> roi = gpd.read_file("path/to/study_area.gpkg")
-        >>> sm_img = get_soilmoisture(roi)
-        >>> print(sm_img.bandNames().getInfo())  # ['val_5_15cm_mean']
     """
     return _build_soilmoisture("SOILGRIDS",roi_gdf)
 
