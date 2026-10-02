@@ -157,6 +157,20 @@ def get_chirps_image(
         reducer=reducer
         )
 
+def get_fire_incident_image(
+    start_date: str,
+    end_date: str,
+    roi_gdf: Optional[gpd.GeoDataFrame] = None,
+    reducer: ReducerName = "mean",
+) -> ee.Image:
+    return CompositeImage(
+        "FIRE", 
+        start_date, 
+        end_date, 
+        satellite=None, 
+        roi_gdf=roi_gdf, 
+        reducer=reducer
+        )
 
 def get_lst_image_collection(
     start_date: str,
@@ -224,6 +238,24 @@ def get_chirps_image_collection(
 ) -> ee.ImageCollection:
     return CollectionImage(
         "CHIRPS", 
+        start_date, 
+        end_date, 
+        frequency=frequency, 
+        satellite=None, 
+        roi_gdf=roi_gdf, 
+        reducer=reducer
+        )
+
+
+def get_fire_image_collection(
+    start_date: str,
+    end_date: str,
+    frequency: Frequency = "monthly",
+    roi_gdf: Optional[gpd.GeoDataFrame] = None,
+    reducer: ReducerName = "mean",
+) -> ee.ImageCollection:
+    return CollectionImage(
+        "FIRE", 
         start_date, 
         end_date, 
         frequency=frequency, 

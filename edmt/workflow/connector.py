@@ -101,6 +101,9 @@ def get_satellite_collection(
     elif pipeline == "chirps":
         ic, meta = _build_chirps(start_date, end_date)
 
+    elif pipeline == "fire":
+        ic, meta = _build_fire(start_date, end_date)
+
     else:
         raise ValueError("Invalid pipeline")
     
@@ -597,8 +600,6 @@ def get_landcover(roi_gdf: gpd.GeoDataFrame) -> ee.Image:
     return _build_landcover("ESA", roi_gdf)
 
 # 7 : Soil Moisture
-
-
 
 def get_soilmoisture(roi_gdf: gpd.GeoDataFrame) -> ee.Image:
     """

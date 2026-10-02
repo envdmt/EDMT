@@ -124,6 +124,7 @@ _PRODUCT_REGISTRY = {
     "EVI": "vegetation",
     "CHIRPS": "chirps",
     "FLOODING": "flooding",
+    "FIRE" : "fire"
 }
 
 
@@ -208,7 +209,12 @@ _SAT_CONFIG = {
     },
 
     "FIRE_INCIDENTS" : {
-
+        "MODIS": {
+            "collection": "MODIS/061/MOD14A1",
+            "band": "FireMask",
+            "scale_m": 1000,
+            "scale": {"type": "linear", "mult": 0.02, "add": 0.0}
+        }
     },
 }
 
@@ -422,6 +428,89 @@ def _build_flooding(satellite, start_date, end_date):
         "satellite": sat,
     }
 
+
+# Landcover
+
+def _build_landcover(satellite: str, roi_gdf: gpd.GeoDataFrame) -> ee.Image:
+  sat = _norm_sat(satellite)
+  cfg = _SAT_CONFIG["LANDCOVER"].get(sat)
+
+  geometry = gdf_to_ee_geometry(roi_gdf)
+
+  if not cfg:
+        raise ValueError(f"Unsupported land cover satellite: {satellite}")
+
+  ic = ee.ImageCollection(cfg["collection"])
+  landcover_image = ic.first()
+  landcover_map_band = landcover_image.select(
+      _SAT_CONFIG["LANDCOVER"]["ESA"]["bands"]
+  )
+
+  return landcover_map_band.clip(geometry)
+
+
+# Soil Moisture
+
+def _build_soilmoisture(
+    satellite: str,
+    roi_gdf: gpd.GeoDataFrame,
+) -> ee.Image:
+    """
+    Construct and return a clipped soil moisture raster for the specified product and ROI.
+    
+    Retrieves the configured soil moisture image from Earth Engine, extracts the
+    relevant band(s), and clips the result to the provided region of interest.
+    Relies on a centralized configuration dictionary to map product identifiers to
+    Earth Engine asset paths and band definitions.
+    
+    Args:
+        roi_gdf (gpd.GeoDataFrame): GeoDataFrame defining the region of interest. 
+            Must contain at least one valid geometry and be compatible with 
+            ``edmt.workflow.gdf_to_ee_geometry()``.
+        satellite (str, optional): Soil moisture product identifier. Defaults to 
+            ``"SOILGRIDS"``. Normalized internally via ``_norm_sat()``.
+            
+    Returns:
+        ee.Image: Single-band Earth Engine image containing soil property values, 
+            clipped to the ROI. Values represent mean soil moisture at 5–15 cm 
+            depth (typically in g/kg) as per the SoilGrids v2.0 specification.
+    """
+    sat = _norm_sat(satellite)
+    cfg = _SAT_CONFIG["SOIL_MOISTURE"].get(sat)
+    geometry = gdf_to_ee_geometry(roi_gdf)
+
+    if not cfg:
+        raise ValueError(f"Unsupported soil moisture product: {satellite}")
+
+    sm_image = ee.Image(cfg["collection"])
+    sm_band = sm_image.select(cfg["bands"])
+
+    return sm_band.clip(geometry)
+
+
+# Fire Incidence
+
+def _build_fire(start_date, end_date, satellite: str = "MODIS_TERRA"):
+    sat = _norm_sat(satellite)
+    cfg = _SAT_CONFIG["FIRE_INCIDENTS"].get(sat)
+    geometry = edmt.workflow.gdf_to_ee_geometry(roi_gdf)
+
+    if not cfg:
+        raise ValueError(f"Unsupported fire incident product: {satellite}")
+
+    ic = ee.ImageCollection(cfg["collection"])
+    
+    if start_date and end_date:
+        ic = ic.filterDate(start_date, end_date)
+
+    def _proc(img):
+        return _scale_lst(img, cfg["band"], cfg["scale"])
+
+    return ic.map(_proc), {
+        "bands": ["FireMask"],
+        "scale_m": cfg["scale_m"]
+    }
+
 # 3 : COMPUTATION
 
 # LST
@@ -497,6 +586,26 @@ def _compute_chirps(start, period_ic, geometry, scale, meta):
     })
 
 
+def _compute_fire(start, period_ic, geometry, scale, meta):
+    band = meta.get("bands")
+    img = period_ic.select(band).sum().rename(band)
+
+    stats = img.reduceRegion(
+        reducer=ee.Reducer.max(),
+        geometry=geometry,
+        scale=scale,
+        crs=img.select(band).projection(),
+        maxPixels=1e13,
+        tileScale=16, 
+        bestEffort=True,
+    )
+
+    return ee.Feature(None, {
+        "date": start.format("YYYY-MM-dd"),
+        "product": "CHIRPS",
+        "precipitation_mm": stats.get(band),
+        "unit": meta.get("unit", "mm"),
+    })
 
 # Compute Registry
 _COMPUTE_REGISTRY = {
@@ -504,7 +613,8 @@ _COMPUTE_REGISTRY = {
     "NDVI": _compute_veg,
     "EVI": _compute_veg,
     "LST": _compute_lst,
-    "FLOOD":_build_flooding
+    "FLOOD":_build_flooding,
+    "FIRE" : _build_fire,
 }
 
 
@@ -594,6 +704,19 @@ def _chirps_composite(start, end, period_ic, meta, reducer):
         "satellite": meta["satellite"],
     })
 
+# Fire
+def _fire_composite(start, end, period_ic, meta, reducer):
+    band = meta["bands"][0]
+    img = getattr(period_ic.select(band), reducer)()
+
+    return img.rename(band).set({
+        "period_start": start.format("YYYY-MM-dd"),
+        "period_end": end.format("YYYY-MM-dd"),
+        "product": meta["product"],
+        "reducer": reducer,
+        "unit": "index",
+        "satellite": meta["satellite"],
+    })
 
 
 _COMPOSITE_BUILDERS = {
@@ -601,6 +724,7 @@ _COMPOSITE_BUILDERS = {
     "NDVI": _veg_composite,
     "EVI": _veg_composite,
     "CHIRPS": _chirps_composite,
+    "FIRE" : _fire_composite
 }
 
 
@@ -682,65 +806,4 @@ def _build_period_img(
             _empty_img(start, end, meta.get("frequency", ""), prod)
         )
     )
-
-
-
-# Landcover
-
-
-def _build_landcover(satellite: str, roi_gdf: gpd.GeoDataFrame) -> ee.Image:
-  sat = _norm_sat(satellite)
-  cfg = _SAT_CONFIG["LANDCOVER"].get(sat)
-
-  geometry = gdf_to_ee_geometry(roi_gdf)
-
-  if not cfg:
-        raise ValueError(f"Unsupported land cover satellite: {satellite}")
-
-  ic = ee.ImageCollection(cfg["collection"])
-  landcover_image = ic.first()
-  landcover_map_band = landcover_image.select(
-      _SAT_CONFIG["LANDCOVER"]["ESA"]["bands"]
-  )
-
-  return landcover_map_band.clip(geometry)
-
-
-# Soil Moisture
-
-def _build_soilmoisture(
-    satellite: str,
-    roi_gdf: gpd.GeoDataFrame,
-) -> ee.Image:
-    """
-    Construct and return a clipped soil moisture raster for the specified product and ROI.
-    
-    Retrieves the configured soil moisture image from Earth Engine, extracts the
-    relevant band(s), and clips the result to the provided region of interest.
-    Relies on a centralized configuration dictionary to map product identifiers to
-    Earth Engine asset paths and band definitions.
-    
-    Args:
-        roi_gdf (gpd.GeoDataFrame): GeoDataFrame defining the region of interest. 
-            Must contain at least one valid geometry and be compatible with 
-            ``edmt.workflow.gdf_to_ee_geometry()``.
-        satellite (str, optional): Soil moisture product identifier. Defaults to 
-            ``"SOILGRIDS"``. Normalized internally via ``_norm_sat()``.
-            
-    Returns:
-        ee.Image: Single-band Earth Engine image containing soil property values, 
-            clipped to the ROI. Values represent mean soil moisture at 5–15 cm 
-            depth (typically in g/kg) as per the SoilGrids v2.0 specification.
-    """
-    sat = _norm_sat(satellite)
-    cfg = _SAT_CONFIG["SOIL_MOISTURE"].get(sat)
-    geometry = gdf_to_ee_geometry(roi_gdf)
-
-    if not cfg:
-        raise ValueError(f"Unsupported soil moisture product: {satellite}")
-
-    sm_image = ee.Image(cfg["collection"])
-    sm_band = sm_image.select(cfg["bands"])
-
-    return sm_band.clip(geometry)
 
