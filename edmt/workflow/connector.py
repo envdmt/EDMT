@@ -595,7 +595,36 @@ def get_landcover(roi_gdf: gpd.GeoDataFrame) -> ee.Image:
     """
     return _build_landcover("ESA", roi_gdf)
 
-# 7 : RASTER TO VECTOR POINTS
+# 7 : Soil Moisture
+
+
+def get_soilmoisture(roi_gdf: gpd.GeoDataFrame) -> ee.Image:
+    """
+    Retrieve the SMAP soil moisture image clipped to a specified region of interest.
+    
+    This function serves as a convenience wrapper around ``_build_soilmoisture()``, 
+    pre-configured to use the ``"SMAP"`` (Soil Moisture Active Passive) product. 
+    It extracts the primary soil moisture image, selects the classification band, 
+    and returns the result clipped to the provided ROI.
+    
+    Args:
+        roi_gdf (gpd.GeoDataFrame): GeoDataFrame defining the region of interest. 
+            Must be compatible with ``edmt.workflow.gdf_to_ee_geometry()``.
+            
+    Returns:
+        ee.Image: Single-band Earth Engine image containing SMAP soil moisture 
+            values, spatially clipped to the ROI.
+          
+    Example:
+        >>> import geopandas as gpd
+        >>> roi = gpd.read_file("path/to/watershed_boundary.gpkg")
+        >>> sm_img = get_soilmoisture(roi)
+        >>> print(sm_img.bandNames().getInfo())
+    """
+    return _build_soilmoisture("SMAP", roi_gdf)
+
+
+# 8 : RASTER TO VECTOR POINTS
 
 def ee_to_points(
     image: ee.Image, 

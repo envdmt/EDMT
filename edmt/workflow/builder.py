@@ -193,20 +193,24 @@ _SAT_CONFIG = {
         }
     },
 
+    "LANDCOVER" : {
+        "ESA": {
+            "collection": "ESA/WorldCover/v100",
+            "bands": "Map"
+        },
+    },
+
     "SOIL_MOISTURE" : {
+      "SMAP": {
+          "collection": "NASA/SMAP/SPL4SMGP/008",
+          "bands": "sm_surface"
+      }
 
     },
 
     "FIRE_INCIDENTS" : {
 
     },
-
-    "LANDCOVER" : {
-        "ESA": {
-            "collection": "ESA/WorldCover/v100",
-            "bands": "Map"
-        },
-    }
 }
 
 
@@ -703,6 +707,35 @@ def _build_landcover(satellite: str, roi_gdf: gpd.GeoDataFrame) -> ee.Image:
   return landcover_map_band.clip(geometry)
 
 
+# Soil Moisture
 
+def _build_soilmoisture(satellite: str, roi_gdf: gpd.GeoDataFrame) -> ee.Image:
+    """
+    Construct and return a clipped soil moisture raster for the specified satellite and ROI.
+    
+    Retrieves the primary soil moisture image from the configured Earth Engine collection, 
+    extracts the relevant band(s), and clips the result to the provided region of interest. 
+    Relies on a centralized configuration dictionary to map satellite identifiers to 
+    Earth Engine asset paths and band definitions.
+            
+    Returns:
+        ee.Image: Single-band Earth Engine image containing soil moisture values, 
+            clipped to the ROI. Pixel units/values depend on the source product 
+            configuration (typically volumetric water content in m³/m³ or percent).
+    
+    """
+    sat = _norm_sat(satellite)
+    cfg = _SAT_CONFIG["SOIL_MOISTURE"].get(sat)
+
+    geometry = edmt.workflow.gdf_to_ee_geometry(roi_gdf)
+
+    if not cfg:
+        raise ValueError(f"Unsupported soil moisture satellite: {satellite}")
+
+    ic = ee.ImageCollection(cfg["collection"])
+    sm_image = ic.first()
+    sm_band = sm_image.select(cfg["bands"])
+
+    return sm_band.clip(geometry)
 
 

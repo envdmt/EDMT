@@ -4,7 +4,8 @@ from .builder import (
 
 from .connector import (
     ee_to_points,
-    get_landcover
+    get_landcover,
+    get_soilmoisture
 )
 
 from .workflow import (
@@ -46,6 +47,7 @@ _workflow_functions = [
     "get_evi_image_collection",
     "get_chirps_image_collection",
     "get_landcover",
+    "get_soilmoisture",
     "ee_to_points"
 ]
 
