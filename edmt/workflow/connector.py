@@ -13,6 +13,7 @@ from .builder import (
     _build_vegetation,
     _build_flooding,
     _build_landcover,
+    _build_soilmoisture,
 
     _norm_sat,
     _build_chirps,
@@ -598,33 +599,35 @@ def get_landcover(roi_gdf: gpd.GeoDataFrame) -> ee.Image:
 # 7 : Soil Moisture
 
 
+
 def get_soilmoisture(roi_gdf: gpd.GeoDataFrame) -> ee.Image:
     """
-    Retrieve the SMAP soil moisture image clipped to a specified region of interest.
+    Retrieve the ISRIC SoilGrids soil moisture image clipped to a specified region of interest.
     
-    This function serves as a convenience wrapper around ``_build_soilmoisture()``, 
-    pre-configured to use the ``"SMAP"`` (Soil Moisture Active Passive) product. 
-    It extracts the primary soil moisture image, selects the classification band, 
-    and returns the result clipped to the provided ROI.
+    Convenience wrapper around ``_build_soilmoisture()`` pre-configured for 
+    ISRIC's SoilGrids v2.0 product. Returns high-resolution static soil moisture 
+    estimates (mean 5–15 cm depth) for the ROI.
     
     Args:
         roi_gdf (gpd.GeoDataFrame): GeoDataFrame defining the region of interest. 
             Must be compatible with ``edmt.workflow.gdf_to_ee_geometry()``.
             
     Returns:
-        ee.Image: Single-band Earth Engine image containing SMAP soil moisture 
-            values, spatially clipped to the ROI.
+        ee.Image: Single-band Earth Engine image containing SoilGrids soil moisture 
+            values (``val_5_15cm_mean``), spatially clipped to the ROI.
+            Values are in grams of water per kilogram of soil (g/kg).
+            
           
     Example:
         >>> import geopandas as gpd
-        >>> roi = gpd.read_file("path/to/watershed_boundary.gpkg")
+        >>> roi = gpd.read_file("path/to/study_area.gpkg")
         >>> sm_img = get_soilmoisture(roi)
-        >>> print(sm_img.bandNames().getInfo())
+        >>> print(sm_img.bandNames().getInfo())  # ['val_5_15cm_mean']
     """
-    return _build_soilmoisture("SMAP", roi_gdf)
+    return _build_soilmoisture("SOILGRIDS",roi_gdf)
 
 
-# 8 : RASTER TO VECTOR POINTS
+# RASTER TO VECTOR POINTS
 
 def ee_to_points(
     image: ee.Image, 

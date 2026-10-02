@@ -200,12 +200,11 @@ _SAT_CONFIG = {
         },
     },
 
-    "SOIL_MOISTURE" : {
-      "SMAP": {
-          "collection": "NASA/SMAP/SPL4SMGP/008",
-          "bands": "sm_surface"
-      }
-
+    "SOIL_MOISTURE": {
+        "SOILGRIDS": {
+            "collection": "ISRIC/SoilGrids250m/v2_0/wv0010",
+            "bands": "val_5_15cm_mean"
+        }
     },
 
     "FIRE_INCIDENTS" : {
@@ -709,33 +708,39 @@ def _build_landcover(satellite: str, roi_gdf: gpd.GeoDataFrame) -> ee.Image:
 
 # Soil Moisture
 
-def _build_soilmoisture(satellite: str, roi_gdf: gpd.GeoDataFrame) -> ee.Image:
+def _build_soilmoisture(
+    satellite: str,
+    roi_gdf: gpd.GeoDataFrame,
+) -> ee.Image:
     """
-    Construct and return a clipped soil moisture raster for the specified satellite and ROI.
+    Construct and return a clipped soil moisture raster for the specified product and ROI.
     
-    Retrieves the primary soil moisture image from the configured Earth Engine collection, 
-    extracts the relevant band(s), and clips the result to the provided region of interest. 
-    Relies on a centralized configuration dictionary to map satellite identifiers to 
+    Retrieves the configured soil moisture image from Earth Engine, extracts the
+    relevant band(s), and clips the result to the provided region of interest.
+    Relies on a centralized configuration dictionary to map product identifiers to
     Earth Engine asset paths and band definitions.
+    
+    Args:
+        roi_gdf (gpd.GeoDataFrame): GeoDataFrame defining the region of interest. 
+            Must contain at least one valid geometry and be compatible with 
+            ``edmt.workflow.gdf_to_ee_geometry()``.
+        satellite (str, optional): Soil moisture product identifier. Defaults to 
+            ``"SOILGRIDS"``. Normalized internally via ``_norm_sat()``.
             
     Returns:
-        ee.Image: Single-band Earth Engine image containing soil moisture values, 
-            clipped to the ROI. Pixel units/values depend on the source product 
-            configuration (typically volumetric water content in m³/m³ or percent).
-    
+        ee.Image: Single-band Earth Engine image containing soil property values, 
+            clipped to the ROI. Values represent mean soil moisture at 5–15 cm 
+            depth (typically in g/kg) as per the SoilGrids v2.0 specification.
     """
     sat = _norm_sat(satellite)
     cfg = _SAT_CONFIG["SOIL_MOISTURE"].get(sat)
-
     geometry = edmt.workflow.gdf_to_ee_geometry(roi_gdf)
 
     if not cfg:
-        raise ValueError(f"Unsupported soil moisture satellite: {satellite}")
+        raise ValueError(f"Unsupported soil moisture product: {satellite}")
 
-    ic = ee.ImageCollection(cfg["collection"])
-    sm_image = ic.first()
+    sm_image = ee.Image(cfg["collection"])
     sm_band = sm_image.select(cfg["bands"])
 
     return sm_band.clip(geometry)
-
 
