@@ -734,7 +734,7 @@ def _build_soilmoisture(
     """
     sat = _norm_sat(satellite)
     cfg = _SAT_CONFIG["SOIL_MOISTURE"].get(sat)
-    geometry = edmt.workflow.gdf_to_ee_geometry(roi_gdf)
+    geometry = gdf_to_ee_geometry(roi_gdf)
 
     if not cfg:
         raise ValueError(f"Unsupported soil moisture product: {satellite}")
