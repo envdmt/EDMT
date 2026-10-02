@@ -14,10 +14,11 @@ from .builder import (
     _build_flooding,
     _build_landcover,
     _build_soilmoisture,
-
-    _norm_sat,
     _build_chirps,
     _build_lst,
+    _build_fire,
+
+    _norm_sat,
     _compute,
     _empty,
     _advance_end,
@@ -679,6 +680,7 @@ def ee_to_points(
     gdf = gdf.set_crs("EPSG:4326")
 
     return gdf
+
 
 
 
