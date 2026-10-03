@@ -161,7 +161,7 @@ def get_fire_incident_image(
     start_date: str,
     end_date: str,
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
-    reducer: ReducerName = "mean",
+    reducer: ReducerName = "max",
 ) -> ee.Image:
     return CompositeImage(
         "FIRE", 
@@ -252,7 +252,7 @@ def get_fire_image_collection(
     end_date: str,
     frequency: Frequency = "monthly",
     roi_gdf: Optional[gpd.GeoDataFrame] = None,
-    reducer: ReducerName = "mean",
+    reducer: ReducerName = "max",
 ) -> ee.ImageCollection:
     return CollectionImage(
         "FIRE", 

@@ -208,12 +208,11 @@ _SAT_CONFIG = {
         }
     },
 
-    "FIRE_INCIDENTS" : {
+    "FIRE_INCIDENTS": {
         "MODIS_TERRA": {
             "collection": "MODIS/061/MOD14A1",
-            "band": "FireMask",
+            "bands": ["FireMask", "MaxFRP"],
             "scale_m": 1000,
-            "scale": {"type": "linear", "mult": 0.02, "add": 0.0}
         }
     },
 }
@@ -493,21 +492,22 @@ def _build_soilmoisture(
 def _build_fire(start_date, end_date, satellite: str = "MODIS_TERRA"):
     sat = _norm_sat(satellite)
     cfg = _SAT_CONFIG["FIRE_INCIDENTS"].get(sat)
-
     if not cfg:
         raise ValueError(f"Unsupported fire incident product: {satellite}")
 
     ic = ee.ImageCollection(cfg["collection"])
-    
     if start_date and end_date:
         ic = ic.filterDate(start_date, end_date)
 
     def _proc(img):
-        return _scale_lst(img, cfg["band"], cfg["scale"])
+        fire_mask = img.select("FireMask")
+        max_frp = img.select("MaxFRP").multiply(0.1).rename("MaxFRP") 
+        return (ee.Image.cat([fire_mask, max_frp])
+                .copyProperties(img, ["system:time_start"]))
 
     return ic.map(_proc), {
-        "bands": ["FireMask"],
-        "scale_m": cfg["scale_m"]
+        "bands": cfg["bands"],
+        "scale_m": cfg["scale_m"],
     }
 
 # 3 : COMPUTATION
