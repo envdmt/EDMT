@@ -493,7 +493,7 @@ def _build_soilmoisture(
 def _build_fire(start_date, end_date, satellite: str = "MODIS_TERRA"):
     sat = _norm_sat(satellite)
     cfg = _SAT_CONFIG["FIRE_INCIDENTS"].get(sat)
-    geometry = edmt.workflow.gdf_to_ee_geometry(roi_gdf)
+    geometry = gdf_to_ee_geometry(roi_gdf)
 
     if not cfg:
         raise ValueError(f"Unsupported fire incident product: {satellite}")
