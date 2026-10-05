@@ -211,7 +211,7 @@ _SAT_CONFIG = {
     "FIRE_INCIDENTS": {
         "MODIS_TERRA": {
             "collection": "MODIS/061/MOD14A1",
-            "bands": "FireMask",
+            "bands": ["FireMask", "MaxFRP"],
             "scale_m": 1000,
         }
     },
