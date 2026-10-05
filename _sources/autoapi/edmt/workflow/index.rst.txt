@@ -67,6 +67,61 @@ Package Contents
    >>> print(gdf.crs)  # EPSG:4326
 
 
+.. py:function:: get_landcover(roi_gdf: geopandas.GeoDataFrame) -> ee.Image
+
+   Retrieve the ESA land cover classification image clipped to a specified region of interest.
+
+   This function serves as a convenience wrapper around ``_build_landcover()``,
+   pre-configured to use the ``"ESA"`` land cover product. It extracts the primary
+   land cover image from the configured Earth Engine collection, selects the
+   classification band(s), and returns the result clipped to the provided ROI.
+
+   :param roi_gdf: GeoDataFrame defining the region of interest.
+                   Must contain at least one valid geometry and be compatible with
+                   ``edmt.workflow.gdf_to_ee_geometry()``.
+   :type roi_gdf: gpd.GeoDataFrame
+
+   :returns:
+
+             A single-band Earth Engine image containing the ESA land cover
+                 classification values, spatially clipped to the ROI. Pixel values
+                 correspond to the standard ESA land cover class indices.
+   :rtype: ee.Image
+
+   :raises ValueError: If the ``"ESA"`` land cover configuration is missing from
+       ``_SAT_CONFIG``.
+   :raises Exception: Propagates geometry conversion, collection access, or
+       Earth Engine clipping errors.
+
+   .. rubric:: Example
+
+   >>> import geopandas as gpd
+   >>> roi = gpd.read_file("path/to/study_area.gpkg")
+   >>> lc_img = get_landcover(roi)
+   >>> # Trigger server-side computation and inspect metadata
+   >>> print(lc_img.bandNames().getInfo())
+
+
+.. py:function:: get_soilmoisture(roi_gdf: geopandas.GeoDataFrame) -> ee.Image
+
+   Retrieve the ISRIC SoilGrids soil moisture image clipped to a specified region of interest.
+
+   Convenience wrapper around ``_build_soilmoisture()`` pre-configured for
+   ISRIC's SoilGrids v2.0 product. Returns high-resolution static soil moisture
+   estimates (mean 5–15 cm depth) for the ROI.
+
+   :param roi_gdf: GeoDataFrame defining the region of interest.
+                   Must be compatible with ``edmt.workflow.gdf_to_ee_geometry()``.
+   :type roi_gdf: gpd.GeoDataFrame
+
+   :returns:
+
+             Single-band Earth Engine image containing SoilGrids soil moisture
+                 values (``val_5_15cm_mean``), spatially clipped to the ROI.
+                 Values are in grams of water per kilogram of soil (g/kg).
+   :rtype: ee.Image
+
+
 .. py:function:: compute_evi_timeseries(start_date: str, end_date: str, satellite: str = 'Sentinel2', frequency: str = 'monthly', roi_gdf: Optional[geopandas.GeoDataFrame] = None, scale: Optional[int] = None) -> pandas.DataFrame
 
 .. py:function:: compute_lst_timeseries(start_date: str, end_date: str, satellite: str = 'MODIS', frequency: str = 'monthly', roi_gdf: Optional[geopandas.GeoDataFrame] = None, scale: Optional[int] = None) -> pandas.DataFrame

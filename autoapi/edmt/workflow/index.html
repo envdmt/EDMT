@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="../../../genindex.html"><link rel="search" title="Search" href="../../../search.html"><link rel="next" title="edmt.workflow.analysis" href="analysis/index.html"><link rel="prev" title="edmt.plotting" href="../plotting/index.html">
 
     <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>edmt.workflow - EDMT 1.0.9 documentation</title>
+        <title>edmt.workflow - EDMT 1.1.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
@@ -162,7 +162,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">EDMT 1.0.9 documentation</div></a>
+      <a href="../../../index.html"><div class="brand">EDMT 1.1.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -183,7 +183,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../../../index.html">
   
-  <span class="sidebar-brand-text">EDMT 1.0.9 documentation</span>
+  <span class="sidebar-brand-text">EDMT 1.1.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -343,6 +343,76 @@ computation times out, or the response payload exceeds the <code class="docutils
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">gdf</span><span class="o">.</span><span class="n">crs</span><span class="p">)</span>  <span class="c1"># EPSG:4326</span>
 </pre></div>
 </div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.workflow.get_landcover">
+<span class="sig-prename descclassname"><span class="pre">edmt.workflow.</span></span><span class="sig-name descname"><span class="pre">get_landcover</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">roi_gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ee.Image</span></span></span><a class="headerlink" href="#edmt.workflow.get_landcover" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieve the ESA land cover classification image clipped to a specified region of interest.</p>
+<p>This function serves as a convenience wrapper around <code class="docutils literal notranslate"><span class="pre">_build_landcover()</span></code>,
+pre-configured to use the <code class="docutils literal notranslate"><span class="pre">&quot;ESA&quot;</span></code> land cover product. It extracts the primary
+land cover image from the configured Earth Engine collection, selects the
+classification band(s), and returns the result clipped to the provided ROI.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>roi_gdf</strong> (<em>gpd.GeoDataFrame</em>) -- GeoDataFrame defining the region of interest.
+Must contain at least one valid geometry and be compatible with
+<code class="docutils literal notranslate"><span class="pre">edmt.workflow.gdf_to_ee_geometry()</span></code>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A single-band Earth Engine image containing the ESA land cover</dt><dd><p>classification values, spatially clipped to the ROI. Pixel values
+correspond to the standard ESA land cover class indices.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ee.Image</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ValueError</strong> -- If the <code class="docutils literal notranslate"><span class="pre">&quot;ESA&quot;</span></code> land cover configuration is missing from
+<code class="docutils literal notranslate"><span class="pre">_SAT_CONFIG</span></code>.</p></li>
+<li><p><strong>Exception</strong> -- Propagates geometry conversion, collection access, or
+Earth Engine clipping errors.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">geopandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gpd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">roi</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="s2">"path/to/study_area.gpkg"</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lc_img</span> <span class="o">=</span> <span class="n">get_landcover</span><span class="p">(</span><span class="n">roi</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Trigger server-side computation and inspect metadata</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">lc_img</span><span class="o">.</span><span class="n">bandNames</span><span class="p">()</span><span class="o">.</span><span class="n">getInfo</span><span class="p">())</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.workflow.get_soilmoisture">
+<span class="sig-prename descclassname"><span class="pre">edmt.workflow.</span></span><span class="sig-name descname"><span class="pre">get_soilmoisture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">roi_gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ee.Image</span></span></span><a class="headerlink" href="#edmt.workflow.get_soilmoisture" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieve the ISRIC SoilGrids soil moisture image clipped to a specified region of interest.</p>
+<p>Convenience wrapper around <code class="docutils literal notranslate"><span class="pre">_build_soilmoisture()</span></code> pre-configured for
+ISRIC's SoilGrids v2.0 product. Returns high-resolution static soil moisture
+estimates (mean 5–15 cm depth) for the ROI.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>roi_gdf</strong> (<em>gpd.GeoDataFrame</em>) -- GeoDataFrame defining the region of interest.
+Must be compatible with <code class="docutils literal notranslate"><span class="pre">edmt.workflow.gdf_to_ee_geometry()</span></code>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Single-band Earth Engine image containing SoilGrids soil moisture</dt><dd><p>values (<code class="docutils literal notranslate"><span class="pre">val_5_15cm_mean</span></code>), spatially clipped to the ROI.
+Values are in grams of water per kilogram of soil (g/kg).</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ee.Image</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -677,6 +747,8 @@ composite_score, season, season_source.</p>
 <li><a class="reference internal" href="#package-contents">Package Contents</a><ul>
 <li><a class="reference internal" href="#edmt.workflow.gdf_to_ee_geometry"><code class="docutils literal notranslate"><span class="pre">gdf_to_ee_geometry()</span></code></a></li>
 <li><a class="reference internal" href="#edmt.workflow.ee_to_points"><code class="docutils literal notranslate"><span class="pre">ee_to_points()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.workflow.get_landcover"><code class="docutils literal notranslate"><span class="pre">get_landcover()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.workflow.get_soilmoisture"><code class="docutils literal notranslate"><span class="pre">get_soilmoisture()</span></code></a></li>
 <li><a class="reference internal" href="#edmt.workflow.compute_evi_timeseries"><code class="docutils literal notranslate"><span class="pre">compute_evi_timeseries()</span></code></a></li>
 <li><a class="reference internal" href="#edmt.workflow.compute_lst_timeseries"><code class="docutils literal notranslate"><span class="pre">compute_lst_timeseries()</span></code></a></li>
 <li><a class="reference internal" href="#edmt.workflow.compute_ndvi_timeseries"><code class="docutils literal notranslate"><span class="pre">compute_ndvi_timeseries()</span></code></a></li>
@@ -705,7 +777,7 @@ composite_score, season, season_source.</p>
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=f59b4473"></script>
+</div><script src="../../../_static/documentation_options.js?v=9eeba0cf"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>
