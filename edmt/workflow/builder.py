@@ -833,3 +833,5 @@ def _apply_fire_zones(
 
     return img.updateMask(zone) if zones_only else img
 
+
+
