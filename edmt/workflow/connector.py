@@ -12,10 +12,13 @@ from .builder import (
     _PRODUCT_REGISTRY,
     _build_vegetation,
     _build_flooding,
-
-    _norm_sat,
+    _build_landcover,
+    _build_soilmoisture,
     _build_chirps,
     _build_lst,
+    _build_fire,
+
+    _norm_sat,
     _compute,
     _empty,
     _advance_end,
@@ -98,6 +101,9 @@ def get_satellite_collection(
 
     elif pipeline == "chirps":
         ic, meta = _build_chirps(start_date, end_date)
+
+    elif pipeline == "fire":
+        ic, meta = _build_fire(start_date, end_date)
 
     else:
         raise ValueError("Invalid pipeline")
@@ -320,9 +326,6 @@ def ComputeTimeseries(
         if "precipitation_mm" in df.columns:
             df = df[df["precipitation_mm"].notna()]
 
-    # elif prod == "CHIRPS":
-    #     if "precipitation_mm" in df.columns:
-    #         df = df[df["precipitation_mm"].notna()]
 
     elif prod in ("NDVI", "EVI"):
         key = prod.lower()
@@ -513,6 +516,8 @@ def CollectionImage(
 
     if prod == "CHIRPS":
         allowed = ("sum", "mean", "median", "min", "max")
+    elif prod == "FIRE":
+        allowed = ("max",)
     else:
         allowed = ("mean", "median", "min", "max")
 
@@ -556,8 +561,68 @@ def CollectionImage(
     return img_coll
 
 
+# 6 : Landcover
 
-# 6 : RASTER TO VECTOR POINTS
+def get_landcover(roi_gdf: gpd.GeoDataFrame) -> ee.Image:
+    """
+    Retrieve the ESA land cover classification image clipped to a specified region of interest.
+    
+    This function serves as a convenience wrapper around ``_build_landcover()``, 
+    pre-configured to use the ``"ESA"`` land cover product. It extracts the primary 
+    land cover image from the configured Earth Engine collection, selects the 
+    classification band(s), and returns the result clipped to the provided ROI.
+    
+    Args:
+        roi_gdf (gpd.GeoDataFrame): GeoDataFrame defining the region of interest. 
+            Must contain at least one valid geometry and be compatible with 
+            ``edmt.workflow.gdf_to_ee_geometry()``.
+            
+    Returns:
+        ee.Image: A single-band Earth Engine image containing the ESA land cover 
+            classification values, spatially clipped to the ROI. Pixel values 
+            correspond to the standard ESA land cover class indices.
+            
+    Raises:
+        ValueError: If the ``"ESA"`` land cover configuration is missing from 
+            ``_SAT_CONFIG``.
+        Exception: Propagates geometry conversion, collection access, or 
+            Earth Engine clipping errors.
+            
+    
+          
+    Example:
+        >>> import geopandas as gpd
+        >>> roi = gpd.read_file("path/to/study_area.gpkg")
+        >>> lc_img = get_landcover(roi)
+        >>> # Trigger server-side computation and inspect metadata
+        >>> print(lc_img.bandNames().getInfo())
+    """
+    return _build_landcover("ESA", roi_gdf)
+
+# 7 : Soil Moisture
+
+def get_soilmoisture(roi_gdf: gpd.GeoDataFrame) -> ee.Image:
+    """
+    Retrieve the ISRIC SoilGrids soil moisture image clipped to a specified region of interest.
+    
+    Convenience wrapper around ``_build_soilmoisture()`` pre-configured for 
+    ISRIC's SoilGrids v2.0 product. Returns high-resolution static soil moisture 
+    estimates (mean 5–15 cm depth) for the ROI.
+    
+    Args:
+        roi_gdf (gpd.GeoDataFrame): GeoDataFrame defining the region of interest. 
+            Must be compatible with ``edmt.workflow.gdf_to_ee_geometry()``.
+            
+    Returns:
+        ee.Image: Single-band Earth Engine image containing SoilGrids soil moisture 
+            values (``val_5_15cm_mean``), spatially clipped to the ROI.
+            Values are in grams of water per kilogram of soil (g/kg).
+            
+    """
+    return _build_soilmoisture("SOILGRIDS",roi_gdf)
+
+
+# RASTER TO VECTOR POINTS
 
 def ee_to_points(
     image: ee.Image, 
@@ -614,6 +679,7 @@ def ee_to_points(
     gdf = gdf.set_crs("EPSG:4326")
 
     return gdf
+
 
 
 

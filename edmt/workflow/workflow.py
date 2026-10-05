@@ -10,6 +10,7 @@ from .connector import (
 from .builder import (
     Frequency,
     ReducerName,
+    _apply_fire_zones,
 )
 
 def compute_lst_timeseries(
@@ -158,6 +159,25 @@ def get_chirps_image(
         )
 
 
+def get_fire_incident_image(
+    start_date: str,
+    end_date: str,
+    roi_gdf: Optional[gpd.GeoDataFrame] = None,
+    reducer: ReducerName = "max",
+    min_confidence: int = 7,
+    zones_only: bool = True,
+) -> ee.Image:
+    img = CompositeImage(
+        "FIRE",
+        start_date,
+        end_date,
+        satellite=None,
+        roi_gdf=roi_gdf,
+        reducer=reducer,
+    )
+    return _apply_fire_zones(img, min_confidence, zones_only)
+
+
 def get_lst_image_collection(
     start_date: str,
     end_date: str,
@@ -232,6 +252,26 @@ def get_chirps_image_collection(
         reducer=reducer
         )
 
+
+def get_fire_image_collection(
+    start_date: str,
+    end_date: str,
+    frequency: Frequency = "monthly",
+    roi_gdf: Optional[gpd.GeoDataFrame] = None,
+    reducer: ReducerName = "max",
+    min_confidence: int = 7,
+    zones_only: bool = True,
+) -> ee.ImageCollection:
+    coll = CollectionImage(
+        "FIRE",
+        start_date,
+        end_date,
+        frequency=frequency,
+        satellite=None,
+        roi_gdf=roi_gdf,
+        reducer=reducer,
+    )
+    return coll.map(lambda img: _apply_fire_zones(img, min_confidence, zones_only))
 
 
 

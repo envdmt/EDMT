@@ -124,6 +124,7 @@ _PRODUCT_REGISTRY = {
     "EVI": "vegetation",
     "CHIRPS": "chirps",
     "FLOODING": "flooding",
+    "FIRE" : "fire"
 }
 
 
@@ -191,7 +192,29 @@ _SAT_CONFIG = {
             "band": "VH",
             "scale_m": 10,
         }
-    }
+    },
+
+    "LANDCOVER" : {
+        "ESA": {
+            "collection": "ESA/WorldCover/v100",
+            "bands": "Map"
+        },
+    },
+
+    "SOIL_MOISTURE": {
+        "SOILGRIDS": {
+            "collection": "ISRIC/SoilGrids250m/v2_0/wv0010",
+            "bands": "val_5_15cm_mean"
+        }
+    },
+
+    "FIRE_INCIDENTS": {
+        "MODIS_TERRA": {
+            "collection": "MODIS/061/MOD14A1",
+            "bands": ["FireMask", "MaxFRP"],
+            "scale_m": 1000,
+        }
+    },
 }
 
 
@@ -404,6 +427,89 @@ def _build_flooding(satellite, start_date, end_date):
         "satellite": sat,
     }
 
+
+# Landcover
+
+def _build_landcover(satellite: str, roi_gdf: gpd.GeoDataFrame) -> ee.Image:
+  sat = _norm_sat(satellite)
+  cfg = _SAT_CONFIG["LANDCOVER"].get(sat)
+
+  geometry = gdf_to_ee_geometry(roi_gdf)
+
+  if not cfg:
+        raise ValueError(f"Unsupported land cover satellite: {satellite}")
+
+  ic = ee.ImageCollection(cfg["collection"])
+  landcover_image = ic.first()
+  landcover_map_band = landcover_image.select(
+      _SAT_CONFIG["LANDCOVER"]["ESA"]["bands"]
+  )
+
+  return landcover_map_band.clip(geometry)
+
+
+# Soil Moisture
+
+def _build_soilmoisture(
+    satellite: str,
+    roi_gdf: gpd.GeoDataFrame,
+) -> ee.Image:
+    """
+    Construct and return a clipped soil moisture raster for the specified product and ROI.
+    
+    Retrieves the configured soil moisture image from Earth Engine, extracts the
+    relevant band(s), and clips the result to the provided region of interest.
+    Relies on a centralized configuration dictionary to map product identifiers to
+    Earth Engine asset paths and band definitions.
+    
+    Args:
+        roi_gdf (gpd.GeoDataFrame): GeoDataFrame defining the region of interest. 
+            Must contain at least one valid geometry and be compatible with 
+            ``edmt.workflow.gdf_to_ee_geometry()``.
+        satellite (str, optional): Soil moisture product identifier. Defaults to 
+            ``"SOILGRIDS"``. Normalized internally via ``_norm_sat()``.
+            
+    Returns:
+        ee.Image: Single-band Earth Engine image containing soil property values, 
+            clipped to the ROI. Values represent mean soil moisture at 5–15 cm 
+            depth (typically in g/kg) as per the SoilGrids v2.0 specification.
+    """
+    sat = _norm_sat(satellite)
+    cfg = _SAT_CONFIG["SOIL_MOISTURE"].get(sat)
+    geometry = gdf_to_ee_geometry(roi_gdf)
+
+    if not cfg:
+        raise ValueError(f"Unsupported soil moisture product: {satellite}")
+
+    sm_image = ee.Image(cfg["collection"])
+    sm_band = sm_image.select(cfg["bands"])
+
+    return sm_band.clip(geometry)
+
+
+# Fire Incidence
+
+def _build_fire(start_date, end_date, satellite: str = "MODIS_TERRA"):
+    sat = _norm_sat(satellite)
+    cfg = _SAT_CONFIG["FIRE_INCIDENTS"].get(sat)
+    if not cfg:
+        raise ValueError(f"Unsupported fire incident product: {satellite}")
+
+    ic = ee.ImageCollection(cfg["collection"])
+    if start_date and end_date:
+        ic = ic.filterDate(start_date, end_date)
+
+    def _proc(img):
+        fire_mask = img.select("FireMask")
+        max_frp = img.select("MaxFRP").multiply(0.1).rename("MaxFRP") 
+        return (ee.Image.cat([fire_mask, max_frp])
+                .copyProperties(img, ["system:time_start"]))
+
+    return ic.map(_proc), {
+        "bands": cfg["bands"],
+        "scale_m": cfg["scale_m"],
+    }
+
 # 3 : COMPUTATION
 
 # LST
@@ -479,6 +585,26 @@ def _compute_chirps(start, period_ic, geometry, scale, meta):
     })
 
 
+def _compute_fire(start, period_ic, geometry, scale, meta):
+    band = meta.get("bands")
+    img = period_ic.select(band).sum().rename(band)
+
+    stats = img.reduceRegion(
+        reducer=ee.Reducer.max(),
+        geometry=geometry,
+        scale=scale,
+        crs=img.select(band).projection(),
+        maxPixels=1e13,
+        tileScale=16, 
+        bestEffort=True,
+    )
+
+    return ee.Feature(None, {
+        "date": start.format("YYYY-MM-dd"),
+        "product": "CHIRPS",
+        "precipitation_mm": stats.get(band),
+        "unit": meta.get("unit", "mm"),
+    })
 
 # Compute Registry
 _COMPUTE_REGISTRY = {
@@ -486,7 +612,8 @@ _COMPUTE_REGISTRY = {
     "NDVI": _compute_veg,
     "EVI": _compute_veg,
     "LST": _compute_lst,
-    "FLOOD":_build_flooding
+    "FLOOD":_build_flooding,
+    "FIRE" : _build_fire,
 }
 
 
@@ -576,13 +703,34 @@ def _chirps_composite(start, end, period_ic, meta, reducer):
         "satellite": meta["satellite"],
     })
 
+# Fire
+_FIRE_OUT_BANDS = ["FireMask", "MaxFRP", "FireDays"]
 
+def _fire_composite(start, end, period_ic, meta, reducer):
+    img = getattr(period_ic.select(["FireMask", "MaxFRP"]), reducer)()
+
+    fire_days = (
+        period_ic.select("FireMask")
+        .map(lambda i: i.gte(7).rename("FireDays"))
+        .sum()
+        .rename("FireDays")
+    )
+
+    return img.addBands(fire_days).set({
+        "period_start": start.format("YYYY-MM-dd"),
+        "period_end": end.format("YYYY-MM-dd"),
+        "product": meta["product"],
+        "reducer": reducer,
+        "unit": "FireMask:class, MaxFRP:MW, FireDays:count",
+        "satellite": meta["satellite"],
+    })
 
 _COMPOSITE_BUILDERS = {
     "LST": _lst_composite,
     "NDVI": _veg_composite,
     "EVI": _veg_composite,
     "CHIRPS": _chirps_composite,
+    "FIRE" : _fire_composite
 }
 
 
@@ -606,11 +754,12 @@ def _composite_image(product, start, end, period_ic, meta, reducer="mean"):
 
 # 5 : COLLECTION BUILD
 
-def _empty_img(start: ee.Date, end: ee.Date, freq: str, prod: str) -> ee.Image:
+def _empty_img(start, end, freq, prod, bands=None):
+    names = bands or ["empty"]
     return (
-        ee.Image(0)
+        ee.Image.constant([0] * len(names))
+        .rename(names)
         .updateMask(ee.Image(0))
-        .rename("empty")
         .set({
             "system:time_start": start.millis(),
             "period_start": start.format("YYYY-MM-dd"),
@@ -661,15 +810,26 @@ def _build_period_img(
         ee.Algorithms.If(
             n.gt(0),
             img,
-            _empty_img(start, end, meta.get("frequency", ""), prod)
+            _empty_img(
+                start, end, meta.get("frequency", ""), prod,
+                _FIRE_OUT_BANDS if prod == "FIRE" else None,
+            )
         )
     )
 
 
+def _apply_fire_zones(
+    img: ee.Image,
+    min_confidence: int = 7,
+    zones_only: bool = True,
+) -> ee.Image:
+    """Add a binary FireZone band (FireMask >= min_confidence). If zones_only, mask all bands to those pixels."""
+    if min_confidence not in (7, 8, 9):
+        raise ValueError("min_confidence must be 7 (low), 8 (nominal) or 9 (high)")
 
+    img = ee.Image(img)
+    zone = img.select("FireMask").gte(min_confidence)
+    img = img.addBands(zone.selfMask().rename("FireZone"))
 
-
-
-
-
+    return img.updateMask(zone) if zones_only else img
 
