@@ -704,19 +704,26 @@ def _chirps_composite(start, end, period_ic, meta, reducer):
     })
 
 # Fire
-def _fire_composite(start, end, period_ic, meta, reducer):
-    band = meta["bands"][0]
-    img = getattr(period_ic.select(band), reducer)()
+_FIRE_OUT_BANDS = ["FireMask", "MaxFRP", "FireDays"]
 
-    return img.rename(band).set({
+def _fire_composite(start, end, period_ic, meta, reducer):
+    img = getattr(period_ic.select(["FireMask", "MaxFRP"]), reducer)()
+
+    fire_days = (
+        period_ic.select("FireMask")
+        .map(lambda i: i.gte(7).rename("FireDays"))
+        .sum()
+        .rename("FireDays")
+    )
+
+    return img.addBands(fire_days).set({
         "period_start": start.format("YYYY-MM-dd"),
         "period_end": end.format("YYYY-MM-dd"),
         "product": meta["product"],
         "reducer": reducer,
-        "unit": "index",
+        "unit": "FireMask:class, MaxFRP:MW, FireDays:count",
         "satellite": meta["satellite"],
     })
-
 
 _COMPOSITE_BUILDERS = {
     "LST": _lst_composite,
@@ -747,11 +754,12 @@ def _composite_image(product, start, end, period_ic, meta, reducer="mean"):
 
 # 5 : COLLECTION BUILD
 
-def _empty_img(start: ee.Date, end: ee.Date, freq: str, prod: str) -> ee.Image:
+def _empty_img(start, end, freq, prod, bands=None):
+    names = bands or ["empty"]
     return (
-        ee.Image(0)
+        ee.Image.constant([0] * len(names))
+        .rename(names)
         .updateMask(ee.Image(0))
-        .rename("empty")
         .set({
             "system:time_start": start.millis(),
             "period_start": start.format("YYYY-MM-dd"),
@@ -802,7 +810,26 @@ def _build_period_img(
         ee.Algorithms.If(
             n.gt(0),
             img,
-            _empty_img(start, end, meta.get("frequency", ""), prod)
+            _empty_img(
+                start, end, meta.get("frequency", ""), prod,
+                _FIRE_OUT_BANDS if prod == "FIRE" else None,
+            )
         )
     )
+
+
+def _apply_fire_zones(
+    img: ee.Image,
+    min_confidence: int = 7,
+    zones_only: bool = True,
+) -> ee.Image:
+    """Add a binary FireZone band (FireMask >= min_confidence). If zones_only, mask all bands to those pixels."""
+    if min_confidence not in (7, 8, 9):
+        raise ValueError("min_confidence must be 7 (low), 8 (nominal) or 9 (high)")
+
+    img = ee.Image(img)
+    zone = img.select("FireMask").gte(min_confidence)
+    img = img.addBands(zone.selfMask().rename("FireZone"))
+
+    return img.updateMask(zone) if zones_only else img
 

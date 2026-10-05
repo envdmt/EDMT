@@ -326,9 +326,6 @@ def ComputeTimeseries(
         if "precipitation_mm" in df.columns:
             df = df[df["precipitation_mm"].notna()]
 
-    # elif prod == "CHIRPS":
-    #     if "precipitation_mm" in df.columns:
-    #         df = df[df["precipitation_mm"].notna()]
 
     elif prod in ("NDVI", "EVI"):
         key = prod.lower()
@@ -519,6 +516,8 @@ def CollectionImage(
 
     if prod == "CHIRPS":
         allowed = ("sum", "mean", "median", "min", "max")
+    elif prod == "FIRE":
+        allowed = ("max",)
     else:
         allowed = ("mean", "median", "min", "max")
 
