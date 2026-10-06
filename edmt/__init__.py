@@ -1,5 +1,5 @@
+from importlib.metadata import version, PackageNotFoundError
 from ._edmt import list_functions
-import importlib
 
 ASCII = r"""
  ___ ___  __  __ _____ 
@@ -11,8 +11,7 @@ ASCII = r"""
 __initialized = False
 
 # Package version
-__version__ = importlib.metadata.version("edmt")
-
+__version__ = version("edmt")
 
 
 _MODULES = {
