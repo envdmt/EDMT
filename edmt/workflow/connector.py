@@ -1,7 +1,7 @@
 import ee
 import geopandas as gpd
 import pandas as pd
-from typing import Dict, Any, Optional,Literal
+from typing import Dict, Any, Optional,Literal, Union
 
 from .builder import (
     Frequency,
