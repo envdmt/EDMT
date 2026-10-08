@@ -1,5 +1,5 @@
 import importlib
-from importlib.metadata import version, PackageNotFoundError
+from importlib.metadata import version
 from ._edmt import list_functions
 
 ASCII = r"""
