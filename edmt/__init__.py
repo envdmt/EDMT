@@ -1,3 +1,4 @@
+import importlib
 from importlib.metadata import version, PackageNotFoundError
 from ._edmt import list_functions
 

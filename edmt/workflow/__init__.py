@@ -5,7 +5,8 @@ from .builder import (
 from .connector import (
     ee_to_points,
     get_landcover,
-    get_soilmoisture
+    get_soilmoisture,
+    get_class_histogram
 )
 
 from .workflow import (
@@ -52,7 +53,8 @@ _workflow_functions = [
     "get_landcover",
     "get_soilmoisture",
     "get_fire_image_collection",
-    "ee_to_points"
+    "ee_to_points",
+    "get_class_histogram"
 ]
 
 _analysis_functions = [

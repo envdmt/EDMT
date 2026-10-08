@@ -681,5 +681,53 @@ def ee_to_points(
     return gdf
 
 
+def get_class_histogram(
+    image: ee.Image,
+    gdf: gpd.GeoDataFrame,
+    band: Optional[str] = None,
+    scale: Union[int, float] = 10,
+    max_pixels: float = 1e9,
+    best_effort: bool = False,
+) -> Dict[int, int]:
+    """
+    Compute a pixel-count histogram of a categorical image over a region.
+
+    Parameters
+    ----------
+    image : ee.Image
+        Categorical image (e.g. a classification or land-cover map).
+    gdf : geopandas.GeoDataFrame
+        Region of interest. Must have a CRS; reprojected to EPSG:4326 and
+        dissolved into a single geometry.
+    band : str, optional
+        Band to summarise. Defaults to the first band of ``image``.
+    scale : int or float, default 10
+        Reduction scale in metres.
+    max_pixels : float, default 1e9
+        Maximum number of pixels to reduce.
+    best_effort : bool, default False
+        If True, Earth Engine coarsens the scale to stay under ``max_pixels``.
+
+    Returns
+    -------
+    dict of int to int
+        Mapping of class value to pixel count. Empty if no pixels fall
+        inside the region.
+    """
+    image = image.select(band) if band is not None else image.select([0])
+
+    result = image.reduceRegion(
+        reducer=ee.Reducer.frequencyHistogram(),
+        geometry=gdf_to_ee_geometry(gdf),
+        scale=scale,
+        maxPixels=max_pixels,
+        bestEffort=best_effort,
+    ).getInfo()
+
+    if not result:
+        return {}
+
+    hist = next(iter(result.values()), None) or {}
+    return {int(float(k)): int(v) for k, v in hist.items()}
 
 

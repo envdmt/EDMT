@@ -9,7 +9,7 @@ logging.getLogger('nbsphinx').setLevel(logging.DEBUG)
 project = 'EDMT'
 copyright = '2026, EDMT'
 author = 'Odero'
-release = '1.1.0'
+release = '1.1.1'
 
 extensions = [        
     'autoapi.extension',
