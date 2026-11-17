@@ -344,3 +344,26 @@ Module Contents
    >>> print(gdf.crs)  # EPSG:4326
 
 
+.. py:function:: get_class_histogram(image: ee.Image, gdf: geopandas.GeoDataFrame, band: Optional[str] = None, scale: Union[int, float] = 10, max_pixels: float = 1000000000.0, best_effort: bool = False) -> Dict[int, int]
+
+   Compute a pixel-count histogram of a categorical image over a region.
+
+   :param image: Categorical image (e.g. a classification or land-cover map).
+   :type image: ee.Image
+   :param gdf: Region of interest. Must have a CRS; reprojected to EPSG:4326 and
+               dissolved into a single geometry.
+   :type gdf: geopandas.GeoDataFrame
+   :param band: Band to summarise. Defaults to the first band of ``image``.
+   :type band: str, optional
+   :param scale: Reduction scale in metres.
+   :type scale: int or float, default 10
+   :param max_pixels: Maximum number of pixels to reduce.
+   :type max_pixels: float, default 1e9
+   :param best_effort: If True, Earth Engine coarsens the scale to stay under ``max_pixels``.
+   :type best_effort: bool, default False
+
+   :returns: Mapping of class value to pixel count. Empty if no pixels fall
+             inside the region.
+   :rtype: dict of int to int
+
+
