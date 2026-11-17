@@ -1,5 +1,6 @@
-from ._edmt import list_functions
 import importlib
+from importlib.metadata import version
+from ._edmt import list_functions
 
 ASCII = r"""
  ___ ___  __  __ _____ 
@@ -11,8 +12,7 @@ ASCII = r"""
 __initialized = False
 
 # Package version
-__version__ = importlib.metadata.version("edmt")
-
+__version__ = version("edmt")
 
 
 _MODULES = {

@@ -67,6 +67,84 @@ Package Contents
    >>> print(gdf.crs)  # EPSG:4326
 
 
+.. py:function:: get_landcover(roi_gdf: geopandas.GeoDataFrame) -> ee.Image
+
+   Retrieve the ESA land cover classification image clipped to a specified region of interest.
+
+   This function serves as a convenience wrapper around ``_build_landcover()``,
+   pre-configured to use the ``"ESA"`` land cover product. It extracts the primary
+   land cover image from the configured Earth Engine collection, selects the
+   classification band(s), and returns the result clipped to the provided ROI.
+
+   :param roi_gdf: GeoDataFrame defining the region of interest.
+                   Must contain at least one valid geometry and be compatible with
+                   ``edmt.workflow.gdf_to_ee_geometry()``.
+   :type roi_gdf: gpd.GeoDataFrame
+
+   :returns:
+
+             A single-band Earth Engine image containing the ESA land cover
+                 classification values, spatially clipped to the ROI. Pixel values
+                 correspond to the standard ESA land cover class indices.
+   :rtype: ee.Image
+
+   :raises ValueError: If the ``"ESA"`` land cover configuration is missing from
+       ``_SAT_CONFIG``.
+   :raises Exception: Propagates geometry conversion, collection access, or
+       Earth Engine clipping errors.
+
+   .. rubric:: Example
+
+   >>> import geopandas as gpd
+   >>> roi = gpd.read_file("path/to/study_area.gpkg")
+   >>> lc_img = get_landcover(roi)
+   >>> # Trigger server-side computation and inspect metadata
+   >>> print(lc_img.bandNames().getInfo())
+
+
+.. py:function:: get_soilmoisture(roi_gdf: geopandas.GeoDataFrame) -> ee.Image
+
+   Retrieve the ISRIC SoilGrids soil moisture image clipped to a specified region of interest.
+
+   Convenience wrapper around ``_build_soilmoisture()`` pre-configured for
+   ISRIC's SoilGrids v2.0 product. Returns high-resolution static soil moisture
+   estimates (mean 5–15 cm depth) for the ROI.
+
+   :param roi_gdf: GeoDataFrame defining the region of interest.
+                   Must be compatible with ``edmt.workflow.gdf_to_ee_geometry()``.
+   :type roi_gdf: gpd.GeoDataFrame
+
+   :returns:
+
+             Single-band Earth Engine image containing SoilGrids soil moisture
+                 values (``val_5_15cm_mean``), spatially clipped to the ROI.
+                 Values are in grams of water per kilogram of soil (g/kg).
+   :rtype: ee.Image
+
+
+.. py:function:: get_class_histogram(image: ee.Image, gdf: geopandas.GeoDataFrame, band: Optional[str] = None, scale: Union[int, float] = 10, max_pixels: float = 1000000000.0, best_effort: bool = False) -> Dict[int, int]
+
+   Compute a pixel-count histogram of a categorical image over a region.
+
+   :param image: Categorical image (e.g. a classification or land-cover map).
+   :type image: ee.Image
+   :param gdf: Region of interest. Must have a CRS; reprojected to EPSG:4326 and
+               dissolved into a single geometry.
+   :type gdf: geopandas.GeoDataFrame
+   :param band: Band to summarise. Defaults to the first band of ``image``.
+   :type band: str, optional
+   :param scale: Reduction scale in metres.
+   :type scale: int or float, default 10
+   :param max_pixels: Maximum number of pixels to reduce.
+   :type max_pixels: float, default 1e9
+   :param best_effort: If True, Earth Engine coarsens the scale to stay under ``max_pixels``.
+   :type best_effort: bool, default False
+
+   :returns: Mapping of class value to pixel count. Empty if no pixels fall
+             inside the region.
+   :rtype: dict of int to int
+
+
 .. py:function:: compute_evi_timeseries(start_date: str, end_date: str, satellite: str = 'Sentinel2', frequency: str = 'monthly', roi_gdf: Optional[geopandas.GeoDataFrame] = None, scale: Optional[int] = None) -> pandas.DataFrame
 
 .. py:function:: compute_lst_timeseries(start_date: str, end_date: str, satellite: str = 'MODIS', frequency: str = 'monthly', roi_gdf: Optional[geopandas.GeoDataFrame] = None, scale: Optional[int] = None) -> pandas.DataFrame
@@ -83,6 +161,8 @@ Package Contents
 
 .. py:function:: get_chirps_image(start_date: str, end_date: str, roi_gdf: Optional[geopandas.GeoDataFrame] = None, reducer: edmt.workflow.builder.ReducerName = 'max') -> ee.Image
 
+.. py:function:: get_fire_incident_image(start_date: str, end_date: str, roi_gdf: Optional[geopandas.GeoDataFrame] = None, reducer: edmt.workflow.builder.ReducerName = 'max', min_confidence: int = 7, zones_only: bool = True) -> ee.Image
+
 .. py:function:: get_lst_image_collection(start_date: str, end_date: str, satellite: str, frequency: edmt.workflow.builder.Frequency = 'monthly', roi_gdf: Optional[geopandas.GeoDataFrame] = None, reducer: edmt.workflow.builder.ReducerName = 'mean') -> ee.ImageCollection
 
 .. py:function:: get_ndvi_image_collection(start_date: str, end_date: str, satellite: str, frequency: edmt.workflow.builder.Frequency = 'monthly', roi_gdf: Optional[geopandas.GeoDataFrame] = None, reducer: edmt.workflow.builder.ReducerName = 'mean') -> ee.ImageCollection
@@ -90,6 +170,8 @@ Package Contents
 .. py:function:: get_evi_image_collection(start_date: str, end_date: str, satellite: str, frequency: edmt.workflow.builder.Frequency = 'monthly', roi_gdf: Optional[geopandas.GeoDataFrame] = None, reducer: edmt.workflow.builder.ReducerName = 'mean') -> ee.ImageCollection
 
 .. py:function:: get_chirps_image_collection(start_date: str, end_date: str, frequency: edmt.workflow.builder.Frequency = 'monthly', roi_gdf: Optional[geopandas.GeoDataFrame] = None, reducer: edmt.workflow.builder.ReducerName = 'max') -> ee.ImageCollection
+
+.. py:function:: get_fire_image_collection(start_date: str, end_date: str, frequency: edmt.workflow.builder.Frequency = 'monthly', roi_gdf: Optional[geopandas.GeoDataFrame] = None, reducer: edmt.workflow.builder.ReducerName = 'max', min_confidence: int = 7, zones_only: bool = True) -> ee.ImageCollection
 
 .. py:function:: create_ROI(latitude: float, longitude: float, extent_km: float = 100.0, name: str = 'AOI') -> geopandas.GeoDataFrame
 

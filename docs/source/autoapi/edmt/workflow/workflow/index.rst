@@ -25,6 +25,8 @@ Module Contents
 
 .. py:function:: get_chirps_image(start_date: str, end_date: str, roi_gdf: Optional[geopandas.GeoDataFrame] = None, reducer: edmt.workflow.builder.ReducerName = 'max') -> ee.Image
 
+.. py:function:: get_fire_incident_image(start_date: str, end_date: str, roi_gdf: Optional[geopandas.GeoDataFrame] = None, reducer: edmt.workflow.builder.ReducerName = 'max', min_confidence: int = 7, zones_only: bool = True) -> ee.Image
+
 .. py:function:: get_lst_image_collection(start_date: str, end_date: str, satellite: str, frequency: edmt.workflow.builder.Frequency = 'monthly', roi_gdf: Optional[geopandas.GeoDataFrame] = None, reducer: edmt.workflow.builder.ReducerName = 'mean') -> ee.ImageCollection
 
 .. py:function:: get_ndvi_image_collection(start_date: str, end_date: str, satellite: str, frequency: edmt.workflow.builder.Frequency = 'monthly', roi_gdf: Optional[geopandas.GeoDataFrame] = None, reducer: edmt.workflow.builder.ReducerName = 'mean') -> ee.ImageCollection
@@ -32,4 +34,6 @@ Module Contents
 .. py:function:: get_evi_image_collection(start_date: str, end_date: str, satellite: str, frequency: edmt.workflow.builder.Frequency = 'monthly', roi_gdf: Optional[geopandas.GeoDataFrame] = None, reducer: edmt.workflow.builder.ReducerName = 'mean') -> ee.ImageCollection
 
 .. py:function:: get_chirps_image_collection(start_date: str, end_date: str, frequency: edmt.workflow.builder.Frequency = 'monthly', roi_gdf: Optional[geopandas.GeoDataFrame] = None, reducer: edmt.workflow.builder.ReducerName = 'max') -> ee.ImageCollection
+
+.. py:function:: get_fire_image_collection(start_date: str, end_date: str, frequency: edmt.workflow.builder.Frequency = 'monthly', roi_gdf: Optional[geopandas.GeoDataFrame] = None, reducer: edmt.workflow.builder.ReducerName = 'max', min_confidence: int = 7, zones_only: bool = True) -> ee.ImageCollection
 
