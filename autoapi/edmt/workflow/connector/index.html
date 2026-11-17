@@ -5,8 +5,8 @@
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="index" title="Index" href="../../../../genindex.html"><link rel="search" title="Search" href="../../../../search.html"><link rel="next" title="edmt.workflow.workflow" href="../workflow/index.html"><link rel="prev" title="edmt.workflow.builder" href="../builder/index.html">
 
-    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>edmt.workflow.connector - EDMT 1.1.1 documentation</title>
+    <!-- Generated with Sphinx 9.1.1 and Furo 2025.12.19 -->
+        <title>edmt.workflow.connector - EDMT 1.1.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
@@ -162,7 +162,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../../index.html"><div class="brand">EDMT 1.1.1 documentation</div></a>
+      <a href="../../../../index.html"><div class="brand">EDMT 1.1.2 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -183,7 +183,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="../../../../index.html">
   
-  <span class="sidebar-brand-text">EDMT 1.1.1 documentation</span>
+  <span class="sidebar-brand-text">EDMT 1.1.2 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -671,6 +671,32 @@ computation times out, or the response payload exceeds the <code class="docutils
 </div>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="edmt.workflow.connector.get_class_histogram">
+<span class="sig-prename descclassname"><span class="pre">edmt.workflow.connector.</span></span><span class="sig-name descname"><span class="pre">get_class_histogram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">image</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ee.Image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gdf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">geopandas.GeoDataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">band</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_pixels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000000000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">best_effort</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#edmt.workflow.connector.get_class_histogram" title="Link to this definition">¶</a></dt>
+<dd><p>Compute a pixel-count histogram of a categorical image over a region.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>image</strong> (<em>ee.Image</em>) -- Categorical image (e.g. a classification or land-cover map).</p></li>
+<li><p><strong>gdf</strong> (<em>geopandas.GeoDataFrame</em>) -- Region of interest. Must have a CRS; reprojected to EPSG:4326 and
+dissolved into a single geometry.</p></li>
+<li><p><strong>band</strong> (<em>str</em><em>, </em><em>optional</em>) -- Band to summarise. Defaults to the first band of <code class="docutils literal notranslate"><span class="pre">image</span></code>.</p></li>
+<li><p><strong>scale</strong> (<em>int</em><em> or </em><em>float</em><em>, </em><em>default 10</em>) -- Reduction scale in metres.</p></li>
+<li><p><strong>max_pixels</strong> (<em>float</em><em>, </em><em>default 1e9</em>) -- Maximum number of pixels to reduce.</p></li>
+<li><p><strong>best_effort</strong> (<em>bool</em><em>, </em><em>default False</em>) -- If True, Earth Engine coarsens the scale to stay under <code class="docutils literal notranslate"><span class="pre">max_pixels</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Mapping of class value to pixel count. Empty if no pixels fall
+inside the region.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict of int to int</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 </section>
 
@@ -739,6 +765,7 @@ computation times out, or the response payload exceeds the <code class="docutils
 <li><a class="reference internal" href="#edmt.workflow.connector.get_landcover"><code class="docutils literal notranslate"><span class="pre">get_landcover()</span></code></a></li>
 <li><a class="reference internal" href="#edmt.workflow.connector.get_soilmoisture"><code class="docutils literal notranslate"><span class="pre">get_soilmoisture()</span></code></a></li>
 <li><a class="reference internal" href="#edmt.workflow.connector.ee_to_points"><code class="docutils literal notranslate"><span class="pre">ee_to_points()</span></code></a></li>
+<li><a class="reference internal" href="#edmt.workflow.connector.get_class_histogram"><code class="docutils literal notranslate"><span class="pre">get_class_histogram()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -752,7 +779,7 @@ computation times out, or the response payload exceeds the <code class="docutils
       
     </aside>
   </div>
-</div><script src="../../../../_static/documentation_options.js?v=639b9f89"></script>
+</div><script src="../../../../_static/documentation_options.js?v=bf7ad802"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>

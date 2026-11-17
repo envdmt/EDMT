@@ -32,7 +32,7 @@ Module Contents
 .. py:data:: distance_chart
 
 .. py:data:: temp_units
-   :type:  tuple[str, Ellipsis]
+   :type:  tuple[str, ...]
    :value: ('C', 'F', 'K')
 
 
@@ -54,7 +54,7 @@ Module Contents
    :raises ValueError: If input is not a DataFrame or is empty.
 
 
-.. py:function:: generate_uuid(df: pandas.DataFrame, *, force: bool = False, index: bool = False, uuid_col: str = 'uuid', detect_uuid_cols: bool = True, detect_contains: tuple[str, Ellipsis] = ('uuid', )) -> pandas.DataFrame
+.. py:function:: generate_uuid(df: pandas.DataFrame, *, force: bool = False, index: bool = False, uuid_col: str = 'uuid', detect_uuid_cols: bool = True, detect_contains: tuple[str, ...] = ('uuid', )) -> pandas.DataFrame
 
    Ensure a pandas DataFrame contains a column of valid UUIDs, creating or repairing as needed.
 
